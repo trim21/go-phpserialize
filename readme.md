@@ -11,11 +11,16 @@ goos: windows
 goarch: amd64
 pkg: github.com/trim21/go-phpserialize
 cpu: AMD Ryzen 7 5800X 8-Core Processor
-
-BenchmarkMarshal_map_concrete_types/len-1-16             6954546               169.4 ns/op           144 B/op          2 allocs/op
-BenchmarkMarshal_map_concrete_types/len-10-16            2814568               423.8 ns/op           224 B/op          2 allocs/op
-BenchmarkMarshal_map_concrete_types/len-100-16            399626              3058 ns/op            1152 B/op          2 allocs/op
-BenchmarkMarshal_map_concrete_types/len-1000-16            31783             37477 ns/op           12425 B/op          2 allocs/op
+BenchmarkMarshal_all-16                                 14072532                92.43 ns/op          184 B/op          2 allocs/op
+BenchmarkMarshal_map_concrete_types/len-1-16            43740704                26.50 ns/op           16 B/op          1 allocs/op
+BenchmarkMarshal_map_concrete_types/len-10-16           14448308                92.70 ns/op           96 B/op          1 allocs/op
+BenchmarkMarshal_map_concrete_types/len-100-16           1503818               795.3 ns/op          1025 B/op          1 allocs/op
+BenchmarkMarshal_slice_concrete_types/len-1-16          50314042                25.24 ns/op           40 B/op          2 allocs/op
+BenchmarkMarshal_slice_concrete_types/len-10-16          8027953               143.3 ns/op           120 B/op          2 allocs/op
+BenchmarkMarshal_slice_concrete_types/len-100-16          924982              1387 ns/op            1049 B/op          2 allocs/op
+Benchmark_elliotchance_phpserialize_marshal-16            189254              6064 ns/op            3627 B/op        105 allocs/op
+PASS
+ok      github.com/trim21/go-phpserialize       11.304s
 ```
 
 Disadvantage:
@@ -70,7 +75,6 @@ func main() {
 }
 ```
 
-you will
-get `a:2:{s:5:"users";a:2:{i:0;a:2:{s:2:"id";i:1;s:4:"name";s:3:"sai";}i:1;a:2:{s:2:"id";i:2;s:4:"name";s:6:"trim21";}}s:3:"obj";a:2:{s:1:"v";i:2;s:37:"a long string name replace field name";s:3:"vvv";}}`
+Marshaler is heavily inspired by https://github.com/goccy/go-json
 
 this is different with https://github.com/elliotchance/phpserialize
