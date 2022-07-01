@@ -1,6 +1,6 @@
 PHP `serialize()` and `unserialize()` (in future) for Go.
 
-Support All go type including `map`, `slice`, `strcut`, and simple type like `int`, `uint` ...eta
+Support All go type including `map`, `slice`, `strcut`, and simple type like `int`, `uint` ...etc.
 
 Advantage:
 
