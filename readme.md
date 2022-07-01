@@ -1,16 +1,18 @@
+# go-phpserialize
+
 PHP `serialize()` and `unserialize()` (in future) for Go.
 
 Support All go type including `map`, `slice`, `strcut`, and simple type like `int`, `uint` ...etc.
 
-Advantage:
+### Advantage:
 
 Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 
-Disadvantage:
+### Disadvantage:
 
 heavy usage of `unsafe`.
 
-Limitation:
+#### Limitation:
 
 1. Marshal go `struct`, `map` into php array and array only, php object is not supported.
 2. `interface` contain any `map` (in progress) or `interface` as `map`'s value type
