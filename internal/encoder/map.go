@@ -4,7 +4,6 @@ import (
 	"unsafe"
 
 	"github.com/goccy/go-reflect"
-	"github.com/gookit/goutil/dump"
 )
 
 func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
@@ -39,19 +38,6 @@ func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
 
 	return func(buf *buffer, p uintptr) error {
 		rv := reflectValueMapFromPtr(typ, p, flag)
-		for _, key := range rv.MapKeys() {
-			err := keyEncoder(buf, reflectValueToLocal(key).ptr)
-			if err != nil {
-				return err
-			}
-
-			v := rv.MapIndex(key)
-
-			err = valueEncoder(buf, reflectValueToLocal(v).ptr)
-			if err != nil {
-				return err
-			}
-		}
 
 		if rv.IsNil() {
 			appendArrayBegin(buf, 0)
@@ -69,9 +55,7 @@ func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
 		}
 
 		smr := rv.MapRange()
-		dump.P(smr)
 		mr := *(**MapIter)(unsafe.Pointer(&smr))
-		dump.P(mr)
 		for mr.Next() {
 			err := keyEncoder(buf, mr.Key())
 			if err != nil {

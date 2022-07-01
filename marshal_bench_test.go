@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	elliotchance_phpserialize "github.com/elliotchance/phpserialize"
-	"github.com/trim21/go-phpserialize"
 	"github.com/trim21/go-phpserialize/internal/encoder"
 )
 
@@ -22,7 +21,7 @@ func BenchmarkMarshal_all(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		phpserialize.Marshal(data)
+		encoder.Marshal(data)
 	}
 }
 
@@ -34,7 +33,7 @@ func BenchmarkMarshal_map_concrete_types(b *testing.B) {
 				m[j+1] = uint(j + 2)
 			}
 			for i := 0; i < b.N; i++ {
-				phpserialize.Marshal(m)
+				encoder.Marshal(m)
 			}
 		})
 	}
