@@ -3,7 +3,6 @@ package phpserialize_test
 import (
 	"fmt"
 	"runtime"
-	"strings"
 	"testing"
 
 	elliotchance_phpserialize "github.com/elliotchance/phpserialize"
@@ -45,9 +44,11 @@ func BenchmarkAll_concrete_types(b *testing.B) {
 
 func BenchmarkAll_interface(b *testing.B) {
 	for _, data := range testCase {
-		if strings.Contains(data.Name, "map") {
+		_, err := phpserialize.Marshal(data)
+		if err != nil {
 			continue
 		}
+
 		data := data
 		b.Run(data.Name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {

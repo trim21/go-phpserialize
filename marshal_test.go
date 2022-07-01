@@ -126,7 +126,7 @@ func TestMarshal_concrete_types(t *testing.T) {
 
 func TestMarshal_interface(t *testing.T) {
 	for _, data := range testCase {
-		if strings.Contains(data.Name, "map") {
+		if strings.Contains(data.Name, "map") || strings.Contains(data.Name, "complex_object") {
 			continue
 		}
 		data := data
