@@ -3,9 +3,11 @@ package phpserialize_test
 import (
 	"fmt"
 	"runtime"
+	"strings"
 	"testing"
 
 	elliotchance_phpserialize "github.com/elliotchance/phpserialize"
+	"github.com/trim21/go-phpserialize"
 	"github.com/trim21/go-phpserialize/internal/encoder"
 )
 
@@ -28,6 +30,31 @@ func BenchmarkMarshal_all(b *testing.B) {
 			encoder.Marshal(data)
 		}
 	})
+}
+
+func BenchmarkAll_concrete_types(b *testing.B) {
+	for _, data := range testCase {
+		data := data
+		b.Run(data.Name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				phpserialize.Marshal(data.Data)
+			}
+		})
+	}
+}
+
+func BenchmarkAll_interface(b *testing.B) {
+	for _, data := range testCase {
+		if strings.Contains(data.Name, "map") {
+			continue
+		}
+		data := data
+		b.Run(data.Name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				phpserialize.Marshal(data)
+			}
+		})
+	}
 }
 
 func BenchmarkMarshal_map_concrete_types(b *testing.B) {

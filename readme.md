@@ -4,24 +4,7 @@ Support All go type including `map`, `slice`, `strcut`, and simple type like `in
 
 Advantage:
 
-Low memory allocation and fast:
-
-```text
-goos: windows
-goarch: amd64
-pkg: github.com/trim21/go-phpserialize
-cpu: AMD Ryzen 7 5800X 8-Core Processor
-BenchmarkMarshal_all-16                                 14072532                92.43 ns/op          184 B/op          2 allocs/op
-BenchmarkMarshal_map_concrete_types/len-1-16            43740704                26.50 ns/op           16 B/op          1 allocs/op
-BenchmarkMarshal_map_concrete_types/len-10-16           14448308                92.70 ns/op           96 B/op          1 allocs/op
-BenchmarkMarshal_map_concrete_types/len-100-16           1503818               795.3 ns/op          1025 B/op          1 allocs/op
-BenchmarkMarshal_slice_concrete_types/len-1-16          50314042                25.24 ns/op           40 B/op          2 allocs/op
-BenchmarkMarshal_slice_concrete_types/len-10-16          8027953               143.3 ns/op           120 B/op          2 allocs/op
-BenchmarkMarshal_slice_concrete_types/len-100-16          924982              1387 ns/op            1049 B/op          2 allocs/op
-Benchmark_elliotchance_phpserialize_marshal-16            189254              6064 ns/op            3627 B/op        105 allocs/op
-PASS
-ok      github.com/trim21/go-phpserialize       11.304s
-```
+Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 
 Disadvantage:
 
@@ -30,7 +13,7 @@ heavy usage of `unsafe`.
 Limitation:
 
 1. Marshal go `struct`, `map` into php array and array only, php object is not supported.
-2. You can't use `interface` (yet)
+2. `interface` contain any `map` (in progress) or `interface` as `map`'s value type
 3. No `omitempty` support (yet).
 4. Anonymous Struct field (embedding struct) working like named field.
 

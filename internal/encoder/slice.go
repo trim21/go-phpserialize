@@ -1,7 +1,6 @@
 package encoder
 
 import (
-	"strconv"
 	"unsafe"
 
 	"github.com/goccy/go-reflect"
@@ -26,9 +25,10 @@ func compileSlice(rt reflect.Type, rv reflect.Value) (encoder, error) {
 		appendArrayBegin(ctx, int64(length))
 
 		for i := 0; i < length; i++ {
-			ctx.b = append(ctx.b, 'i', ':')
-			ctx.b = strconv.AppendInt(ctx.b, int64(i), 10)
-			ctx.b = append(ctx.b, ';')
+			appendInt(ctx, int64(i))
+			// ctx.b = append(ctx.b, 'i', ':')
+			// ctx.b = strconv.AppendInt(ctx.b, int64(i), 10)
+			// ctx.b = append(ctx.b, ';')
 			err = encoder(ctx, dataPtr+offset*uintptr(i))
 			if err != nil {
 				return err

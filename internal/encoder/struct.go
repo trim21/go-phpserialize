@@ -54,3 +54,15 @@ func compileFieldName(field reflect.StructField) (encoder, error) {
 
 	return compileConstString(name)
 }
+
+func getFieldName(field reflect.StructField) string {
+	var name = field.Name
+
+	tag := field.Tag.Get(DefaultStructTag)
+
+	if tag != "" {
+		name = strings.Split(tag, ",")[0]
+	}
+
+	return name
+}

@@ -23,5 +23,5 @@ type UnsupportedInterfaceTypeError struct {
 }
 
 func (e *UnsupportedInterfaceTypeError) Error() string {
-	return "php serialize: can't encode type: " + e.Type.String()
+	return "php serialize: can't encode type (as part of an interface): " + e.Type.String()
 }
