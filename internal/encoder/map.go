@@ -46,9 +46,7 @@ func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
 		rv := reflectValueMapFromPtr(typ, p, flag)
 
 		if rv.IsNil() {
-			appendArrayBegin(ctx, 0)
-			ctx.b = append(ctx.b, '}')
-
+			appendNil(ctx)
 			return nil
 		}
 

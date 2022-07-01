@@ -68,10 +68,12 @@ func TestMarshal(t *testing.T) {
 		{Name: "int16", Data: int16(7)},
 		{Name: "int32", Data: int32(7)},
 		{Name: "int64", Data: int64(7)},
+		{Name: "int", Data: int(8)},
 		{Name: "uint8", Data: uint8(7)},
 		{Name: "uint16", Data: uint16(7)},
 		{Name: "uint32", Data: uint32(7)},
 		{Name: "uint64", Data: uint64(7)},
+		{Name: "uint", Data: uint(9)},
 		{Name: "float32", Data: float32(3.14)},
 		{Name: "float64", Data: float64(3.14)},
 		{Name: "string", Data: strings.Repeat("qasd", 5)},
@@ -83,6 +85,8 @@ func TestMarshal(t *testing.T) {
 		{Name: "struct with map embed", Data: MapOnly{
 			Map: map[string]int64{"one": 1},
 		}},
+
+		{Name: "nil map", Data: MapOnly{}},
 
 		{Name: "nested struct not anonymous", Data: ContainerNonAnonymous{
 			OK:   true,
@@ -117,6 +121,15 @@ func TestMarshal(t *testing.T) {
 			require.JSONEq(t, jsonEncode(t, data.Data), j)
 		})
 	}
+}
+
+// some special case like `empty map`, can't be compared by json unmarshal
+func TestMarshal_special(t *testing.T) {
+	t.Run("empty map", func(t *testing.T) {
+		b, err := phpserialize.Marshal(map[int]string{})
+		require.NoError(t, err)
+		require.Equal(t, []byte("a:0:{}"), b)
+	})
 }
 
 func decodeWithRealPhp(t *testing.T, s []byte) string {

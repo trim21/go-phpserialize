@@ -15,3 +15,7 @@ func appendString(buf *Ctx, s string) {
 	buf.b = strconv.AppendQuote(buf.b, s)
 	buf.b = append(buf.b, ';')
 }
+
+func appendNil(ctx *Ctx) {
+	ctx.b = append(ctx.b, 'N', ';')
+}

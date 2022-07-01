@@ -2,8 +2,6 @@ package encoder
 
 import (
 	"unsafe"
-
-	"github.com/goccy/go-reflect"
 )
 
 // without doing any allocations.
@@ -82,18 +80,4 @@ func (iter *mapIter) Next() bool {
 		mapIterNext(&iter.hiter)
 	}
 	return mapIterKey(&iter.hiter) != nil
-}
-
-// mapType represents a map type.
-type mapType struct {
-	reflect.Type
-	key    reflect.Type // map key type
-	elem   reflect.Type // map element (value) type
-	bucket reflect.Type // internal bucket structure
-	// function for hashing keys (ptr to key, seed) -> hash
-	hasher     func(unsafe.Pointer, uintptr) uintptr
-	keysize    uint8  // size of key slot
-	valuesize  uint8  // size of value slot
-	bucketsize uint16 // size of bucket
-	flags      uint32
 }
