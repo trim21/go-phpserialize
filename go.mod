@@ -7,7 +7,7 @@ require (
 	github.com/goccy/go-json v0.9.8
 	github.com/goccy/go-reflect v1.1.1-0.20210520085854-e1eb8c5193d0
 	github.com/gookit/goutil v0.4.6
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.8.0
 )
 
 require (
