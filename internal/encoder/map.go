@@ -7,7 +7,7 @@ import (
 	"github.com/goccy/go-reflect"
 )
 
-var mapContextPool = sync.Pool{
+var mapIterPool = sync.Pool{
 	New: func() interface{} {
 		return &mapIter{}
 	},
@@ -60,8 +60,8 @@ func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
 			return nil
 		}
 
-		var mr = mapContextPool.Get().(*mapIter)
-		defer mapContextPool.Put(mr)
+		var mr = mapIterPool.Get().(*mapIter)
+		defer mapIterPool.Put(mr)
 		defer mr.reset()
 
 		mr.m = *(*rValue)(unsafe.Pointer(&rv))
