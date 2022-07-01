@@ -2,6 +2,7 @@ package phpserialize_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/require"
 	"github.com/trim21/go-phpserialize"
 )
@@ -57,6 +57,12 @@ type MapOnly struct {
 	Map map[string]int64 `php:"map" json:"map"`
 }
 
+type NestedMap = map[int]map[uint]string
+
+type Generic[T any] struct {
+	Value T
+}
+
 var testCase = []struct {
 	Name string
 	Data any
@@ -86,7 +92,7 @@ var testCase = []struct {
 		Map: map[string]int64{"one": 1},
 	}},
 
-	{Name: "nil map", Data: MapOnly{}},
+	{Name: "nil map", Data: (map[string]string)(nil)},
 
 	{Name: "nested struct not anonymous", Data: ContainerNonAnonymous{
 		OK:   true,
@@ -108,12 +114,35 @@ var testCase = []struct {
 
 		Map: map[int]struct{ V int }{7: {V: 4}},
 	}},
+
+	{Name: "nested map", Data: NestedMap{
+		1: map[uint]string{4: "ok"},
+	}},
+
+	{Name: "map[type]any(map)", Data: map[int]any{
+		1: map[uint]string{4: "ok"},
+	}},
+
+	{Name: "map[type]any(slice)", Data: map[int]any{
+		1: []int{3, 1, 4},
+	}},
+
+	{Name: "map[type]any(struct)", Data: map[int]any{
+		1: User{},
+	}},
+
+	{Name: "generic[int]", Data: Generic[int]{1}},
+	{Name: "generic[struct]", Data: Generic[User]{User{}}},
+	{Name: "generic[map]", Data: Generic[map[string]int]{map[string]int{"one": 1}}},
+	{Name: "generic[slice]", Data: Generic[[]string]{[]string{"hello", "world"}}},
 }
 
 func TestMarshal_concrete_types(t *testing.T) {
+	t.Parallel()
 	for _, data := range testCase {
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
+			t.Parallel()
 			b, err := phpserialize.Marshal(data.Data)
 			require.NoError(t, err)
 
@@ -125,26 +154,26 @@ func TestMarshal_concrete_types(t *testing.T) {
 }
 
 func TestMarshal_interface(t *testing.T) {
+	t.Parallel()
 	for _, data := range testCase {
-		if strings.Contains(data.Name, "map") || strings.Contains(data.Name, "complex") {
-			continue
-		}
-
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
+			t.Parallel()
 			b, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 
 			j := decodeWithRealPhp(t, b)
 
-			require.JSONEq(t, jsonEncode(t, data), j, string(b)+"\n json: "+j)
+			require.JSONEq(t, jsonEncode(t, data), j, "lib: "+string(b)+"\nphp to json: "+j+"\njson.Marshal(data): "+jsonEncode(t, data))
 		})
 	}
 }
 
 // some special case like `empty map`, can't be compared by json unmarshal
 func TestMarshal_special(t *testing.T) {
+	t.Parallel()
 	t.Run("empty map", func(t *testing.T) {
+		t.Parallel()
 		b, err := phpserialize.Marshal(map[int]string{})
 		require.NoError(t, err)
 		require.Equal(t, []byte("a:0:{}"), b, string(b))

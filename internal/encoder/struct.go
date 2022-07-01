@@ -61,7 +61,11 @@ func getFieldName(field reflect.StructField) string {
 	tag := field.Tag.Get(DefaultStructTag)
 
 	if tag != "" {
-		name = strings.Split(tag, ",")[0]
+		i := strings.Index(tag, ",")
+		if i > 0 {
+			return tag[:i]
+		}
+		return tag
 	}
 
 	return name

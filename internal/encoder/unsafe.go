@@ -21,6 +21,10 @@ func reflectValueToLocal(value reflect.Value) rValue {
 	return *(*rValue)(unsafe.Pointer(&value))
 }
 
+func localToReflectValue(value rValue) reflect.Value {
+	return *(*reflect.Value)(unsafe.Pointer(&value))
+}
+
 func stdReflectValueToLocal(value stdReflect.Value) rValue {
 	return *(*rValue)(unsafe.Pointer(&value))
 }
@@ -113,3 +117,10 @@ const (
 	flagMethodShift      = 10
 	flagRO          flag = flagStickyRO | flagEmbedRO
 )
+
+func ro(f uintptr) flag {
+	if f&flagRO != 0 {
+		return flagStickyRO
+	}
+	return 0
+}

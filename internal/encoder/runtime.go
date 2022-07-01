@@ -2,6 +2,8 @@ package encoder
 
 import (
 	"unsafe"
+
+	"github.com/goccy/go-reflect"
 )
 
 // without doing any allocations.
@@ -43,7 +45,7 @@ func (h *hiter) initialized() bool {
 }
 
 // A mapIter is an iterator for ranging over a map.
-// See Value.MapRange.
+// See ValueUnsafeAddress.MapRange.
 type mapIter struct {
 	m     rValue
 	hiter hiter
@@ -53,23 +55,35 @@ func (iter *mapIter) reset() {
 	iter.hiter = hiter{}
 }
 
-// Key returns the key of iter's current map entry without alloc.
-func (iter *mapIter) Key() uintptr {
+// KeyUnsafeAddress returns the key of iter's current map entry without alloc.
+func (iter *mapIter) KeyUnsafeAddress() uintptr {
 	iterKey := mapIterKey(&iter.hiter)
 	return uintptr(iterKey)
 }
 
-// Value returns the value of iter's current map entry.
-func (iter *mapIter) Value() uintptr {
+// ValueUnsafeAddress returns the value of iter's current map entry.
+func (iter *mapIter) ValueUnsafeAddress() uintptr {
 	return uintptr(mapIterValue(&iter.hiter))
+}
+
+// Value return a reflect.Value for reflect encoder.
+func (iter *mapIter) Value() reflect.Value {
+	iterElem := mapIterValue(&iter.hiter)
+	if iterElem == nil {
+		panic("MapIter.Value called on exhausted iterator")
+	}
+
+	t := (*mapType)(unsafe.Pointer(iter.m.typ))
+	vtype := t.elem
+	return *(*reflect.Value)(unsafe.Pointer(&rValue{vtype, uintptr(iterElem), ro(iter.m.flag) | flag(vtype.Kind())}))
 }
 
 // Next advances the map iterator and reports whether there is another
 // entry. It returns false when iter is exhausted; subsequent
-// calls to Key, Value, or Next will panic.
+// calls to KeyUnsafeAddress, ValueUnsafeAddress, or Next will panic.
 func (iter *mapIter) Next() bool {
 	if !iter.m.IsValid() {
-		panic("mapIter.Next called on an iterator that does not have an associated map Value")
+		panic("mapIter.Next called on an iterator that does not have an associated map ValueUnsafeAddress")
 	}
 	if !iter.hiter.initialized() {
 		mapIterInit(iter.m.typ, iter.m.pointer(), &iter.hiter)
@@ -80,4 +94,18 @@ func (iter *mapIter) Next() bool {
 		mapIterNext(&iter.hiter)
 	}
 	return mapIterKey(&iter.hiter) != nil
+}
+
+// mapType represents a map type.
+type mapType struct {
+	rtype
+	key    *rtype // map key type
+	elem   *rtype // map element (value) type
+	bucket *rtype // internal bucket structure
+	// function for hashing keys (ptr to key, seed) -> hash
+	hasher     func(unsafe.Pointer, uintptr) uintptr
+	keysize    uint8  // size of key slot
+	valuesize  uint8  // size of value slot
+	bucketsize uint16 // size of bucket
+	flags      uint32
 }

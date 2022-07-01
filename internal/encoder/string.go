@@ -12,7 +12,6 @@ import (
 // str length is underling bytes length, not len(str)
 func compileConstString(s string) (encoder, error) {
 	var encodedStr = "s:" + strconv.Itoa(len(s)) + ":" + strconv.Quote(s) + ";"
-
 	return func(buf *Ctx, p uintptr) error {
 		buf.b = append(buf.b, encodedStr...)
 		return nil

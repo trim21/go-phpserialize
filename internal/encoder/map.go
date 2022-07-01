@@ -13,10 +13,11 @@ var mapIterPool = sync.Pool{
 	},
 }
 
-func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
+// !!! not safe to use in reflect case !!!
+func compileMap(rt reflect.Type, rv reflect.Value) (encoder, error) {
 	// for map[int]string, keyType is int, valueType is string
-	keyType := typ.Key()
-	valueType := typ.Elem()
+	keyType := rt.Key()
+	valueType := rt.Elem()
 
 	switch keyType.Kind() {
 	case reflect.String,
@@ -24,11 +25,6 @@ func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 	default:
 		return nil, &UnsupportedTypeAsMapKeyError{Type: keyType}
-	}
-
-	if valueType.Kind() == reflect.Interface {
-		// interface slow path
-		return compileMapWithInterfaceValue(typ, rv, keyType, valueType)
 	}
 
 	keyEncoder, err := compile(keyType, reflect.New(keyType).Elem())
@@ -40,10 +36,11 @@ func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
 	if err != nil {
 		return nil, err
 	}
-	flag := (*(*rValue)(unsafe.Pointer(&rv))).flag
+
+	flag := reflectValueToLocal(rv).flag
 
 	return func(ctx *Ctx, p uintptr) error {
-		rv := reflectValueMapFromPtr(typ, p, flag)
+		rv := reflectValueMapFromPtr(rt, p, flag)
 
 		if rv.IsNil() {
 			appendNil(ctx)
@@ -64,12 +61,12 @@ func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
 
 		mr.m = *(*rValue)(unsafe.Pointer(&rv))
 		for mr.Next() {
-			err := keyEncoder(ctx, mr.Key())
+			err := keyEncoder(ctx, mr.KeyUnsafeAddress())
 			if err != nil {
 				return err
 			}
 
-			err = valueEncoder(ctx, mr.Value())
+			err = valueEncoder(ctx, mr.ValueUnsafeAddress())
 			if err != nil {
 				return err
 			}
@@ -79,49 +76,46 @@ func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
 	}, nil
 }
 
-func compileMapWithInterfaceValue(typ reflect.Type, rv reflect.Value, keyType, valueType reflect.Type) (encoder, error) {
-	keyEncoder, err := compile(keyType, rv)
-	if err != nil {
-		return nil, err
-	}
+type mapEncoder struct {
+	rt           reflect.Type
+	flag         uintptr
+	keyEncoder   encoder
+	valueEncoder encoder
+}
 
-	flag := (*(*rValue)(unsafe.Pointer(&rv))).flag
+func (e *mapEncoder) encode(ctx *Ctx, p uintptr) error {
+	rv := reflectValueMapFromPtr(e.rt, p, e.flag)
 
-	valueEncoder, err := compileInterface(valueType)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(buf *Ctx, p uintptr) error {
-		rv := reflectValueMapFromPtr(typ, p, flag)
-
-		if rv.IsNil() {
-			appendArrayBegin(buf, 0)
-
-			return nil
-		}
-
-		appendArrayBegin(buf, int64(rv.Len()))
-
-		mr := rv.MapRange()
-		for mr.Next() {
-			// HINT: This is very likely to break after new go version.
-			p := mr.Key()
-			v := (*rValue)(unsafe.Pointer(&p))
-
-			err := keyEncoder(buf, v.ptr)
-			if err != nil {
-				return err
-			}
-
-			p = mr.Value()
-			v = (*rValue)(unsafe.Pointer(&p))
-			err = valueEncoder(buf, v.ptr)
-			if err != nil {
-				return err
-			}
-		}
-		buf.b = append(buf.b, '}')
+	if rv.IsNil() {
+		appendNil(ctx)
 		return nil
-	}, nil
+	}
+
+	mapLen := rv.Len()
+	appendArrayBegin(ctx, int64(mapLen))
+
+	if mapLen == 0 {
+		ctx.b = append(ctx.b, '}')
+		return nil
+	}
+
+	var mr = mapIterPool.Get().(*mapIter)
+	defer mapIterPool.Put(mr)
+	defer mr.reset()
+
+	mr.m = *(*rValue)(unsafe.Pointer(&rv))
+	for mr.Next() {
+		err := e.keyEncoder(ctx, mr.KeyUnsafeAddress())
+		if err != nil {
+			return err
+		}
+
+		err = e.valueEncoder(ctx, mr.ValueUnsafeAddress())
+		if err != nil {
+			return err
+		}
+	}
+
+	ctx.b = append(ctx.b, '}')
+	return nil
 }

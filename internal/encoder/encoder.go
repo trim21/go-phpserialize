@@ -107,3 +107,33 @@ func compile(typ reflect.Type, rv reflect.Value) (encoder, error) {
 
 	return nil, fmt.Errorf("failed to build encoder, unsupported type %s (kind %s)", typ.String(), typ.Kind())
 }
+
+func compileMapKey(typ reflect.Type) (encoder, error) {
+	switch typ.Kind() {
+	case reflect.String:
+		return encodeStringVariable, nil
+
+	case reflect.Int8:
+		return encodeInt8, nil
+	case reflect.Int16:
+		return encodeInt16, nil
+	case reflect.Int32:
+		return encodeInt32, nil
+	case reflect.Int64:
+		return encodeInt64, nil
+	case reflect.Int:
+		return encodeInt, nil
+	case reflect.Uint8:
+		return encodeUint8, nil
+	case reflect.Uint16:
+		return encodeUint16, nil
+	case reflect.Uint32:
+		return encodeUint32, nil
+	case reflect.Uint64:
+		return encodeUint64, nil
+	case reflect.Uint:
+		return encodeUint, nil
+	}
+
+	return nil, fmt.Errorf("failed to build encoder for map key, unsupported type %s (kind %s)", typ.String(), typ.Kind())
+}

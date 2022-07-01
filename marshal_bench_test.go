@@ -23,11 +23,6 @@ func BenchmarkMarshal_concrete_types(b *testing.B) {
 
 func BenchmarkMarshal_interface(b *testing.B) {
 	for _, data := range testCase {
-		_, err := phpserialize.Marshal(data)
-		if err != nil {
-			continue
-		}
-
 		data := data
 		b.Run(data.Name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -42,6 +37,41 @@ func BenchmarkMarshal_map_concrete_types(b *testing.B) {
 		i := i
 		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
 			var m = make(map[int]uint, i)
+			for j := 0; j < i; j++ {
+				m[j+1] = uint(j + 2)
+			}
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					encoder.Marshal(m)
+				}
+			})
+		})
+	}
+}
+
+func BenchmarkMarshal_map_as_interface(b *testing.B) {
+	for i := 1; i < 1000; i = i * 10 {
+		i := i
+		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
+			var m = make(map[int]uint, i)
+			for j := 0; j < i; j++ {
+				m[j+1] = uint(j + 2)
+			}
+			b.RunParallel(func(pb *testing.PB) {
+				var v = struct{ Value any }{m}
+				for pb.Next() {
+					encoder.Marshal(v)
+				}
+			})
+		})
+	}
+}
+
+func BenchmarkMarshal_map_with_interface_value(b *testing.B) {
+	for i := 1; i < 1000; i = i * 10 {
+		i := i
+		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
+			var m = make(map[int]any, i)
 			for j := 0; j < i; j++ {
 				m[j+1] = uint(j + 2)
 			}
