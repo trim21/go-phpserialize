@@ -72,6 +72,9 @@ func TestMarshal(t *testing.T) {
 		{Name: "uint16", Data: uint16(7)},
 		{Name: "uint32", Data: uint32(7)},
 		{Name: "uint64", Data: uint64(7)},
+		{Name: "float32", Data: float32(3.14)},
+		{Name: "float64", Data: float64(3.14)},
+		{Name: "string", Data: strings.Repeat("qasd", 5)},
 		{Name: "slice", Data: []Item{{V: 6}, {V: 5}, {4}, {3}, {2}}},
 		{Name: "struct with map ptr", Data: MapPtr{
 			Users: []Item{},
