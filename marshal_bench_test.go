@@ -72,6 +72,27 @@ func BenchmarkMarshal_slice_concrete_types(b *testing.B) {
 	}
 }
 
+func BenchmarkMarshal_slice_interface(b *testing.B) {
+	type D struct {
+		Value any
+	}
+	for i := 1; i < 1000; i = i * 10 {
+		i := i
+		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
+			var m = make([]uint, i)
+			for j := 0; j < i; j++ {
+				m[j] = uint(j + 2)
+			}
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					encoder.Marshal(D{Value: m})
+				}
+			})
+			runtime.KeepAlive(m)
+		})
+	}
+}
+
 func Benchmark_marshal_compare(b *testing.B) {
 	type Obj struct {
 		V int `php:"v"`

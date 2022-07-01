@@ -126,9 +126,10 @@ func TestMarshal_concrete_types(t *testing.T) {
 
 func TestMarshal_interface(t *testing.T) {
 	for _, data := range testCase {
-		if strings.Contains(data.Name, "map") || strings.Contains(data.Name, "complex_object") {
+		if strings.Contains(data.Name, "map") || strings.Contains(data.Name, "complex") {
 			continue
 		}
+
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
 			b, err := phpserialize.Marshal(data)

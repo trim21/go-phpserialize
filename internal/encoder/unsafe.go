@@ -61,6 +61,12 @@ func (v rValue) pointer() unsafe.Pointer {
 	return unsafe.Pointer(v.ptr)
 }
 
+const (
+	kindDirectIface = 1 << 5
+	kindGCProg      = 1 << 6 // Type.gc points to GC program
+	kindMask        = (1 << 5) - 1
+)
+
 // rtype is the common implementation of most values.
 // It is embedded in other struct types.
 //
@@ -80,6 +86,8 @@ type rtype struct {
 	str       int32 // string form
 	ptrToThis int32 // type for pointer to this type, may be zero
 }
+
+func (t *rtype) Kind() reflect.Kind { return reflect.Kind(t.kind & kindMask) }
 
 func (t *rtype) pointers() bool { return t.ptrdata != 0 }
 
