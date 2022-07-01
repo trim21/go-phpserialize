@@ -2,6 +2,7 @@ package phpserialize_test
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 
 	elliotchance_phpserialize "github.com/elliotchance/phpserialize"
@@ -9,46 +10,57 @@ import (
 )
 
 func BenchmarkMarshal_all(b *testing.B) {
+
 	var data = TestData{
 		Users: []User{
 			{ID: 1, Name: "sai"},
 			{ID: 2, Name: "trim21"},
+			{ID: 3, Name: "g"},
 		},
-		B:   false,
-		Obj: Inner{V: 2, S: "vvv"},
+		// B:   false,
+		// Obj: Inner{V: 2, S: "vvv"},
 
-		Map: map[int]struct{ V int }{7: {V: 4}},
+		// Map: map[int]struct{ V int }{7: {V: 4}},
 	}
 
-	for i := 0; i < b.N; i++ {
-		encoder.Marshal(data)
-	}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			encoder.Marshal(data)
+		}
+	})
 }
 
 func BenchmarkMarshal_map_concrete_types(b *testing.B) {
-	for i := 1; i < 10000; i = i * 10 {
+	for i := 1; i < 1000; i = i * 10 {
+		i := i
 		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
 			var m = make(map[int]uint, i)
 			for j := 0; j < i; j++ {
 				m[j+1] = uint(j + 2)
 			}
-			for i := 0; i < b.N; i++ {
-				encoder.Marshal(m)
-			}
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					encoder.Marshal(m)
+				}
+			})
 		})
 	}
 }
 
 func BenchmarkMarshal_slice_concrete_types(b *testing.B) {
-	for i := 1; i < 10000; i = i * 10 {
+	for i := 1; i < 1000; i = i * 10 {
+		i := i
 		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
 			var m = make([]uint, i)
 			for j := 0; j < i; j++ {
 				m[j] = uint(j + 2)
 			}
-			for i := 0; i < b.N; i++ {
-				encoder.Marshal(m)
-			}
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					encoder.Marshal(m)
+				}
+			})
+			runtime.KeepAlive(m)
 		})
 	}
 }

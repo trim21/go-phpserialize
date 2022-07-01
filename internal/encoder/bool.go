@@ -10,13 +10,13 @@ func compileBool(typ reflect.Type) (encoder, error) {
 	return encodeBool, nil
 }
 
-func encodeBool(buf *buffer, p uintptr) error {
+func encodeBool(buf *Ctx, p uintptr) error {
 	value := *(*bool)(unsafe.Pointer(p))
 	appendBool(buf, value)
 	return nil
 }
 
-func appendBool(buf *buffer, v bool) {
+func appendBool(buf *Ctx, v bool) {
 	buf.b = append(buf.b, 'b', ':')
 	if v {
 		buf.b = append(buf.b, '1')

@@ -19,22 +19,22 @@ func compileSlice(rt reflect.Type, rv reflect.Value) (encoder, error) {
 		return nil, err
 	}
 
-	return func(buf *buffer, p uintptr) error {
+	return func(ctx *Ctx, p uintptr) error {
 		dataPtr := *(*uintptr)(unsafe.Pointer(p))
 		length := *(*int)(unsafe.Pointer(p + lenOffset))
 
-		appendArrayBegin(buf, int64(length))
+		appendArrayBegin(ctx, int64(length))
 
 		for i := 0; i < length; i++ {
-			buf.b = append(buf.b, 'i', ':')
-			buf.b = strconv.AppendInt(buf.b, int64(i), 10)
-			buf.b = append(buf.b, ';')
-			err = encoder(buf, dataPtr+offset*uintptr(i))
+			ctx.b = append(ctx.b, 'i', ':')
+			ctx.b = strconv.AppendInt(ctx.b, int64(i), 10)
+			ctx.b = append(ctx.b, ';')
+			err = encoder(ctx, dataPtr+offset*uintptr(i))
 			if err != nil {
 				return err
 			}
 		}
-		buf.b = append(buf.b, '}')
+		ctx.b = append(ctx.b, '}')
 		return nil
 	}, nil
 }

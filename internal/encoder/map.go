@@ -1,17 +1,22 @@
 package encoder
 
 import (
+	"sync"
 	"unsafe"
 
 	"github.com/goccy/go-reflect"
 )
 
+var mapContextPool = sync.Pool{
+	New: func() interface{} {
+		return &mapIter{}
+	},
+}
+
 func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
 	// for map[int]string, keyType is int, valueType is string
 	keyType := typ.Key()
 	valueType := typ.Elem()
-
-	flag := (*(*rValue)(unsafe.Pointer(&rv))).flag
 
 	switch keyType.Kind() {
 	case reflect.String,
@@ -35,39 +40,43 @@ func compileMap(typ reflect.Type, rv reflect.Value) (encoder, error) {
 	if err != nil {
 		return nil, err
 	}
+	flag := (*(*rValue)(unsafe.Pointer(&rv))).flag
 
-	return func(buf *buffer, p uintptr) error {
+	return func(ctx *Ctx, p uintptr) error {
 		rv := reflectValueMapFromPtr(typ, p, flag)
 
 		if rv.IsNil() {
-			appendArrayBegin(buf, 0)
-			buf.b = append(buf.b, '}')
+			appendArrayBegin(ctx, 0)
+			ctx.b = append(ctx.b, '}')
 
 			return nil
 		}
 
 		mapLen := rv.Len()
-		appendArrayBegin(buf, int64(mapLen))
+		appendArrayBegin(ctx, int64(mapLen))
 
 		if mapLen == 0 {
-			buf.b = append(buf.b, '}')
+			ctx.b = append(ctx.b, '}')
 			return nil
 		}
 
-		smr := rv.MapRange()
-		mr := *(**MapIter)(unsafe.Pointer(&smr))
+		var mr = mapContextPool.Get().(*mapIter)
+		defer mapContextPool.Put(mr)
+		defer mr.reset()
+
+		mr.m = *(*rValue)(unsafe.Pointer(&rv))
 		for mr.Next() {
-			err := keyEncoder(buf, mr.Key())
+			err := keyEncoder(ctx, mr.Key())
 			if err != nil {
 				return err
 			}
 
-			err = valueEncoder(buf, mr.Value())
+			err = valueEncoder(ctx, mr.Value())
 			if err != nil {
 				return err
 			}
 		}
-		buf.b = append(buf.b, '}')
+		ctx.b = append(ctx.b, '}')
 		return nil
 	}, nil
 }
@@ -85,7 +94,7 @@ func compileMapWithInterfaceValue(typ reflect.Type, rv reflect.Value, keyType, v
 		return nil, err
 	}
 
-	return func(buf *buffer, p uintptr) error {
+	return func(buf *Ctx, p uintptr) error {
 		rv := reflectValueMapFromPtr(typ, p, flag)
 
 		if rv.IsNil() {

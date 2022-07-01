@@ -14,10 +14,10 @@ type Inner struct {
 }
 
 type TestData struct {
-	Users []User                  `php:"users"`
-	Obj   Inner                   `php:"obj"`
-	B     bool                    `php:"ok"`
-	Map   map[int]struct{ V int } `php:"map"`
+	Users []User `php:"users"`
+	// Obj   Inner  `php:"obj"`
+	// B     bool   `php:"ok"`
+	// Map   map[int]struct{ V int } `php:"map"`
 }
 
 type User struct {
@@ -33,10 +33,10 @@ func TestMarshal(t *testing.T) {
 			{ID: 1, Name: "sai"},
 			{ID: 2, Name: "trim21"},
 		},
-		B:   false,
-		Obj: Inner{V: 2, S: "vvv"},
+		// B:   false,
+		// Obj: Inner{V: 2, S: "vvv"},
 
-		Map: map[int]struct{ V int }{7: {V: 4}},
+		// Map: map[int]struct{ V int }{7: {V: 4}},
 	}
 
 	_, err := phpserialize.Marshal(data)

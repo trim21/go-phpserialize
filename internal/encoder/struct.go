@@ -24,21 +24,21 @@ func compileStruct(rt reflect.Type, rv reflect.Value) (encoder, error) {
 		}
 
 		offset := field.Offset
-		encoders = append(encoders, func(buf *buffer, p uintptr) error {
+		encoders = append(encoders, func(buf *Ctx, p uintptr) error {
 			return enc(buf, p+offset)
 		})
 	}
 
 	fields := int64(rt.NumField())
-	return func(buf *buffer, p uintptr) error {
-		appendArrayBegin(buf, fields)
+	return func(ctx *Ctx, p uintptr) error {
+		appendArrayBegin(ctx, fields)
 
 		for _, enc := range encoders {
-			if err := enc(buf, p); err != nil {
+			if err := enc(ctx, p); err != nil {
 				return err
 			}
 		}
-		buf.b = append(buf.b, '}')
+		ctx.b = append(ctx.b, '}')
 		return nil
 	}, nil
 }

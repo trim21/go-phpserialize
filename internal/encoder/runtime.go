@@ -44,46 +44,40 @@ func (h *hiter) initialized() bool {
 	return h.t != nil
 }
 
-// A MapIter is an iterator for ranging over a map.
+// A mapIter is an iterator for ranging over a map.
 // See Value.MapRange.
-type MapIter struct {
+type mapIter struct {
 	m     rValue
 	hiter hiter
 }
 
-// Key returns the key of iter's current map entry without alloc.
-func (iter *MapIter) Key() uintptr {
-	if !iter.hiter.initialized() {
-		panic("MapIter.Key called before Next")
-	}
-	iterKey := mapIterKey(&iter.hiter)
-	if iterKey == nil {
-		panic("MapIter.Key called on exhausted iterator")
-	}
+func (iter *mapIter) reset() {
+	iter.hiter = hiter{}
+}
 
+// Key returns the key of iter's current map entry without alloc.
+func (iter *mapIter) Key() uintptr {
+	iterKey := mapIterKey(&iter.hiter)
 	return uintptr(iterKey)
 }
 
 // Value returns the value of iter's current map entry.
-func (iter *MapIter) Value() uintptr {
-	if !iter.hiter.initialized() {
-		panic("MapIter.Value called before Next")
-	}
+func (iter *mapIter) Value() uintptr {
 	return uintptr(mapIterValue(&iter.hiter))
 }
 
 // Next advances the map iterator and reports whether there is another
 // entry. It returns false when iter is exhausted; subsequent
 // calls to Key, Value, or Next will panic.
-func (iter *MapIter) Next() bool {
+func (iter *mapIter) Next() bool {
 	if !iter.m.IsValid() {
-		panic("MapIter.Next called on an iterator that does not have an associated map Value")
+		panic("mapIter.Next called on an iterator that does not have an associated map Value")
 	}
 	if !iter.hiter.initialized() {
 		mapIterInit(iter.m.typ, iter.m.pointer(), &iter.hiter)
 	} else {
 		if mapIterKey(&iter.hiter) == nil {
-			panic("MapIter.Next called on exhausted iterator")
+			panic("mapIter.Next called on exhausted iterator")
 		}
 		mapIterNext(&iter.hiter)
 	}

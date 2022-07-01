@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConsumeString(t *testing.T) {
+func tTestConsumeString(t *testing.T) {
 	t.Parallel()
 	raw := []byte(`s:14:"a string value";s:2:"ff";`)
 	s, offset, err := consumeString(raw[2:])
@@ -16,7 +16,7 @@ func TestConsumeString(t *testing.T) {
 	require.Equal(t, []byte(`s:2:"ff";`), raw[2+offset:])
 }
 
-func BenchmarkConsumeString(b *testing.B) {
+func bBenchmarkConsumeString(b *testing.B) {
 	raw := []byte(`s:14:"a string value";s:2:"ff";`)
 	var s string
 	var offset int
@@ -29,7 +29,7 @@ func BenchmarkConsumeString(b *testing.B) {
 	runtime.KeepAlive(err)
 }
 
-func TestConsumeBool(t *testing.T) {
+func tTestConsumeBool(t *testing.T) {
 	t.Parallel()
 	raw := []byte(`0;`)
 	s, offset, err := consumeBool(raw)
@@ -46,7 +46,7 @@ func TestConsumeBool(t *testing.T) {
 	require.Error(t, err)
 }
 
-func BenchmarkConsumeBool(b *testing.B) {
+func bBenchmarkConsumeBool(b *testing.B) {
 	raw := []byte(`0;`)
 	var s bool
 	var offset int

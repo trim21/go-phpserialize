@@ -13,13 +13,13 @@ import (
 func compileConstString(s string) (encoder, error) {
 	var encodedStr = "s:" + strconv.Itoa(len(s)) + ":" + strconv.Quote(s) + ";"
 
-	return func(buf *buffer, p uintptr) error {
+	return func(buf *Ctx, p uintptr) error {
 		buf.b = append(buf.b, encodedStr...)
 		return nil
 	}, nil
 }
 
-func encodeStringVariable(buf *buffer, p uintptr) error {
+func encodeStringVariable(buf *Ctx, p uintptr) error {
 	s := (*reflect.StringHeader)(unsafe.Pointer(p))
 	sVal := *(*string)(unsafe.Pointer(p))
 	buf.b = append(buf.b, 's', ':')

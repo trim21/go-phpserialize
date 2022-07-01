@@ -25,25 +25,25 @@ func compileUint(rt reflect.Type) (encoder, error) {
 	panic(fmt.Sprintf("unexpected kind %s", rt.Kind()))
 }
 
-func encodeUint8(buf *buffer, p uintptr) error {
+func encodeUint8(buf *Ctx, p uintptr) error {
 	value := *(*uint8)(unsafe.Pointer(p))
 	appendUint(buf, uint64(value))
 	return nil
 }
 
-func encodeUint16(buf *buffer, p uintptr) error {
+func encodeUint16(buf *Ctx, p uintptr) error {
 	value := *(*uint16)(unsafe.Pointer(p))
 	appendUint(buf, uint64(value))
 	return nil
 }
 
-func encodeUint32(buf *buffer, p uintptr) error {
+func encodeUint32(buf *Ctx, p uintptr) error {
 	value := *(*uint32)(unsafe.Pointer(p))
 	appendUint(buf, uint64(value))
 	return nil
 }
 
-func encodeUint64(buf *buffer, p uintptr) error {
+func encodeUint64(buf *Ctx, p uintptr) error {
 	value := *(*uint64)(unsafe.Pointer(p))
 	buf.b = append(buf.b, 'i', ':')
 	buf.b = strconv.AppendUint(buf.b, value, 10)
@@ -51,13 +51,13 @@ func encodeUint64(buf *buffer, p uintptr) error {
 	return nil
 }
 
-func encodeUint(buf *buffer, p uintptr) error {
+func encodeUint(buf *Ctx, p uintptr) error {
 	value := *(*uint)(unsafe.Pointer(p))
 	appendUint(buf, uint64(value))
 	return nil
 }
 
-func appendUint(buf *buffer, v uint64) {
+func appendUint(buf *Ctx, v uint64) {
 	buf.b = append(buf.b, 'i', ':')
 	buf.b = strconv.AppendUint(buf.b, v, 10)
 	buf.b = append(buf.b, ';')

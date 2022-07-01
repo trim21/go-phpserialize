@@ -8,7 +8,7 @@ import (
 // should avoid interface for performance thinking.
 func compileInterface(typ reflect.Type) (encoder, error) {
 	typ.Kind()
-	return func(buf *buffer, p uintptr) error {
+	return func(buf *Ctx, p uintptr) error {
 		rv := reflectValueFromPtr(typ, p)
 
 		// simple type
@@ -46,7 +46,7 @@ func compileInterface(typ reflect.Type) (encoder, error) {
 }
 
 // // slow path of encoding struct
-// func encodeStruct(buf *buffer, rv reflect.Value) error {
+// func encodeStruct(buf *Ctx, rv reflect.Value) error {
 // 	typeID := uintptr(unsafe.Pointer(rv.Type()))
 //
 // 	appendArrayBegin(buf, int64(rv.NumField()))

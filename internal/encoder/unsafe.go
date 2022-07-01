@@ -25,6 +25,11 @@ func stdReflectValueToLocal(value stdReflect.Value) rValue {
 	return *(*rValue)(unsafe.Pointer(&value))
 }
 
+type emptyInterface struct {
+	typ reflect.Type
+	ptr unsafe.Pointer
+}
+
 // to get reflect.Value unexported ptr field.
 // used in map encoder
 type rValueReflectType struct {

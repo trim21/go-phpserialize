@@ -2,8 +2,8 @@ package encoder
 
 import (
 	"fmt"
-	"runtime"
 	"sync"
+	"unsafe"
 
 	"github.com/goccy/go-reflect"
 )
@@ -12,44 +12,54 @@ const DefaultStructTag = "php"
 
 var (
 	typeToEncoderMap sync.Map
-	bufpool          = sync.Pool{
+	ctxPool          = sync.Pool{
 		New: func() interface{} {
-			return &buffer{
-				b: make([]byte, 0, 1024),
+			return &Ctx{
+				b:        make([]byte, 0, 1024),
+				KeepRefs: make([]unsafe.Pointer, 0, 8),
 			}
 		},
 	}
 )
 
-type buffer struct {
-	b []byte
+type Ctx struct {
+	b        []byte
+	KeepRefs []unsafe.Pointer
 }
 
-type encoder func(buf *buffer, p uintptr) error
+type encoder func(ctx *Ctx, p uintptr) error
 
 func Marshal(v interface{}) ([]byte, error) {
 	// Technique 1.
 	// Get type information and pointer from interface{} rValue without allocation.
 	typ, ptr := reflect.TypeAndPtrOf(v)
-	typeID := reflect.TypeID(typ)
+	// so value will have a writing barrier until we release it.
+	header := (*emptyInterface)(unsafe.Pointer(&v))
+	typeID := header.typ
+	// typeID := reflect.TypeID(typ)
 	p := uintptr(ptr)
 
 	// Technique 2.
-	// Reuse the buffer once allocated using sync.Pool
-	buf := bufpool.Get().(*buffer)
-	buf.b = buf.b[:0]
-	defer bufpool.Put(buf)
+	// Reuse the Ctx once allocated using sync.Pool
+	ctx := ctxPool.Get().(*Ctx)
+	ctx.b = ctx.b[:0]
+	defer ctxPool.Put(ctx)
+	defer func() {
+		ctx.KeepRefs = ctx.KeepRefs[:0]
+	}()
+	ctx.KeepRefs = append(ctx.KeepRefs, header.ptr)
+	// ctx.KeepRefs = append(ctx.KeepRefs, unsafe.Pointer(&p))
 
 	// Technique 3.
 	// builds an optimized path by typeID and caches it
 	if enc, ok := typeToEncoderMap.Load(typeID); ok {
-		if err := enc.(encoder)(buf, p); err != nil {
+		if err := enc.(encoder)(ctx, p); err != nil {
 			return nil, err
 		}
 
-		// allocate a new buffer required length only
-		b := make([]byte, len(buf.b))
-		copy(b, buf.b)
+		// allocate a new Ctx required length only
+		b := make([]byte, len(ctx.b))
+		copy(b, ctx.b)
 		return b, nil
 	}
 
@@ -61,16 +71,14 @@ func Marshal(v interface{}) ([]byte, error) {
 		return nil, err
 	}
 	typeToEncoderMap.Store(typeID, enc)
-	if err := enc(buf, p); err != nil {
+	if err := enc(ctx, p); err != nil {
 		return nil, err
 	}
 
-	runtime.KeepAlive(v) // didn't keep ref, so just hold the variable
+	// allocate a new Ctx required length only
+	b := make([]byte, len(ctx.b))
 
-	// allocate a new buffer required length only
-	b := make([]byte, len(buf.b))
-
-	copy(b, buf.b)
+	copy(b, ctx.b)
 	return b, nil
 }
 

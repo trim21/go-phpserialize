@@ -22,7 +22,7 @@ func compileFloat(typ reflect.Type) (encoder, error) {
 
 // https://github.com/goccy/go-json/blob/4d0a50640b999aeafd15e3b20d8ad47fe917e6e8/internal/encoder/encoder.go#L335
 
-func encodeFloat32(buf *buffer, p uintptr) error {
+func encodeFloat32(buf *Ctx, p uintptr) error {
 	value := *(*float32)(unsafe.Pointer(p))
 	f64 := float64(value)
 	abs := math.Abs(f64)
@@ -41,7 +41,7 @@ func encodeFloat32(buf *buffer, p uintptr) error {
 	return nil
 }
 
-func encodeFloat64(buf *buffer, p uintptr) error {
+func encodeFloat64(buf *Ctx, p uintptr) error {
 	f64 := *(*float64)(unsafe.Pointer(p))
 
 	abs := math.Abs(f64)
