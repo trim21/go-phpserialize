@@ -30,7 +30,8 @@ heavy usage of `unsafe`.
 Limitation:
 
 1. You can't use `interface` (working on it, not done yet)
-2. Marshal go `struct`, `map` into php array and array only, php object is not supported.
+2. Marshal go `struct`, `map` into php array and array only, php object is not supported.\
+3. No `omitempty` support (yet).
 
 example:
 
