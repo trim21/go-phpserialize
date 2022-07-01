@@ -10,28 +10,7 @@ import (
 	"github.com/trim21/go-phpserialize/internal/encoder"
 )
 
-func BenchmarkMarshal_all(b *testing.B) {
-
-	var data = TestData{
-		Users: []User{
-			{ID: 1, Name: "sai"},
-			{ID: 2, Name: "trim21"},
-			{ID: 3, Name: "g"},
-		},
-		// B:   false,
-		// Obj: Inner{V: 2, S: "vvv"},
-
-		// Map: map[int]struct{ V int }{7: {V: 4}},
-	}
-
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			encoder.Marshal(data)
-		}
-	})
-}
-
-func BenchmarkAll_concrete_types(b *testing.B) {
+func BenchmarkMarshal_concrete_types(b *testing.B) {
 	for _, data := range testCase {
 		data := data
 		b.Run(data.Name, func(b *testing.B) {
@@ -42,7 +21,7 @@ func BenchmarkAll_concrete_types(b *testing.B) {
 	}
 }
 
-func BenchmarkAll_interface(b *testing.B) {
+func BenchmarkMarshal_interface(b *testing.B) {
 	for _, data := range testCase {
 		_, err := phpserialize.Marshal(data)
 		if err != nil {
@@ -93,13 +72,37 @@ func BenchmarkMarshal_slice_concrete_types(b *testing.B) {
 	}
 }
 
+func Benchmark_marshal_compare(b *testing.B) {
+	type Obj struct {
+		V int `php:"v"`
+		S int `php:"s"`
+	}
+
+	type TestData struct {
+		Users []User `php:"users"`
+		Obj   Obj    `php:"obj"`
+	}
+
+	var data = TestData{
+		Users: []User{
+			{ID: 1, Name: "sai"},
+			{ID: 2, Name: "trim21"},
+		},
+		Obj: Obj{V: 2, S: 3},
+	}
+
+	for i := 0; i < b.N; i++ {
+		phpserialize.Marshal(data)
+	}
+}
+
 func Benchmark_elliotchance_phpserialize_marshal(b *testing.B) {
 	var data = map[any]any{
 		"users": []map[any]any{
 			{"id": 1, "name": "sai"},
 			{"id": 2, "name": "trim21"},
 		},
-		"obj": map[any]any{"v": 2, "s": "vvv"},
+		"obj": map[string]int{"v": 2, "s": 3},
 	}
 	for i := 0; i < b.N; i++ {
 		elliotchance_phpserialize.Marshal(data, nil)

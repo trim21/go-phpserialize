@@ -56,3 +56,50 @@ Benchmark_elliotchance_phpserialize_marshal-16                    203700        
 PASS
 ok      github.com/trim21/go-phpserialize       69.907s
 ```
+
+
+compare with https://github.comm/elliotchance/phpserialize (will have to use map to marshal php array)
+
+```text
+Benchmark_marshal_compare-16                                     3649764               327.4 ns/op           208 B/op          2 allocs/op
+Benchmark_elliotchance_phpserialize_marshal-16                    220365              5382 ns/op            3451 B/op        101 allocs/op
+```
+
+```golang
+func Benchmark_marshal_compare(b *testing.B) {
+	type Obj struct {
+		V int `php:"v"`
+		S int `php:"s"`
+	}
+
+	type TestData struct {
+		Users []User `php:"users"`
+		Obj   Obj    `php:"obj"`
+	}
+
+	var data = TestData{
+		Users: []User{
+			{ID: 1, Name: "sai"},
+			{ID: 2, Name: "trim21"},
+		},
+		Obj: Obj{V: 2, S: 3},
+	}
+
+	for i := 0; i < b.N; i++ {
+		phpserialize.Marshal(data)
+	}
+}
+
+func Benchmark_elliotchance_phpserialize_marshal(b *testing.B) {
+	var data = map[any]any{
+		"users": []map[any]any{
+			{"id": 1, "name": "sai"},
+			{"id": 2, "name": "trim21"},
+		},
+		"obj": map[string]int{"v": 2, "s": 3},
+	}
+	for i := 0; i < b.N; i++ {
+		elliotchance_phpserialize.Marshal(data, nil)
+	}
+}
+```

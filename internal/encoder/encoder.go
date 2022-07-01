@@ -35,8 +35,9 @@ func Marshal(v interface{}) ([]byte, error) {
 	typ, ptr := reflect.TypeAndPtrOf(v)
 	// so value will have a writing barrier until we release it.
 	header := (*emptyInterface)(unsafe.Pointer(&v))
-	typeID := header.typ
-	// typeID := reflect.TypeID(typ)
+
+	typeID := uintptr(unsafe.Pointer(header.typ))
+
 	p := uintptr(ptr)
 
 	// Technique 2.
