@@ -47,7 +47,6 @@ BenchmarkAll_interface/simple_slice-16                           2695722        
 BenchmarkAll_interface/struct_slice-16                            797856              1325 ns/op             408 B/op         22 allocs/op
 BenchmarkAll_interface/nested_struct_not_anonymous-16            1442464               825.0 ns/op           208 B/op          7 allocs/op
 BenchmarkAll_interface/nested_struct_anonymous-16                1488273               813.2 ns/op           200 B/op          7 allocs/op
-BenchmarkAll_interface/complex_object-16                          479556              2459 ns/op             376 B/op         28 allocs/op
 BenchmarkMarshal_map_concrete_types/len-1-16                    45631018                24.81 ns/op           16 B/op          1 allocs/op
 BenchmarkMarshal_map_concrete_types/len-10-16                   14372926                82.31 ns/op           96 B/op          1 allocs/op
 BenchmarkMarshal_map_concrete_types/len-100-16                   1833901               651.4 ns/op          1026 B/op          1 allocs/op
