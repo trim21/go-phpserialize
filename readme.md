@@ -13,7 +13,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/trim21/phpserialize"
+	"github.com/trim21/go-phpserialize"
 )
 
 type Inner struct {
