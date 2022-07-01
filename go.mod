@@ -6,13 +6,13 @@ require (
 	github.com/elliotchance/phpserialize v1.3.3
 	github.com/goccy/go-json v0.9.8
 	github.com/goccy/go-reflect v1.1.1-0.20210520085854-e1eb8c5193d0
-	github.com/gookit/goutil v0.4.6
+	github.com/gookit/goutil v0.5.5
 	github.com/stretchr/testify v1.8.0
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/gookit/color v1.5.0 // indirect
+	github.com/gookit/color v1.5.1 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
