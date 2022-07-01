@@ -29,9 +29,12 @@ heavy usage of `unsafe`.
 
 Limitation:
 
-1. You can't use `interface` (working on it, not done yet)
-2. Marshal go `struct`, `map` into php array and array only, php object is not supported.\
+1. Marshal go `struct`, `map` into php array and array only, php object is not supported.
+2. You can't use `interface` (yet)
 3. No `omitempty` support (yet).
+4. Anonymous Struct field (embedding struct) working like named field.
+
+If any of this Limitation affect you (except `1.`), please create a PR to let me know.
 
 example:
 

@@ -1,0 +1,45 @@
+name: Test
+
+on:
+  push:
+    branches-ignore:
+      - renovate/**
+    paths:
+      - ".github/workflows/test.yaml"
+      - "go.mod"
+      - "go.sum"
+      - "Taskfile.yaml"
+      - "**.go"
+      - "**.go.json"
+  pull_request:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/test.yaml"
+      - "go.mod"
+      - "go.sum"
+      - "Taskfile.yaml"
+      - "**.go"
+      - "**.go.json"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "^1.18"
+          cache: true
+
+      - run: get test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out -count=1 ./...
+
+
+      - uses: codecov/codecov-action@v3
+        with:
+          files: coverage.out
