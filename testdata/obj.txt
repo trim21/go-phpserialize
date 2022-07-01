@@ -1,0 +1,1 @@
+a:5:{s:14:"a string value";s:2:"ff";s:11:"a int value";i:31415926;s:12:"a bool value";b:1;s:13:"a float value";d:3.14;i:662;i:223;}
