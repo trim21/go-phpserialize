@@ -16,7 +16,7 @@ Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 
 Encoder will try to build an optimized path to encoding data.
 
-If you are using interface, encoder will have to use reflect and to slow path. 
+If you are using interface, encoder will have to use reflect and go slow path (reflect). 
 If you care about performance, you should avoid using interface (at all).
 
 Using type is 2x faster than interface in average.
