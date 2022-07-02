@@ -57,8 +57,9 @@ type Inner struct {
 }
 
 type With struct {
-	Users []User `php:"users"`
-	Obj   Inner  `php:"obj"`
+	Users   []User `php:"users"`
+	Obj     Inner  `php:"obj"`
+  	Ignored bool   `php:"-"`
 }
 
 type User struct {
