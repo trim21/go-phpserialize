@@ -18,7 +18,7 @@ Due to the technology encoder is using, You should avoid using interface.
 
 Using type is 2x faster than interface.
 
-In the worst condition, it will slow 8x slower.
+In the worst condition, it may be 8x slower.
 
 ```text
 BenchmarkMarshal_type/complex_object-16            	 2744300	       441.8 ns/op	     256 B/op	       1 allocs/op
