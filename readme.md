@@ -14,10 +14,11 @@ Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 
 #### Performance Hint
 
-Encoder will try to build an optimized path to encoding data.
+Encoder will try to build an optimized path for a type.
 
-If you are using interface, encoder will have to use reflect and go slow path (reflect). 
-If you care about performance, you should avoid using interface (at all).
+If you are using interface, encoder will fall back to reflect, which is much slower. 
+
+If you care about performance, you should avoid using interface.
 
 Using type is 2x faster than interface in average.
 
@@ -27,13 +28,6 @@ In the worst condition, it may be 7x slower (or more).
 BenchmarkMarshal_type/complex_object-16            	 2744300	       441.8 ns/op	     256 B/op	       1 allocs/op
 BenchmarkMarshal_ifce/complex_object-16            	  444032	      2708 ns/op	     801 B/op	      29 allocs/op
 ```
-
-For example:
-
-If you are encoding `struct{Value struct{...}}`, encoder will generate a fast path and use it in the future.
-
-But if you are encoding `struct{Value any}` , encoder has no idea what `.Value` would be, 
-therefore encoder will have to use reflect to walk through `.Value`, with slow speed and high memory allocations.
 
 ### Disadvantage:
 
