@@ -24,8 +24,8 @@ Using type is 2x faster than interface in average.
 In the worst condition, it may be 8x slower (or more).
 
 ```text
-BenchmarkMarshal_type/struct_with_all-16        2814640          431.0 ns/op        256 B/op       1 allocs/op
-BenchmarkMarshal_ifce/struct_with_all-16         374654           3247 ns/op        849 B/op      35 allocs/op
+BenchmarkMarshal_type/struct_with_all-16      2814640        431.0 ns/op      256 B/op     1 allocs/op
+BenchmarkMarshal_ifce/struct_with_all-16       374654         3247 ns/op      849 B/op    35 allocs/op
 ```
 
 ### Disadvantage:
