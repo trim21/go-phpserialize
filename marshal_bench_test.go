@@ -85,7 +85,10 @@ func BenchmarkMarshal_map_with_ifce_value(b *testing.B) {
 	}
 }
 
-func BenchmarkMarshal_slice_as_type(b *testing.B) {
+func BenchmarkMarshal_slice_of_value(b *testing.B) {
+	type D struct {
+		Value []uint
+	}
 	for i := 1; i <= 1000; i = i * 10 {
 		i := i
 		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
@@ -95,15 +98,14 @@ func BenchmarkMarshal_slice_as_type(b *testing.B) {
 			}
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					encoder.Marshal(m)
+					encoder.Marshal(D{m})
 				}
 			})
-			runtime.KeepAlive(m)
 		})
 	}
 }
 
-func BenchmarkMarshal_slice_as_ifce(b *testing.B) {
+func BenchmarkMarshal_ifce_slice_as_value(b *testing.B) {
 	type D struct {
 		Value any
 	}
@@ -116,7 +118,7 @@ func BenchmarkMarshal_slice_as_ifce(b *testing.B) {
 			}
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					encoder.Marshal(D{Value: m})
+					encoder.Marshal(D{m})
 				}
 			})
 			runtime.KeepAlive(m)
@@ -125,6 +127,27 @@ func BenchmarkMarshal_slice_as_ifce(b *testing.B) {
 }
 
 func BenchmarkMarshal_slice_of_type(b *testing.B) {
+	type D struct {
+		Value []User
+	}
+	for i := 1; i <= 1000; i = i * 10 {
+		i := i
+		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
+			var m = make([]User, i)
+			for j := 0; j < i; j++ {
+				m[j] = User{ID: uint64(j + 2), Name: "u-" + strconv.Itoa(j+2)}
+			}
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					encoder.Marshal(D{m})
+				}
+			})
+			runtime.KeepAlive(m)
+		})
+	}
+}
+
+func BenchmarkMarshal_ifce_slice_of_type(b *testing.B) {
 	type D struct {
 		Value any
 	}
@@ -145,7 +168,7 @@ func BenchmarkMarshal_slice_of_type(b *testing.B) {
 	}
 }
 
-func BenchmarkMarshal_slice_of_ifce(b *testing.B) {
+func BenchmarkMarshal_ifce_slice_of_ifce(b *testing.B) {
 	type D struct {
 		Value any
 	}

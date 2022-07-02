@@ -14,9 +14,12 @@ Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 
 #### Performance Hint
 
-Due to the technology encoder is using, You should avoid using interface.
+Encoder will try to build an optimized path to encoding data.
 
-Using type is 2x faster than interface.
+If you are using interface, encoder will have to use reflect and to slow path. 
+If you care about performance, you should avoid using interface (at all).
+
+Using type is 2x faster than interface in average.
 
 In the worst condition, it may be 7x slower (or more).
 
@@ -24,6 +27,13 @@ In the worst condition, it may be 7x slower (or more).
 BenchmarkMarshal_type/complex_object-16            	 2744300	       441.8 ns/op	     256 B/op	       1 allocs/op
 BenchmarkMarshal_ifce/complex_object-16            	  444032	      2708 ns/op	     801 B/op	      29 allocs/op
 ```
+
+For example:
+
+If you are encoding `struct{Value struct{...}}`, encoder will generate a fast path and use it in the future.
+
+But if you are encoding `struct{Value any}` , encoder has no idea what `.Value` would be, 
+therefore encoder will have to use reflect to walk through `.Value`, with slow speed and high memory allocations.
 
 ### Disadvantage:
 
@@ -34,7 +44,7 @@ heavy usage of `unsafe`.
 1. No `omitempty` support (yet).
 2. Anonymous Struct field (embedding struct) working like named field.
 
-If any of these limitations affect you, please create a issue to let me know.
+If any of these limitations affect you, please create an issue to let me know.
 
 example:
 
