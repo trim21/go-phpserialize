@@ -12,6 +12,19 @@ You serialize all data into php array only, php object (or stdClass) is not supp
 
 Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 
+#### Performance Hint
+
+Due to the technology encoder is using, You should avoid using interface.
+
+Using type is 2x faster than interface.
+
+In the worst condition, it will slow 8x slower.
+
+```text
+BenchmarkMarshal_type/complex_object-16            	 2744300	       441.8 ns/op	     256 B/op	       1 allocs/op
+BenchmarkMarshal_ifce/complex_object-16            	  444032	      2708 ns/op	     801 B/op	      29 allocs/op
+```
+
 ### Disadvantage:
 
 heavy usage of `unsafe`.

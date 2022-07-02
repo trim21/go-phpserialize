@@ -3,6 +3,7 @@ package phpserialize_test
 import (
 	"fmt"
 	"runtime"
+	"strconv"
 	"testing"
 
 	elliotchance_phpserialize "github.com/elliotchance/phpserialize"
@@ -10,7 +11,7 @@ import (
 	"github.com/trim21/go-phpserialize/internal/encoder"
 )
 
-func BenchmarkMarshal_concrete_types(b *testing.B) {
+func BenchmarkMarshal_type(b *testing.B) {
 	for _, data := range testCase {
 		data := data
 		b.Run(data.Name, func(b *testing.B) {
@@ -21,7 +22,7 @@ func BenchmarkMarshal_concrete_types(b *testing.B) {
 	}
 }
 
-func BenchmarkMarshal_interface(b *testing.B) {
+func BenchmarkMarshal_ifce(b *testing.B) {
 	for _, data := range testCase {
 		data := data
 		b.Run(data.Name, func(b *testing.B) {
@@ -32,8 +33,8 @@ func BenchmarkMarshal_interface(b *testing.B) {
 	}
 }
 
-func BenchmarkMarshal_map_concrete_types(b *testing.B) {
-	for i := 1; i < 1000; i = i * 10 {
+func BenchmarkMarshal_map_type(b *testing.B) {
+	for i := 1; i <= 1000; i = i * 10 {
 		i := i
 		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
 			var m = make(map[int]uint, i)
@@ -49,8 +50,8 @@ func BenchmarkMarshal_map_concrete_types(b *testing.B) {
 	}
 }
 
-func BenchmarkMarshal_map_as_interface(b *testing.B) {
-	for i := 1; i < 1000; i = i * 10 {
+func BenchmarkMarshal_map_as_ifce(b *testing.B) {
+	for i := 1; i <= 1000; i = i * 10 {
 		i := i
 		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
 			var m = make(map[int]uint, i)
@@ -67,8 +68,8 @@ func BenchmarkMarshal_map_as_interface(b *testing.B) {
 	}
 }
 
-func BenchmarkMarshal_map_with_interface_value(b *testing.B) {
-	for i := 1; i < 1000; i = i * 10 {
+func BenchmarkMarshal_map_with_ifce_value(b *testing.B) {
+	for i := 1; i <= 1000; i = i * 10 {
 		i := i
 		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
 			var m = make(map[int]any, i)
@@ -84,8 +85,8 @@ func BenchmarkMarshal_map_with_interface_value(b *testing.B) {
 	}
 }
 
-func BenchmarkMarshal_slice_concrete_types(b *testing.B) {
-	for i := 1; i < 1000; i = i * 10 {
+func BenchmarkMarshal_slice_as_type(b *testing.B) {
+	for i := 1; i <= 1000; i = i * 10 {
 		i := i
 		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
 			var m = make([]uint, i)
@@ -102,16 +103,58 @@ func BenchmarkMarshal_slice_concrete_types(b *testing.B) {
 	}
 }
 
-func BenchmarkMarshal_slice_interface(b *testing.B) {
+func BenchmarkMarshal_slice_as_ifce(b *testing.B) {
 	type D struct {
 		Value any
 	}
-	for i := 1; i < 1000; i = i * 10 {
+	for i := 1; i <= 1000; i = i * 10 {
 		i := i
 		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
 			var m = make([]uint, i)
 			for j := 0; j < i; j++ {
 				m[j] = uint(j + 2)
+			}
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					encoder.Marshal(D{Value: m})
+				}
+			})
+			runtime.KeepAlive(m)
+		})
+	}
+}
+
+func BenchmarkMarshal_slice_of_type(b *testing.B) {
+	type D struct {
+		Value any
+	}
+	for i := 1; i <= 1000; i = i * 10 {
+		i := i
+		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
+			var m = make([]User, i)
+			for j := 0; j < i; j++ {
+				m[j] = User{ID: uint64(j + 2), Name: "u-" + strconv.Itoa(j+2)}
+			}
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					encoder.Marshal(D{Value: m})
+				}
+			})
+			runtime.KeepAlive(m)
+		})
+	}
+}
+
+func BenchmarkMarshal_slice_of_ifce(b *testing.B) {
+	type D struct {
+		Value any
+	}
+	for i := 1; i <= 1000; i = i * 10 {
+		i := i
+		b.Run(fmt.Sprintf("len-%d", i), func(b *testing.B) {
+			var m = make([]any, i)
+			for j := 0; j < i; j++ {
+				m[j] = User{ID: uint64(j + 2), Name: "u-" + strconv.Itoa(j+2)}
 			}
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
