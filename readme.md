@@ -4,6 +4,10 @@ PHP `serialize()` and `unserialize()` (in future) for Go.
 
 Support All go type including `map`, `slice`, `strcut`, and simple type like `int`, `uint` ...etc.
 
+## Use case:
+
+You serialize all data into php array only, php object (or stdClass) is not supported.
+
 ### Advantage:
 
 Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
@@ -14,11 +18,10 @@ heavy usage of `unsafe`.
 
 #### Limitation:
 
-1. Marshal go `struct`, `map` into php array and array only, php object is not supported.
-3. No `omitempty` support (yet).
-4. Anonymous Struct field (embedding struct) working like named field.
+1. No `omitempty` support (yet).
+2. Anonymous Struct field (embedding struct) working like named field.
 
-If any of this Limitation affect you (except `1.`), please create a PR to let me know.
+If any of these limitations affect you, please create a issue to let me know.
 
 example:
 
