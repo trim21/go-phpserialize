@@ -9,8 +9,13 @@ import (
 func compileStruct(rt reflect.Type, rv reflect.Value) (encoder, error) {
 	var encoders []encoder
 
+	var fields int64
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
+		cfg := getFieldConfig(field)
+		if cfg.Ignore {
+			continue
+		}
 
 		enc, err := compileFieldName(field)
 		if err != nil {
@@ -23,13 +28,13 @@ func compileStruct(rt reflect.Type, rv reflect.Value) (encoder, error) {
 			return nil, err
 		}
 
+		fields++
 		offset := field.Offset
 		encoders = append(encoders, func(buf *Ctx, p uintptr) error {
 			return enc(buf, p+offset)
 		})
 	}
 
-	fields := int64(rt.NumField())
 	return func(ctx *Ctx, p uintptr) error {
 		appendArrayBegin(ctx, fields)
 
@@ -56,17 +61,32 @@ func compileFieldName(field reflect.StructField) (encoder, error) {
 }
 
 func getFieldName(field reflect.StructField) string {
-	var name = field.Name
-
 	tag := field.Tag.Get(DefaultStructTag)
 
-	if tag != "" {
-		i := strings.Index(tag, ",")
-		if i > 0 {
-			return tag[:i]
-		}
-		return tag
+	if tag == "" {
+		return field.Name
 	}
 
-	return name
+	if tag == "-" {
+		return ""
+	}
+
+	i := strings.Index(tag, ",")
+	if i > 0 {
+		return tag[:i]
+	}
+	return tag
+}
+
+type fieldConfig struct {
+	Name   string
+	Ignore bool
+}
+
+func getFieldConfig(field reflect.StructField) fieldConfig {
+	name := getFieldName(field)
+	if name == "" {
+		return fieldConfig{Ignore: true}
+	}
+	return fieldConfig{Name: name}
 }

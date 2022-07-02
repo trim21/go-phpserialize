@@ -63,6 +63,12 @@ type Generic[T any] struct {
 	Value T
 }
 
+type WithIgnore struct {
+	V       int
+	Ignored string `php:"-" json:"-"`
+	D       any
+}
+
 var testCase = []struct {
 	Name string
 	Data any
@@ -104,7 +110,7 @@ var testCase = []struct {
 		Item: Item{V: 5},
 	}},
 
-	{Name: "complex object", Data: TestData{
+	{Name: "struct with all", Data: TestData{
 		Users: []User{
 			{ID: 1, Name: "sai"},
 			{ID: 2, Name: "trim21"},
