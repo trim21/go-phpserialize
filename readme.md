@@ -14,9 +14,8 @@ Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 
 #### Performance Hint
 
-Encoder will try to build an optimized path for a type.
-
-If you are using interface, encoder will fall back to reflect, which is much slower. 
+Encoder will try to build an optimized path for a type. When encoding `interface`,
+encoder will fall back to reflect, which is much slower. 
 
 If you care about performance, you should avoid using interface.
 
