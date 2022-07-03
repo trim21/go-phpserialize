@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/trim21/go-phpserialize"
+	"github.com/trim21/go-phpserialize/internal/decoder"
 )
 
-func tTestUnmarshal_slice_of_struct(t *testing.T) {
+func TestUnmarshal_slice_of_struct(t *testing.T) {
 }
 
 /*
@@ -21,7 +21,7 @@ array(
 )
 */
 
-func tTestUnmarshal_struct(t *testing.T) {
+func TestUnmarshal_struct(t *testing.T) {
 	t.Parallel()
 
 	b, err := os.ReadFile("./testdata/obj.txt")
@@ -33,7 +33,7 @@ func tTestUnmarshal_struct(t *testing.T) {
 		F float64 `php:"a float value"`
 	}
 
-	err = phpserialize.Unmarshal(b, &o)
+	err = decoder.Unmarshal(b, &o)
 	require.NoError(t, err)
 
 	require.Equal(t, "ff", o.S)

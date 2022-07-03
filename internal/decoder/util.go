@@ -1,4 +1,4 @@
-package phpserialize
+package decoder
 
 import (
 	"reflect"

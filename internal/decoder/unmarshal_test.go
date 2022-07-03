@@ -1,4 +1,4 @@
-package phpserialize
+package decoder
 
 import (
 	"runtime"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func tTestConsumeString(t *testing.T) {
+func TestConsumeString(t *testing.T) {
 	t.Parallel()
 	raw := []byte(`s:14:"a string value";s:2:"ff";`)
 	s, offset, err := consumeString(raw[2:])
@@ -16,7 +16,7 @@ func tTestConsumeString(t *testing.T) {
 	require.Equal(t, []byte(`s:2:"ff";`), raw[2+offset:])
 }
 
-func bBenchmarkConsumeString(b *testing.B) {
+func BenchmarkConsumeString(b *testing.B) {
 	raw := []byte(`s:14:"a string value";s:2:"ff";`)
 	var s string
 	var offset int
@@ -29,7 +29,7 @@ func bBenchmarkConsumeString(b *testing.B) {
 	runtime.KeepAlive(err)
 }
 
-func tTestConsumeBool(t *testing.T) {
+func TestConsumeBool(t *testing.T) {
 	t.Parallel()
 	raw := []byte(`0;`)
 	s, offset, err := consumeBool(raw)
@@ -44,17 +44,4 @@ func tTestConsumeBool(t *testing.T) {
 
 	_, _, err = consumeBool([]byte(`a;`))
 	require.Error(t, err)
-}
-
-func bBenchmarkConsumeBool(b *testing.B) {
-	raw := []byte(`0;`)
-	var s bool
-	var offset int
-	var err error
-	for i := 0; i < b.N; i++ {
-		s, offset, err = consumeBool(raw)
-	}
-	runtime.KeepAlive(s)
-	runtime.KeepAlive(offset)
-	runtime.KeepAlive(err)
 }
