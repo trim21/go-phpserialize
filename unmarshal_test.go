@@ -8,9 +8,6 @@ import (
 	"github.com/trim21/go-phpserialize/internal/decoder"
 )
 
-func TestUnmarshal_slice_of_struct(t *testing.T) {
-}
-
 /*
 array(
   'a string value' => 'ff',
@@ -21,7 +18,7 @@ array(
 )
 */
 
-func TestUnmarshal_struct(t *testing.T) {
+func tTestUnmarshal_struct(t *testing.T) {
 	t.Parallel()
 
 	b, err := os.ReadFile("./testdata/obj.txt")
