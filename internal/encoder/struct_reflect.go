@@ -18,8 +18,8 @@ func reflectStruct(ctx *Ctx, rv reflect.Value) error {
 	var fields int64
 	for i := 0; i < rv.NumField(); i++ {
 		cfg := getFieldConfig(rt.Field(i))
-		fieldsCfg = append(fieldsCfg, cfg)
-		if cfg.Ignore {
+		fieldsCfg[i] = cfg
+		if !cfg.Ignore {
 			fields++
 		}
 	}
