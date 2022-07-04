@@ -12,9 +12,14 @@ func reflectStruct(ctx *Ctx, rv reflect.Value) error {
 	//
 	// }{}
 	//
+
+	var fieldsCfg = make([]fieldConfig, rv.NumField())
+
 	var fields int64
 	for i := 0; i < rv.NumField(); i++ {
-		if rt.Field(i).Tag.Get(DefaultStructTag) != "-" {
+		cfg := getFieldConfig(rt.Field(i))
+		fieldsCfg = append(fieldsCfg, cfg)
+		if cfg.Ignore {
 			fields++
 		}
 	}
@@ -22,12 +27,21 @@ func reflectStruct(ctx *Ctx, rv reflect.Value) error {
 	appendArrayBegin(ctx, fields)
 
 	for i := 0; i < rv.NumField(); i++ {
-		name := getFieldName(rt.Field(i))
-		if name == "" {
+		cfg := fieldsCfg[i]
+		if cfg.Ignore {
 			continue
 		}
 
-		appendString(ctx, name)
+		appendString(ctx, cfg.Name)
+
+		if cfg.AsString {
+			err := reflectInterfaceValue(ctx, rv.Field(i))
+			if err != nil {
+				return err
+			}
+
+			continue
+		}
 
 		err := reflectInterfaceValue(ctx, rv.Field(i))
 		if err != nil {

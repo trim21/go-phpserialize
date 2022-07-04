@@ -186,9 +186,160 @@ func TestMarshal_special(t *testing.T) {
 	})
 }
 
+func TestMarshal_int_as_string(t *testing.T) {
+	type Container struct {
+		I int `php:"i,string"`
+	}
+
+	t.Run("negative", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{I: -104})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"i";s:4:"-104";}`
+		require.Equal(t, expected, string(v))
+	})
+
+	t.Run("positive", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{I: 1040})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"i";s:4:"1040";}`
+		require.Equal(t, expected, string(v))
+	})
+
+	t.Run("zero", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{I: 0})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"i";s:1:"0";}`
+		require.Equal(t, expected, string(v))
+	})
+}
+
+func TestMarshal_uint_as_string(t *testing.T) {
+	type Container struct {
+		I uint `php:"i,string"`
+	}
+
+	t.Run("zero", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{I: 0})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"i";s:1:"0";}`
+		require.Equal(t, expected, string(v))
+	})
+
+	t.Run("positive", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{I: 1040})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"i";s:4:"1040";}`
+		require.Equal(t, expected, string(v))
+	})
+}
+
+func TestMarshal_bool_as_string(t *testing.T) {
+	type Container struct {
+		B bool `php:",string"`
+	}
+
+	t.Run("true", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{true})
+		require.NoError(t, err)
+		require.Equal(t, `a:1:{s:1:"B";s:4:"true";}`, string(v))
+	})
+
+	t.Run("false", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{false})
+		require.NoError(t, err)
+		require.Equal(t, `a:1:{s:1:"B";s:5:"false";}`, string(v))
+	})
+}
+
+func TestMarshal_float32_as_string(t *testing.T) {
+	type Container struct {
+		F float32 `php:"f,string"`
+	}
+
+	t.Run("negative", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{F: 3.14})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"f";s:4:"3.14";}`
+		require.Equal(t, expected, string(v))
+	})
+
+	t.Run("positive", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{F: 1.00})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"f";s:1:"1";}`
+		require.Equal(t, expected, string(v))
+	})
+
+	t.Run("zero", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{F: -3.14})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
+		require.Equal(t, expected, string(v))
+	})
+}
+
+func TestMarshal_float64_as_string(t *testing.T) {
+	type Container struct {
+		F float64 `php:"f,string"`
+	}
+
+	t.Run("negative", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{F: 3.14})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"f";s:4:"3.14";}`
+		require.Equal(t, expected, string(v))
+	})
+
+	t.Run("positive", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{F: 1.00})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"f";s:1:"1";}`
+		require.Equal(t, expected, string(v))
+	})
+
+	t.Run("zero", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Container{F: -3.14})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
+		require.Equal(t, expected, string(v))
+	})
+}
+
+func TestMarshal_float64_as_string_reflect(t *testing.T) {
+	type Container struct {
+		F float64 `php:"f,string"`
+	}
+
+	t.Run("negative", func(t *testing.T) {
+		v, err := phpserialize.Marshal(WithIgnore{D: Container{F: 3.14}}.D)
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"f";s:4:"3.14";}`
+		require.Equal(t, expected, string(v))
+	})
+
+	t.Run("positive", func(t *testing.T) {
+		v, err := phpserialize.Marshal(WithIgnore{D: Container{F: 1.00}}.D)
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"f";s:1:"1";}`
+		require.Equal(t, expected, string(v))
+	})
+
+	t.Run("zero", func(t *testing.T) {
+		v, err := phpserialize.Marshal(WithIgnore{D: Container{F: -3.14}}.D)
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
+		require.Equal(t, expected, string(v))
+	})
+}
+
 func decodeWithRealPhp(t *testing.T, s []byte) string {
 	os.MkdirAll("./tmp/", 0700)
-	fs := filepath.Join("./tmp/", strings.ReplaceAll(t.Name(), "/", "-")) + ".php"
+	fs := t.Name()
+	for _, c := range "/{}()<>" {
+		fs = strings.ReplaceAll(fs, string(c), "-")
+	}
+
+	fs = filepath.Join("./tmp/", fs) + ".php"
 
 	file, err := os.Create(fs)
 	require.NoError(t, err)

@@ -25,6 +25,23 @@ var (
 type Ctx struct {
 	b        []byte
 	KeepRefs []unsafe.Pointer
+
+	// a buffer to encode float as string
+	floatBuffer []byte
+}
+
+func newCtx() *Ctx {
+	ctx := ctxPool.Get().(*Ctx)
+	ctx.b = ctx.b[:0]
+
+	return ctx
+}
+
+func freeCtx(ctx *Ctx) {
+	ctx.KeepRefs = ctx.KeepRefs[:0]
+	ctx.floatBuffer = ctx.floatBuffer[:0]
+
+	ctxPool.Put(ctx)
 }
 
 type encoder func(ctx *Ctx, p uintptr) error
@@ -42,12 +59,8 @@ func Marshal(v interface{}) ([]byte, error) {
 
 	// Technique 2.
 	// Reuse the Ctx once allocated using sync.Pool
-	ctx := ctxPool.Get().(*Ctx)
-	ctx.b = ctx.b[:0]
-	defer ctxPool.Put(ctx)
-	defer func() {
-		ctx.KeepRefs = ctx.KeepRefs[:0]
-	}()
+	ctx := newCtx()
+	defer freeCtx(ctx)
 	ctx.KeepRefs = append(ctx.KeepRefs, header.ptr)
 	// ctx.KeepRefs = append(ctx.KeepRefs, unsafe.Pointer(&p))
 
@@ -136,4 +149,23 @@ func compileMapKey(typ reflect.Type) (encoder, error) {
 	}
 
 	return nil, fmt.Errorf("failed to build encoder for map key, unsupported type %s (kind %s)", typ.String(), typ.Kind())
+}
+
+func compileAsString(typ reflect.Type, rv reflect.Value) (encoder, error) {
+	switch typ.Kind() {
+	case reflect.Bool:
+		return compileBoolAsString(typ)
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
+		return compileIntAsString(typ)
+	case reflect.String:
+		return encodeStringVariable, nil
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
+		return compileUintAsString(typ)
+	case reflect.Float32, reflect.Float64:
+		return compileFloatAsString(typ)
+	}
+
+	return nil, fmt.Errorf(
+		"failed to build encoder for struct field (as string), unsupported type %s (kind %s)",
+		typ.String(), typ.Kind())
 }

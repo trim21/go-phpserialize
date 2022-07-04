@@ -62,7 +62,7 @@ type With struct {
 }
 
 type User struct {
-	ID   uint32 `php:"id"`
+	ID   uint32 `php:"id,string"`
 	Name string `php:"name"`
 }
 

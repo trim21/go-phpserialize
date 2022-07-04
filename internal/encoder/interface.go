@@ -114,3 +114,58 @@ func reflectInterfaceValue(ctx *Ctx, rv reflect.Value) error {
 	// slice, map and struct as interface are not supported yet.
 	return &UnsupportedInterfaceTypeError{rv.Type()}
 }
+
+func reflectInterfaceValueAsString(ctx *Ctx, rv reflect.Value) error {
+	// simple type
+	switch v := rv.Interface().(type) {
+	case bool:
+		appendBoolAsString(ctx, v)
+		return nil
+
+	case uint8:
+		appendUintAsString(ctx, uint64(v))
+		return nil
+	case uint16:
+		appendUintAsString(ctx, uint64(v))
+		return nil
+	case uint32:
+		appendUintAsString(ctx, uint64(v))
+		return nil
+	case uint:
+		appendUintAsString(ctx, uint64(v))
+		return nil
+	case uint64:
+		appendUintAsString(ctx, v)
+		return nil
+
+	case int8:
+		appendIntAsString(ctx, int64(v))
+		return nil
+	case int16:
+		appendIntAsString(ctx, int64(v))
+		return nil
+	case int32:
+		appendIntAsString(ctx, int64(v))
+		return nil
+	case int:
+		appendIntAsString(ctx, int64(v))
+		return nil
+	case int64:
+		appendIntAsString(ctx, v)
+		return nil
+
+	case float32:
+		appendFloat32AsString(ctx, v)
+		return nil
+	case float64:
+		appendFloat64AsString(ctx, v)
+		return nil
+
+	case string:
+		appendString(ctx, v)
+		return nil
+	}
+
+	// slice, map and struct as interface are not supported yet.
+	return fmt.Errorf("failed to encode %s as string", rv.Kind())
+}

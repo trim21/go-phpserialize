@@ -19,3 +19,9 @@ func appendString(ctx *Ctx, s string) {
 func appendNil(ctx *Ctx) {
 	ctx.b = append(ctx.b, 'N', ';')
 }
+
+func appendStringHead(ctx *Ctx, length int64) {
+	ctx.b = append(ctx.b, 's', ':')
+	ctx.b = strconv.AppendInt(ctx.b, length, 10)
+	ctx.b = append(ctx.b, ':')
+}

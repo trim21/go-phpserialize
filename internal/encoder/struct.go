@@ -17,11 +17,26 @@ func compileStruct(rt reflect.Type, rv reflect.Value) (encoder, error) {
 			continue
 		}
 
-		enc, err := compileFieldName(field)
+		enc, err := compileConstString(cfg.Name)
 		if err != nil {
 			return nil, err
 		}
 		encoders = append(encoders, enc)
+
+		if cfg.AsString {
+			enc, err = compileAsString(field.Type, rv.Field(i))
+			if err != nil {
+				return nil, err
+			}
+
+			fields++
+			offset := field.Offset
+			encoders = append(encoders, func(buf *Ctx, p uintptr) error {
+				return enc(buf, p+offset)
+			})
+
+			continue
+		}
 
 		enc, err = compile(field.Type, rv.Field(i))
 		if err != nil {
@@ -48,18 +63,6 @@ func compileStruct(rt reflect.Type, rv reflect.Value) (encoder, error) {
 	}, nil
 }
 
-func compileFieldName(field reflect.StructField) (encoder, error) {
-	var name = field.Name
-
-	tag := field.Tag.Get(DefaultStructTag)
-
-	if tag != "" {
-		name = strings.Split(tag, ",")[0]
-	}
-
-	return compileConstString(name)
-}
-
 func getFieldName(field reflect.StructField) string {
 	tag := field.Tag.Get(DefaultStructTag)
 
@@ -71,22 +74,58 @@ func getFieldName(field reflect.StructField) string {
 		return ""
 	}
 
-	i := strings.Index(tag, ",")
-	if i > 0 {
-		return tag[:i]
+	i := strings.IndexByte(tag, ',')
+	if i <= 0 {
+		return tag
 	}
-	return tag
+
+	if i == 0 {
+		return field.Name
+	}
+
+	return tag[:i]
 }
 
 type fieldConfig struct {
-	Name   string
-	Ignore bool
+	Name     string
+	Ignore   bool
+	AsString bool
 }
 
 func getFieldConfig(field reflect.StructField) fieldConfig {
-	name := getFieldName(field)
-	if name == "" {
+	tag := field.Tag.Get(DefaultStructTag)
+
+	if tag == "" {
+		return fieldConfig{Name: field.Name}
+	}
+
+	if tag == "-" {
 		return fieldConfig{Ignore: true}
 	}
-	return fieldConfig{Name: name}
+
+	cfg := fieldConfig{Name: field.Name}
+	s := strings.Split(tag, ",")
+
+	if s[0] != "" {
+		cfg.Name = s[0]
+	}
+
+	if len(s) == 1 {
+		return cfg
+	}
+
+	if contains(s[1:], "string") {
+		cfg.AsString = true
+	}
+
+	return cfg
+}
+
+func contains[T comparable](elems []T, v T) bool {
+	for _, s := range elems {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }

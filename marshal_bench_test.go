@@ -22,6 +22,15 @@ func BenchmarkMarshal_type(b *testing.B) {
 	}
 }
 
+func BenchmarkMarshal_field_as_string(b *testing.B) {
+	data := struct {
+		F int `php:",string"`
+	}{}
+	for i := 0; i < b.N; i++ {
+		phpserialize.Marshal(data)
+	}
+}
+
 func BenchmarkMarshal_ifce(b *testing.B) {
 	for _, data := range testCase {
 		data := data
