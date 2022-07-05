@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"unsafe"
 
+	"github.com/sirupsen/logrus"
 	"github.com/trim21/go-phpserialize/internal/errors"
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
@@ -121,7 +122,9 @@ func (d *mapDecoder) DecodeStream(s *Stream, depth int64, p unsafe.Pointer) erro
 	}
 }
 
+// TODO
 func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+	logrus.Info("decode map")
 	buf := ctx.Buf
 	depth++
 	if depth > maxDecodeNestingDepth {
@@ -134,39 +137,57 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 		return 0, errors.ErrExpected("{} for map", cursor)
 	}
 	switch buf[cursor] {
-	case 'n':
+	case 'N':
 		if err := validateNull(buf, cursor); err != nil {
 			return 0, err
 		}
-		cursor += 4
+		cursor += 2
 		**(**unsafe.Pointer)(unsafe.Pointer(&p)) = nil
 		return cursor, nil
-	case '{':
+	case 'a':
+		// array case
+		cursor++
 	default:
 		return 0, errors.ErrExpected("{ character for map value", cursor)
 	}
-	cursor++
-	cursor = skipWhiteSpace(buf, cursor)
+
+	l, end, err := readLength(buf, cursor)
+	if err != nil {
+		return 0, err
+	}
+
+	cursor = end
+	printState(buf, cursor)
+	if buf[cursor] != '{' {
+		return 0, errors.ErrExpected("{ character for map value", cursor)
+	}
+
 	mapValue := *(*unsafe.Pointer)(p)
 	if mapValue == nil {
-		mapValue = makemap(d.mapType, 0)
+		mapValue = makemap(d.mapType, int(l))
 	}
+
+	cursor++
+	printState(buf, cursor)
 	if buf[cursor] == '}' {
 		**(**unsafe.Pointer)(unsafe.Pointer(&p)) = mapValue
 		cursor++
 		return cursor, nil
 	}
+
+	printState(buf, cursor)
 	for {
 		k := unsafe_New(d.keyType)
 		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k)
 		if err != nil {
 			return 0, err
 		}
-		cursor = skipWhiteSpace(buf, keyCursor)
-		if buf[cursor] != ':' {
-			return 0, errors.ErrExpected("colon after object key", cursor)
-		}
-		cursor++
+		cursor = keyCursor
+		// cursor = skipWhiteSpace(buf, keyCursor)
+		// if buf[cursor] != ':' {
+		// 	return 0, errors.ErrExpected("colon after object key", cursor)
+		// }
+		// cursor++
 		v := unsafe_New(d.valueType)
 		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v)
 		if err != nil {
@@ -179,9 +200,9 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 			cursor++
 			return cursor, nil
 		}
-		if buf[cursor] != ',' {
-			return 0, errors.ErrExpected("comma after object value", cursor)
-		}
-		cursor++
+		// if buf[cursor] != ',' {
+		// 	return 0, errors.ErrExpected("comma after object value", cursor)
+		// }
+		// cursor++
 	}
 }

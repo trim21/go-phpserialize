@@ -303,14 +303,11 @@ func decodeKeyByBitmapUint16(d *structDecoder, buf []byte, cursor int64) (int64,
 	case 's':
 		fmt.Println("switch 's'")
 		cursor++
-		printState(buf, cursor, "decodeKeyByBitmapUint16 1")
 		sLen, end, err := readLength(buf, cursor)
 		if err != nil {
 			return 0, nil, err
 		}
-		printState(buf, cursor, "decodeKeyByBitmapUint16 2")
 		cursor = end
-		printState(buf, cursor, "decodeKeyByBitmapUint16 3")
 		cursor++ // '"'
 
 		keyIdx := 0
