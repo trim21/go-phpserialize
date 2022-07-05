@@ -33,8 +33,8 @@ type structDecoder struct {
 	keyBitmapUint8     [][256]uint8
 	keyBitmapUint16    [][256]uint16
 	sortedFieldSets    []*structFieldSet
-	keyDecoder         func(*structDecoder, []byte, int64) (int64, *structFieldSet, error)
-	keyStreamDecoder   func(*structDecoder, *Stream) (*structFieldSet, string, error)
+	// keyDecoder         func(*structDecoder, []byte, int64) (int64, *structFieldSet, error)
+	keyStreamDecoder func(*structDecoder, *Stream) (*structFieldSet, string, error)
 }
 
 var (
@@ -53,11 +53,11 @@ func init() {
 
 func newStructDecoder(structName, fieldName string, fieldMap map[string]*structFieldSet) *structDecoder {
 	return &structDecoder{
-		fieldMap:         fieldMap,
-		stringDecoder:    newStringDecoder(structName, fieldName),
-		structName:       structName,
-		fieldName:        fieldName,
-		keyDecoder:       decodeKey,
+		fieldMap:      fieldMap,
+		stringDecoder: newStringDecoder(structName, fieldName),
+		structName:    structName,
+		fieldName:     fieldName,
+		// keyDecoder:       decodeKey,
 		keyStreamDecoder: decodeKeyStream,
 	}
 }
@@ -152,7 +152,7 @@ func (d *structDecoder) tryOptimize() {
 		d.sortedFieldSets = append(d.sortedFieldSets, fieldMap[key])
 	}
 	d.keyBitmapUint16 = keyBitmap
-	d.keyDecoder = decodeKeyByBitmapUint16
+	// d.keyDecoder = decodeKeyByBitmapUint16
 	d.keyStreamDecoder = decodeKeyByBitmapUint16Stream
 	// }
 }
@@ -224,7 +224,11 @@ func decodeKeyByBitmapUint8(d *structDecoder, buf []byte, cursor int64) (int64, 
 			}
 
 			cursor++
-			sLen, cursor := readLength(buf, cursor)
+			sLen, end, err := readLength(buf, cursor)
+			if err != nil {
+				return 0, nil, err
+			}
+			cursor = end
 
 			c = char(b, cursor)
 			if c != ':' {
@@ -239,7 +243,7 @@ func decodeKeyByBitmapUint8(d *structDecoder, buf []byte, cursor int64) (int64, 
 				cursor++
 				return cursor, nil, nil
 			case nul:
-				return 0, nil, errors.ErrUnexpectedEndOfJSON("string", cursor)
+				return 0, nil, errors.ErrUnexpectedEnd("string", cursor)
 			}
 			keyIdx := 0
 			bitmap := d.keyBitmapUint8
@@ -258,7 +262,7 @@ func decodeKeyByBitmapUint8(d *structDecoder, buf []byte, cursor int64) (int64, 
 					}
 					return cursor, field, nil
 				case nul:
-					return 0, nil, errors.ErrUnexpectedEndOfJSON("string", cursor)
+					return 0, nil, errors.ErrUnexpectedEnd("string", cursor)
 				case '\\':
 					cursor++
 					chars, nextCursor := decodeKeyCharByEscapedChar(buf, cursor)
@@ -299,19 +303,14 @@ func decodeKeyByBitmapUint16(d *structDecoder, buf []byte, cursor int64) (int64,
 	case 's':
 		fmt.Println("switch 's'")
 		cursor++
-		c := char(b, cursor)
-		if c != ':' {
-			return 0, nil, errors.ErrSyntax(fmt.Sprintf("unexpected chat (%c) before str length", c), cursor)
+		printState(buf, cursor, "decodeKeyByBitmapUint16 1")
+		sLen, end, err := readLength(buf, cursor)
+		if err != nil {
+			return 0, nil, err
 		}
-
-		cursor++
-		sLen, cursor := readLength(buf, cursor)
-
-		c = char(b, cursor)
-		if c != ':' {
-			return 0, nil, errors.ErrSyntax(fmt.Sprintf("unexpected chat (%c) before str length", c), cursor)
-		}
-		cursor++ // ':'
+		printState(buf, cursor, "decodeKeyByBitmapUint16 2")
+		cursor = end
+		printState(buf, cursor, "decodeKeyByBitmapUint16 3")
 		cursor++ // '"'
 
 		keyIdx := 0
@@ -361,10 +360,10 @@ func decodeKeyNotFound(b unsafe.Pointer, cursor int64) (int64, *structFieldSet, 
 		case '\\':
 			cursor++
 			if char(b, cursor) == nul {
-				return 0, nil, errors.ErrUnexpectedEndOfJSON("string", cursor)
+				return 0, nil, errors.ErrUnexpectedEnd("string", cursor)
 			}
 		case nul:
-			return 0, nil, errors.ErrUnexpectedEndOfJSON("string", cursor)
+			return 0, nil, errors.ErrUnexpectedEnd("string", cursor)
 		}
 	}
 }
@@ -414,7 +413,7 @@ func decodeKeyByBitmapUint8Stream(d *structDecoder, s *Stream) (*structFieldSet,
 					_, cursor, p = s.stat()
 					goto FIRST_CHAR
 				}
-				return nil, "", errors.ErrUnexpectedEndOfJSON("string", s.totalOffset())
+				return nil, "", errors.ErrUnexpectedEnd("string", s.totalOffset())
 			}
 			keyIdx := 0
 			bitmap := d.keyBitmapUint8
@@ -438,7 +437,7 @@ func decodeKeyByBitmapUint8Stream(d *structDecoder, s *Stream) (*structFieldSet,
 						_, cursor, p = s.stat()
 						continue
 					}
-					return nil, "", errors.ErrUnexpectedEndOfJSON("string", s.totalOffset())
+					return nil, "", errors.ErrUnexpectedEnd("string", s.totalOffset())
 				case '\\':
 					s.cursor = cursor + 1 // skip '\' char
 					chars, err := decodeKeyCharByEscapeCharStream(s)
@@ -501,7 +500,7 @@ func decodeKeyByBitmapUint16Stream(d *structDecoder, s *Stream) (*structFieldSet
 					_, cursor, p = s.stat()
 					goto FIRST_CHAR
 				}
-				return nil, "", errors.ErrUnexpectedEndOfJSON("string", s.totalOffset())
+				return nil, "", errors.ErrUnexpectedEnd("string", s.totalOffset())
 			}
 			keyIdx := 0
 			bitmap := d.keyBitmapUint16
@@ -525,7 +524,7 @@ func decodeKeyByBitmapUint16Stream(d *structDecoder, s *Stream) (*structFieldSet
 						_, cursor, p = s.stat()
 						continue
 					}
-					return nil, "", errors.ErrUnexpectedEndOfJSON("string", s.totalOffset())
+					return nil, "", errors.ErrUnexpectedEnd("string", s.totalOffset())
 				case '\\':
 					s.cursor = cursor + 1 // skip '\' char
 					chars, err := decodeKeyCharByEscapeCharStream(s)
@@ -617,7 +616,7 @@ RETRY:
 		}
 		goto RETRY
 	default:
-		return nil, errors.ErrUnexpectedEndOfJSON("struct field", s.totalOffset())
+		return nil, errors.ErrUnexpectedEnd("struct field", s.totalOffset())
 	}
 }
 
@@ -637,14 +636,14 @@ func decodeKeyNotFoundStream(s *Stream, start int64) (*structFieldSet, string, e
 			if char(p, cursor) == nul {
 				s.cursor = cursor
 				if !s.read() {
-					return nil, "", errors.ErrUnexpectedEndOfJSON("string", s.totalOffset())
+					return nil, "", errors.ErrUnexpectedEnd("string", s.totalOffset())
 				}
 				buf, cursor, p = s.statForRetry()
 			}
 		case nul:
 			s.cursor = cursor
 			if !s.read() {
-				return nil, "", errors.ErrUnexpectedEndOfJSON("string", s.totalOffset())
+				return nil, "", errors.ErrUnexpectedEnd("string", s.totalOffset())
 			}
 			buf, cursor, p = s.statForRetry()
 		}
@@ -770,10 +769,11 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 	}
 
 	// skip  :${length}:
-	cursor++
-	cursor = skipLength(buf, cursor)
-	cursor += 1
-
+	end, err := skipLengthWithBothColon(buf, cursor)
+	if err != nil {
+		return cursor, err
+	}
+	cursor = end
 	if buf[cursor] != '{' {
 		return 0, errors.ErrInvalidBeginningOfArray(char(b, cursor), cursor)
 	}
@@ -786,9 +786,10 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 
 	for {
 		fmt.Println("for1", cursor)
-		c, field, err := d.keyDecoder(d, buf, cursor)
+		printState(buf, cursor, "for1")
+		c, field, err := decodeKeyByBitmapUint16(d, buf, cursor)
 		if err != nil {
-			fmt.Println("d.keyDecoder", err)
+			fmt.Println("decodeKeyByBitmapUint16", err)
 			return 0, err
 		}
 
@@ -831,7 +832,5 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 }
 
 func printState(buf []byte, cursor int64, o ...interface{}) {
-	s := append([]any{string(buf[cursor:])}, o...)
-
-	fmt.Println(s...)
+	fmt.Println(append(o, string(buf[cursor:]))...)
 }

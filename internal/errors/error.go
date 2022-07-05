@@ -133,9 +133,16 @@ func ErrNotAtBeginningOfValue(cursor int64) *SyntaxError {
 	return &SyntaxError{msg: "not at beginning of value", Offset: cursor}
 }
 
-func ErrUnexpectedEndOfJSON(msg string, cursor int64) *SyntaxError {
+func ErrUnexpectedEnd(msg string, cursor int64) *SyntaxError {
 	return &SyntaxError{
 		msg:    fmt.Sprintf("json: %s unexpected end of JSON input", msg),
+		Offset: cursor,
+	}
+}
+
+func ErrUnexpectedLength(buf []byte, cursor int64) *SyntaxError {
+	return &SyntaxError{
+		msg:    fmt.Sprintf("php: unexpected char %c in length", buf[cursor]),
 		Offset: cursor,
 	}
 }

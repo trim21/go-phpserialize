@@ -203,7 +203,7 @@ func (d *sliceDecoder) DecodeStream(s *Stream, depth int64, p unsafe.Pointer) er
 		}
 	}
 ERROR:
-	return errors.ErrUnexpectedEndOfJSON("slice", s.totalOffset())
+	return errors.ErrUnexpectedEnd("slice", s.totalOffset())
 }
 
 func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
@@ -295,7 +295,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			return 0, d.errNumber(cursor)
 		default:
-			return 0, errors.ErrUnexpectedEndOfJSON("slice", cursor)
+			return 0, errors.ErrUnexpectedEnd("slice", cursor)
 		}
 	}
 }

@@ -80,7 +80,7 @@ ERROR:
 	if s.cursor == start {
 		return nil, errors.ErrInvalidBeginningOfValue(s.char(), s.totalOffset())
 	}
-	return nil, errors.ErrUnexpectedEndOfJSON("json.Number", s.totalOffset())
+	return nil, errors.ErrUnexpectedEnd("json.Number", s.totalOffset())
 }
 
 func (d *numberDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
@@ -106,7 +106,7 @@ func (d *numberDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, err
 		case '"':
 			return d.stringDecoder.decodeByte(buf, cursor)
 		default:
-			return nil, 0, errors.ErrUnexpectedEndOfJSON("json.Number", cursor)
+			return nil, 0, errors.ErrUnexpectedEnd("json.Number", cursor)
 		}
 	}
 }

@@ -9,16 +9,16 @@ import (
 func main() {
 
 	type Container struct {
-		F float64 `php:"f1q"`
+		Value int `php:"value"`
 	}
 
 	var c Container
-	raw := `a:1:{s:3:"f1q";d:147852369;}`
+	raw := `a:1:{s:5:"value";i:10;}`
 	err := phpserialize.Unmarshal([]byte(raw), &c)
 	if err != nil {
 		panic(err)
 	}
-	if c.F != 147852369 {
+	if c.Value != 10 {
 		panic("not equal")
 	}
 

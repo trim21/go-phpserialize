@@ -183,7 +183,7 @@ func (d *interfaceDecoder) decodeStreamEmptyInterface(s *Stream, depth int64, p 
 					if s.read() {
 						continue
 					}
-					return errors.ErrUnexpectedEndOfJSON("string", s.totalOffset())
+					return errors.ErrUnexpectedEnd("string", s.totalOffset())
 				}
 				s.cursor++
 			}

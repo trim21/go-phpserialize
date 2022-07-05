@@ -145,32 +145,41 @@ func (d *intDecoder) decodeStreamByte(s *Stream) ([]byte, error) {
 		}
 	}
 ERROR:
-	return nil, errors.ErrUnexpectedEndOfJSON("number(integer)", s.totalOffset())
+	return nil, errors.ErrUnexpectedEnd("number(integer)", s.totalOffset())
 }
 
 func (d *intDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
 	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
+	if char(b, cursor) != 'i' {
+		return nil, cursor, errors.ErrExpected("int", cursor)
+	}
+
+	cursor++
+	printState(buf, cursor)
+	if char(b, cursor) != ':' {
+		return nil, cursor, errors.ErrExpected("int sep ':'", cursor)
+	}
+	cursor++
+
 	for {
 		switch char(b, cursor) {
-		case ' ', '\n', '\t', '\r':
-			cursor++
-			continue
 		case '0':
 			cursor++
 			return numZeroBuf, cursor, nil
 		case '-', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			printState(buf, cursor)
 			start := cursor
 			cursor++
 			for numTable[char(b, cursor)] {
 				cursor++
 			}
 			num := buf[start:cursor]
-			return num, cursor, nil
+			return num, cursor + 1, nil
 		case 'n':
 			if err := validateNull(buf, cursor); err != nil {
 				return nil, 0, err
 			}
-			cursor += 4
+			cursor += 2
 			return nil, cursor, nil
 		default:
 			return nil, 0, d.typeError([]byte{char(b, cursor)}, cursor)

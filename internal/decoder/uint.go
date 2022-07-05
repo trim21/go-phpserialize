@@ -96,7 +96,7 @@ func (d *uintDecoder) decodeStreamByte(s *Stream) ([]byte, error) {
 		}
 		break
 	}
-	return nil, errors.ErrUnexpectedEndOfJSON("number(unsigned integer)", s.totalOffset())
+	return nil, errors.ErrUnexpectedEnd("number(unsigned integer)", s.totalOffset())
 }
 
 func (d *uintDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {

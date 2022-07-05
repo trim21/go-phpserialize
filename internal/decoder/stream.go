@@ -283,7 +283,7 @@ func (s *Stream) skipObject(depth int64) error {
 							_, cursor, p = s.statForRetry()
 							continue
 						}
-						return errors.ErrUnexpectedEndOfJSON("string of object", cursor)
+						return errors.ErrUnexpectedEnd("string of object", cursor)
 					}
 				case '"':
 					goto SWITCH_OUT
@@ -293,7 +293,7 @@ func (s *Stream) skipObject(depth int64) error {
 						_, cursor, p = s.statForRetry()
 						continue
 					}
-					return errors.ErrUnexpectedEndOfJSON("string of object", cursor)
+					return errors.ErrUnexpectedEnd("string of object", cursor)
 				}
 			}
 		case nul:
@@ -302,7 +302,7 @@ func (s *Stream) skipObject(depth int64) error {
 				_, cursor, p = s.stat()
 				continue
 			}
-			return errors.ErrUnexpectedEndOfJSON("object of object", cursor)
+			return errors.ErrUnexpectedEnd("object of object", cursor)
 		}
 	SWITCH_OUT:
 		cursor++
@@ -346,7 +346,7 @@ func (s *Stream) skipArray(depth int64) error {
 							_, cursor, p = s.statForRetry()
 							continue
 						}
-						return errors.ErrUnexpectedEndOfJSON("string of object", cursor)
+						return errors.ErrUnexpectedEnd("string of object", cursor)
 					}
 				case '"':
 					goto SWITCH_OUT
@@ -356,7 +356,7 @@ func (s *Stream) skipArray(depth int64) error {
 						_, cursor, p = s.statForRetry()
 						continue
 					}
-					return errors.ErrUnexpectedEndOfJSON("string of object", cursor)
+					return errors.ErrUnexpectedEnd("string of object", cursor)
 				}
 			}
 		case nul:
@@ -365,7 +365,7 @@ func (s *Stream) skipArray(depth int64) error {
 				_, cursor, p = s.stat()
 				continue
 			}
-			return errors.ErrUnexpectedEndOfJSON("array of object", cursor)
+			return errors.ErrUnexpectedEnd("array of object", cursor)
 		}
 	SWITCH_OUT:
 		cursor++
@@ -385,7 +385,7 @@ func (s *Stream) skipValue(depth int64) error {
 				_, cursor, p = s.stat()
 				continue
 			}
-			return errors.ErrUnexpectedEndOfJSON("value of object", s.totalOffset())
+			return errors.ErrUnexpectedEnd("value of object", s.totalOffset())
 		case '{':
 			s.cursor = cursor + 1
 			return s.skipObject(depth + 1)
@@ -404,7 +404,7 @@ func (s *Stream) skipValue(depth int64) error {
 							_, cursor, p = s.statForRetry()
 							continue
 						}
-						return errors.ErrUnexpectedEndOfJSON("value of string", s.totalOffset())
+						return errors.ErrUnexpectedEnd("value of string", s.totalOffset())
 					}
 				case '"':
 					s.cursor = cursor + 1
@@ -415,7 +415,7 @@ func (s *Stream) skipValue(depth int64) error {
 						_, cursor, p = s.statForRetry()
 						continue
 					}
-					return errors.ErrUnexpectedEndOfJSON("value of string", s.totalOffset())
+					return errors.ErrUnexpectedEnd("value of string", s.totalOffset())
 				}
 			}
 		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':

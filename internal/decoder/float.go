@@ -90,7 +90,7 @@ func (d *floatDecoder) decodeStreamByte(s *Stream) ([]byte, error) {
 		}
 	}
 ERROR:
-	return nil, errors.ErrUnexpectedEndOfJSON("float", s.totalOffset())
+	return nil, errors.ErrUnexpectedEnd("float", s.totalOffset())
 }
 
 func (d *floatDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {

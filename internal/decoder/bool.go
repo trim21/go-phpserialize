@@ -46,7 +46,7 @@ func (d *boolDecoder) DecodeStream(s *Stream, depth int64, p unsafe.Pointer) err
 		break
 	}
 ERROR:
-	return errors.ErrUnexpectedEndOfJSON("bool", s.totalOffset())
+	return errors.ErrUnexpectedEnd("bool", s.totalOffset())
 }
 
 func (d *boolDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
@@ -74,5 +74,5 @@ func (d *boolDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.
 		cursor += 4
 		return cursor, nil
 	}
-	return 0, errors.ErrUnexpectedEndOfJSON("bool", cursor)
+	return 0, errors.ErrUnexpectedEnd("bool", cursor)
 }

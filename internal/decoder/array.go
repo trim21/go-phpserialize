@@ -98,7 +98,7 @@ func (d *arrayDecoder) DecodeStream(s *Stream, depth int64, p unsafe.Pointer) er
 		s.cursor++
 	}
 ERROR:
-	return errors.ErrUnexpectedEndOfJSON("array", s.totalOffset())
+	return errors.ErrUnexpectedEnd("array", s.totalOffset())
 }
 
 func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
@@ -163,7 +163,7 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 				}
 			}
 		default:
-			return 0, errors.ErrUnexpectedEndOfJSON("array", cursor)
+			return 0, errors.ErrUnexpectedEnd("array", cursor)
 		}
 	}
 }

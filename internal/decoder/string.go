@@ -2,7 +2,6 @@ package decoder
 
 import (
 	"bytes"
-	"fmt"
 	"reflect"
 	"unicode"
 	"unicode/utf16"
@@ -167,7 +166,7 @@ RETRY:
 		}
 		goto RETRY
 	default:
-		return nil, errors.ErrUnexpectedEndOfJSON("string", s.totalOffset())
+		return nil, errors.ErrUnexpectedEnd("string", s.totalOffset())
 	}
 	s.buf = append(s.buf[:s.cursor-1], s.buf[s.cursor:]...)
 	s.length--
@@ -263,7 +262,7 @@ func stringBytes(s *Stream) ([]byte, error) {
 		cursor++
 	}
 ERROR:
-	return nil, errors.ErrUnexpectedEndOfJSON("string", s.totalOffset())
+	return nil, errors.ErrUnexpectedEnd("string", s.totalOffset())
 }
 
 func (d *stringDecoder) decodeStreamByte(s *Stream) ([]byte, error) {
@@ -296,67 +295,36 @@ func (d *stringDecoder) decodeStreamByte(s *Stream) ([]byte, error) {
 }
 
 func (d *stringDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
-	for {
-		switch buf[cursor] {
-		case ' ', '\n', '\t', '\r':
-			cursor++
-		case '[':
-			return nil, 0, d.errUnmarshalType("array", cursor)
-		case '{':
-			return nil, 0, d.errUnmarshalType("object", cursor)
-		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			return nil, 0, d.errUnmarshalType("number", cursor)
-		case '"':
-			cursor++
-			start := cursor
-			b := (*sliceHeader)(unsafe.Pointer(&buf)).data
-			escaped := 0
-			for {
-				switch char(b, cursor) {
-				case '\\':
-					escaped++
-					cursor++
-					switch char(b, cursor) {
-					case '"', '\\', '/', 'b', 'f', 'n', 'r', 't':
-						cursor++
-					case 'u':
-						buflen := int64(len(buf))
-						if cursor+5 >= buflen {
-							return nil, 0, errors.ErrUnexpectedEndOfJSON("escaped string", cursor)
-						}
-						for i := int64(1); i <= 4; i++ {
-							c := char(b, cursor+i)
-							if !(('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')) {
-								return nil, 0, errors.ErrSyntax(fmt.Sprintf("json: invalid character %c in \\u hexadecimal character escape", c), cursor+i)
-							}
-						}
-						cursor += 5
-					default:
-						return nil, 0, errors.ErrUnexpectedEndOfJSON("escaped string", cursor)
-					}
-					continue
-				case '"':
-					literal := buf[start:cursor]
-					if escaped > 0 {
-						literal = literal[:unescapeString(literal)]
-					}
-					cursor++
-					return literal, cursor, nil
-				case nul:
-					return nil, 0, errors.ErrUnexpectedEndOfJSON("string", cursor)
-				}
-				cursor++
-			}
-		case 'n':
-			if err := validateNull(buf, cursor); err != nil {
-				return nil, 0, err
-			}
-			cursor += 4
-			return nil, cursor, nil
-		default:
-			return nil, 0, errors.ErrInvalidBeginningOfValue(buf[cursor], cursor)
+	printState(buf, cursor)
+	switch buf[cursor] {
+	case 'n':
+		if err := validateNull(buf, cursor); err != nil {
+			return nil, 0, err
 		}
+		cursor += 2
+		return nil, cursor, nil
+	case 'b':
+		return nil, 0, d.errUnmarshalType("bool", cursor)
+	case 'd':
+		return nil, 0, d.errUnmarshalType("float", cursor)
+	case 's':
+		cursor++
+		break
+	case 'i':
+		return nil, 0, d.errUnmarshalType("number", cursor)
+		// read int as string
+	default:
+		return nil, 0, errors.ErrInvalidBeginningOfValue(buf[cursor], cursor)
 	}
+
+	printState(buf, cursor, "stringDecoder.decodeByte")
+	s, end, err := readString(buf, cursor)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	printState(buf, end, "stringDecoder.decodeByte read string")
+	return s, end, nil
 }
 
 var unescapeMap = [256]byte{
