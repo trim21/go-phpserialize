@@ -1,11 +1,10 @@
 package phpserialize_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/trim21/go-phpserialize/internal/decoder"
+	"github.com/trim21/go-phpserialize"
 )
 
 /*
@@ -18,22 +17,77 @@ array(
 )
 */
 
-func tTestUnmarshal_struct(t *testing.T) {
+func TestUnmarshal_float(t *testing.T) {
 	t.Parallel()
 
-	b, err := os.ReadFile("./testdata/obj.txt")
-	require.NoError(t, err)
-	var o struct {
-		S string  `php:"a string value"`
-		I int     `php:"a int value"`
-		B bool    `php:"a bool value"`
-		F float64 `php:"a float value"`
+	type Container struct {
+		F float64 `php:"f,string"`
 	}
 
-	err = decoder.Unmarshal(b, &o)
-	require.NoError(t, err)
+	t.Run("negative", func(t *testing.T) {
+		var c Container
+		raw := `a:1:{s:1:"f";d:3.14;}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, 3.14, c.F)
+	})
 
-	require.Equal(t, "ff", o.S)
-	require.Equal(t, int(31415926), o.I)
-	require.Equal(t, true, o.B)
+	t.Run("positive", func(t *testing.T) {
+		var c Container
+		raw := `a:1:{s:1:"f";d:1;}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, 1, c.F)
+	})
+
+	t.Run("zero", func(t *testing.T) {
+		var c Container
+		raw := `a:1:{s:1:"f";d:-3.14;}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, -3.14, c.F)
+	})
+}
+
+func TestUnmarshal_struct_empty(t *testing.T) {
+	t.Parallel()
+
+	type Container struct {
+		F string `php:"f,string"`
+	}
+
+	var c Container
+	raw := `a:0:{}`
+	err := phpserialize.Unmarshal([]byte(raw), &c)
+	require.NoError(t, err)
+	require.Equal(t, "", c.F)
+}
+
+func TestUnmarshal_struct_string(t *testing.T) {
+	t.Parallel()
+
+	type Container struct {
+		F string `php:"f1q,string"`
+		V bool   `php:"1a9,string"`
+	}
+
+	var c Container
+	raw := `a:1:{s:3:"f1q";s:10:"0147852369"}`
+	err := phpserialize.Unmarshal([]byte(raw), &c)
+	require.NoError(t, err)
+	require.Equal(t, "0147852369", c.F)
+}
+
+func TestUnmarshal_struct_float(t *testing.T) {
+	t.Parallel()
+
+	type Container struct {
+		F float64 `php:"f1q"`
+	}
+
+	var c Container
+	raw := `a:1:{s:3:"f1q";d:147852369;}`
+	err := phpserialize.Unmarshal([]byte(raw), &c)
+	require.NoError(t, err)
+	require.Equal(t, "0147852369", c.F)
 }
