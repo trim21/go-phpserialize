@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"fmt"
 	"reflect"
 	"unsafe"
 
@@ -41,6 +42,7 @@ func (d *wrappedStringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, 
 	bytes = append(bytes, nul)
 	oldBuf := ctx.Buf
 	ctx.Buf = bytes
+	fmt.Println(string(ctx.Buf))
 	if _, err := d.dec.Decode(ctx, 0, depth, p); err != nil {
 		return 0, err
 	}

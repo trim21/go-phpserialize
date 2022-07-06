@@ -1,9 +1,7 @@
 package decoder
 
 import (
-	"bytes"
 	"reflect"
-	"unicode/utf8"
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
@@ -122,63 +120,4 @@ var unescapeMap = [256]byte{
 
 func unsafeAdd(ptr unsafe.Pointer, offset int) unsafe.Pointer {
 	return unsafe.Pointer(uintptr(ptr) + uintptr(offset))
-}
-
-func unescapeString(buf []byte) int {
-	p := (*sliceHeader)(unsafe.Pointer(&buf)).data
-	end := unsafeAdd(p, len(buf))
-	src := unsafeAdd(p, bytes.IndexByte(buf, '\\'))
-	dst := src
-	for src != end {
-		c := char(src, 0)
-		if c == '\\' {
-			escapeChar := char(src, 1)
-			if escapeChar != 'u' {
-				*(*byte)(dst) = unescapeMap[escapeChar]
-				src = unsafeAdd(src, 2)
-				dst = unsafeAdd(dst, 1)
-			} else {
-				v1 := hexToInt[char(src, 2)]
-				v2 := hexToInt[char(src, 3)]
-				v3 := hexToInt[char(src, 4)]
-				v4 := hexToInt[char(src, 5)]
-				code := rune((v1 << 12) | (v2 << 8) | (v3 << 4) | v4)
-				if code >= 0xd800 && code < 0xdc00 && uintptr(unsafeAdd(src, 11)) < uintptr(end) {
-					if char(src, 6) == '\\' && char(src, 7) == 'u' {
-						v1 := hexToInt[char(src, 8)]
-						v2 := hexToInt[char(src, 9)]
-						v3 := hexToInt[char(src, 10)]
-						v4 := hexToInt[char(src, 11)]
-						lo := rune((v1 << 12) | (v2 << 8) | (v3 << 4) | v4)
-						if lo >= 0xdc00 && lo < 0xe000 {
-							code = (code-0xd800)<<10 | (lo - 0xdc00) + 0x10000
-							src = unsafeAdd(src, 6)
-						}
-					}
-				}
-				var b [utf8.UTFMax]byte
-				n := utf8.EncodeRune(b[:], code)
-				switch n {
-				case 4:
-					*(*byte)(unsafeAdd(dst, 3)) = b[3]
-					fallthrough
-				case 3:
-					*(*byte)(unsafeAdd(dst, 2)) = b[2]
-					fallthrough
-				case 2:
-					*(*byte)(unsafeAdd(dst, 1)) = b[1]
-					fallthrough
-				case 1:
-					*(*byte)(unsafeAdd(dst, 0)) = b[0]
-				}
-				src = unsafeAdd(src, 6)
-				dst = unsafeAdd(dst, n)
-			}
-		} else {
-			*(*byte)(dst) = c
-			src = unsafeAdd(src, 1)
-			dst = unsafeAdd(dst, 1)
-		}
-	}
-	return int(uintptr(dst) - uintptr(p))
 }
