@@ -28,20 +28,25 @@ func main() {
 	// logrus.SetReportCaller(true)
 
 	type Container struct {
-		Value map[string]int `php:"value"`
+		BB    bool     `php:"bb"`
+		Value []string `php:"value"`
 	}
 
 	var c Container
-	raw := `a:1:{s:5:"value";a:2:{s:3:"one";i:1;s:3:"two";i:2;}}`
+	raw := `a:2:{s:2:"bb";b:1;s:5:"value";a:3:{i:0;s:3:"one";i:1;s:3:"two";i:2;s:1:"q";}}`
 	err := phpserialize.Unmarshal([]byte(raw), &c)
 	if err != nil {
 		panic(err)
 	}
-	expected := map[string]int{"one": 1, "two": 2}
+	expected := []string{"one", "two", "q"}
 	if !reflect.DeepEqual(c.Value, expected) {
 		dump.P(c.Value)
 		dump.P(expected)
 		panic("not equal")
+	}
+
+	if !c.BB {
+		panic("bool parse error")
 	}
 
 	fmt.Println("correct")

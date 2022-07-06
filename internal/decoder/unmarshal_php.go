@@ -93,7 +93,6 @@ func (d *unmarshalPHPDecoder) DecodeStream(s *Stream, depth int64, p unsafe.Poin
 
 func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
-	cursor = skipWhiteSpace(buf, cursor)
 	start := cursor
 	end, err := skipValue(buf, cursor, depth)
 	if err != nil {

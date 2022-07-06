@@ -290,6 +290,7 @@ func decodeKeyByBitmapUint8(d *structDecoder, buf []byte, cursor int64) (int64, 
 }
 
 func decodeKeyByBitmapUint16(d *structDecoder, buf []byte, cursor int64) (int64, *structFieldSet, error) {
+	printState(buf, cursor, "decodeKeyByBitmapUint16")
 	var (
 		curBit uint16 = math.MaxUint16
 	)
@@ -824,10 +825,10 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 		// if char(b, cursor) != ',' {
 		// 	return 0, errors.ErrExpected("comma after object element", cursor)
 		// }
-		cursor++
+		// cursor++
 	}
 }
 
 func printState(buf []byte, cursor int64, o ...interface{}) {
-	fmt.Println(append(o, string(buf[cursor:]))...)
+	fmt.Println(append(o, "`"+string(buf[cursor:])+"`")...)
 }

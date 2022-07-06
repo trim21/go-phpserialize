@@ -38,7 +38,7 @@ func (d *ptrDecoder) DecodeStream(s *Stream, depth int64, p unsafe.Pointer) erro
 	if s.skipWhiteSpace() == nul {
 		s.read()
 	}
-	if s.char() == 'n' {
+	if s.char() == 'N' {
 		if err := nullBytes(s); err != nil {
 			return err
 		}
@@ -60,24 +60,26 @@ func (d *ptrDecoder) DecodeStream(s *Stream, depth int64, p unsafe.Pointer) erro
 
 func (d *ptrDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
-	cursor = skipWhiteSpace(buf, cursor)
-	if buf[cursor] == 'n' {
+	if buf[cursor] == 'N' {
 		if err := validateNull(buf, cursor); err != nil {
 			return 0, err
 		}
 		if p != nil {
 			*(*unsafe.Pointer)(p) = nil
 		}
-		cursor += 4
+		cursor += 2
 		return cursor, nil
 	}
+
 	var newptr unsafe.Pointer
+
 	if *(*unsafe.Pointer)(p) == nil {
 		newptr = unsafe_New(d.typ)
 		*(*unsafe.Pointer)(p) = newptr
 	} else {
 		newptr = *(*unsafe.Pointer)(p)
 	}
+
 	c, err := d.dec.Decode(ctx, cursor, depth, newptr)
 	if err != nil {
 		return 0, err

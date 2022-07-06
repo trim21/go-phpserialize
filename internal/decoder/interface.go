@@ -123,7 +123,6 @@ func decodeStreamTextUnmarshaler(s *Stream, depth int64, unmarshaler ifce.Unmars
 }
 
 func decodeTextUnmarshaler(buf []byte, cursor, depth int64, unmarshaler ifce.Unmarshaler, p unsafe.Pointer) (int64, error) {
-	cursor = skipWhiteSpace(buf, cursor)
 	start := cursor
 	end, err := skipValue(buf, cursor, depth)
 	if err != nil {
@@ -285,7 +284,6 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p un
 		if u, ok := rv.Interface().(ifce.Unmarshaler); ok {
 			return decodeTextUnmarshaler(buf, cursor, depth, u, p)
 		}
-		cursor = skipWhiteSpace(buf, cursor)
 		if buf[cursor] == 'n' {
 			if err := validateNull(buf, cursor); err != nil {
 				return 0, err
@@ -307,7 +305,6 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p un
 	if typ.Kind() == reflect.Ptr && typ.Elem() == d.typ || typ.Kind() != reflect.Ptr {
 		return d.decodeEmptyInterface(ctx, cursor, depth, p)
 	}
-	cursor = skipWhiteSpace(buf, cursor)
 	if buf[cursor] == 'n' {
 		if err := validateNull(buf, cursor); err != nil {
 			return 0, err
@@ -325,7 +322,6 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p un
 
 func (d *interfaceDecoder) decodeEmptyInterface(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
-	cursor = skipWhiteSpace(buf, cursor)
 	switch buf[cursor] {
 	case '{':
 		var v map[string]interface{}

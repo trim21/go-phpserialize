@@ -131,7 +131,6 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 		return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
 	}
 
-	cursor = skipWhiteSpace(buf, cursor)
 	buflen := int64(len(buf))
 	if buflen < 2 {
 		return 0, errors.ErrExpected("{} for map", cursor)
@@ -157,7 +156,6 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 	}
 
 	cursor = end
-	printState(buf, cursor)
 	if buf[cursor] != '{' {
 		return 0, errors.ErrExpected("{ character for map value", cursor)
 	}
@@ -168,14 +166,12 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 	}
 
 	cursor++
-	printState(buf, cursor)
 	if buf[cursor] == '}' {
 		**(**unsafe.Pointer)(unsafe.Pointer(&p)) = mapValue
 		cursor++
 		return cursor, nil
 	}
 
-	printState(buf, cursor)
 	for {
 		k := unsafe_New(d.keyType)
 		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k)
@@ -183,26 +179,17 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 			return 0, err
 		}
 		cursor = keyCursor
-		// cursor = skipWhiteSpace(buf, keyCursor)
-		// if buf[cursor] != ':' {
-		// 	return 0, errors.ErrExpected("colon after object key", cursor)
-		// }
-		// cursor++
 		v := unsafe_New(d.valueType)
 		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v)
 		if err != nil {
 			return 0, err
 		}
 		d.mapassign(d.mapType, mapValue, k, v)
-		cursor = skipWhiteSpace(buf, valueCursor)
+		cursor = valueCursor
 		if buf[cursor] == '}' {
 			**(**unsafe.Pointer)(unsafe.Pointer(&p)) = mapValue
 			cursor++
 			return cursor, nil
 		}
-		// if buf[cursor] != ',' {
-		// 	return 0, errors.ErrExpected("comma after object value", cursor)
-		// }
-		// cursor++
 	}
 }

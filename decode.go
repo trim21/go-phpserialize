@@ -27,7 +27,7 @@ type emptyInterface struct {
 }
 
 func unmarshal(data []byte, v interface{}) error {
-	src := make([]byte, len(data)+1) // append nul byte to the end
+	src := make([]byte, len(data)) // append nul byte to the end
 	copy(src, data)
 
 	header := (*emptyInterface)(unsafe.Pointer(&v))
@@ -78,19 +78,14 @@ func unmarshalNoEscape(data []byte, v interface{}) error {
 }
 
 func validateEndBuf(src []byte, cursor int64) error {
-	for {
-		switch src[cursor] {
-		case ' ', '\t', '\n', '\r':
-			cursor++
-			continue
-		case nul:
-			return nil
-		}
-		return errors.ErrSyntax(
-			fmt.Sprintf("invalid character '%c' after top-level value", src[cursor]),
-			cursor+1,
-		)
+	if int64(len(src)) == cursor {
+		return nil
 	}
+
+	return errors.ErrSyntax(
+		fmt.Sprintf("invalid character '%c' after top-level value", src[cursor]),
+		cursor+1,
+	)
 }
 
 //nolint:staticcheck

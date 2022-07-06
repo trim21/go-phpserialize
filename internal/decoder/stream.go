@@ -459,18 +459,17 @@ func (s *Stream) skipValue(depth int64) error {
 func nullBytes(s *Stream) error {
 	// current cursor's character is 'n'
 	s.cursor++
-	if s.char() != 'u' {
+	if s.char() != ';' {
 		if err := retryReadNull(s); err != nil {
 			return err
 		}
 	}
-	s.cursor++
-	if s.char() != 'l' {
-		if err := retryReadNull(s); err != nil {
-			return err
-		}
-	}
-	s.cursor++
+	// if s.char() != 'l' {
+	// 	if err := retryReadNull(s); err != nil {
+	// 		return err
+	// 	}
+	// }
+	// s.cursor++
 	if s.char() != 'l' {
 		if err := retryReadNull(s); err != nil {
 			return err

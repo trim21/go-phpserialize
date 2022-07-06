@@ -295,7 +295,6 @@ func (d *stringDecoder) decodeStreamByte(s *Stream) ([]byte, error) {
 }
 
 func (d *stringDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
-	printState(buf, cursor)
 	switch buf[cursor] {
 	case 'n':
 		if err := validateNull(buf, cursor); err != nil {
@@ -317,13 +316,11 @@ func (d *stringDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, err
 		return nil, 0, errors.ErrInvalidBeginningOfValue(buf[cursor], cursor)
 	}
 
-	printState(buf, cursor, "stringDecoder.decodeByte")
 	s, end, err := readString(buf, cursor)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	printState(buf, end, "stringDecoder.decodeByte read string")
 	return s, end, nil
 }
 

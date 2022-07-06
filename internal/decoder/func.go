@@ -81,7 +81,6 @@ func (d *funcDecoder) DecodeStream(s *Stream, depth int64, p unsafe.Pointer) err
 
 func (d *funcDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
-	cursor = skipWhiteSpace(buf, cursor)
 	start := cursor
 	end, err := skipValue(buf, cursor, depth)
 	if err != nil {

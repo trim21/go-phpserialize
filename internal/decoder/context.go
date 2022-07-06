@@ -72,13 +72,6 @@ func skipLengthWithBothColon(buf []byte, cursor int64) (int64, error) {
 	return cursor, nil
 }
 
-func skipWhiteSpace(buf []byte, cursor int64) int64 {
-	for isWhiteSpace[buf[cursor]] {
-		cursor++
-	}
-	return cursor
-}
-
 func skipObject(buf []byte, cursor, depth int64) (int64, error) {
 	braceCount := 1
 	for {
@@ -281,6 +274,16 @@ func readLength(buf []byte, cursor int64) (int64, int64, error) {
 		return 0, cursor, err
 	}
 
+	return parseByteStringInt64(buf[cursor+1 : end-1]), end, nil
+}
+
+// :${length}:
+func readLengthInt(buf []byte, cursor int64) (int, int64, error) {
+	end, err := skipLengthWithBothColon(buf, cursor)
+	if err != nil {
+		return 0, cursor, err
+	}
+
 	return parseByteStringInt(buf[cursor+1 : end-1]), end, nil
 }
 
@@ -308,10 +311,19 @@ func readString(buf []byte, cursor int64) ([]byte, int64, error) {
 	return buf[start:end], cursor, nil
 }
 
-func parseByteStringInt(b []byte) int64 {
+func parseByteStringInt64(b []byte) int64 {
 	var l int64
 	for _, c := range b {
 		l = l*10 + int64(c-'0')
+	}
+
+	return l
+}
+
+func parseByteStringInt(b []byte) int {
+	var l int
+	for _, c := range b {
+		l = l*10 + int(c-'0')
 	}
 
 	return l

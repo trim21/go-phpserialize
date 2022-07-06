@@ -122,7 +122,6 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 		case '[':
 			idx := 0
 			cursor++
-			cursor = skipWhiteSpace(buf, cursor)
 			if buf[cursor] == ']' {
 				for idx < d.alen {
 					*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(idx)*d.size)) = d.zeroValue
@@ -146,7 +145,6 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 					cursor = c
 				}
 				idx++
-				cursor = skipWhiteSpace(buf, cursor)
 				switch buf[cursor] {
 				case ']':
 					for idx < d.alen {

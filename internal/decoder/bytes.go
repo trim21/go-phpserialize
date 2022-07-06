@@ -93,7 +93,6 @@ func (d *bytesDecoder) decodeStreamBinary(s *Stream, depth int64, p unsafe.Point
 
 func (d *bytesDecoder) decodeBinary(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) ([]byte, int64, error) {
 	buf := ctx.Buf
-	cursor = skipWhiteSpace(buf, cursor)
 	if buf[cursor] == '[' {
 		if d.sliceDecoder == nil {
 			return nil, 0, &errors.UnmarshalTypeError{

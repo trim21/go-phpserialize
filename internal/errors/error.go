@@ -152,6 +152,7 @@ func ErrExpected(msg string, cursor int64) *SyntaxError {
 }
 
 func ErrInvalidCharacter(c byte, context string, cursor int64) *SyntaxError {
+	debug.PrintStack()
 	if c == 0 {
 		return &SyntaxError{
 			msg:    fmt.Sprintf("json: invalid character as %s", context),

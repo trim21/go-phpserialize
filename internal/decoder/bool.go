@@ -51,27 +51,35 @@ ERROR:
 
 func (d *boolDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
-	cursor = skipWhiteSpace(buf, cursor)
 	switch buf[cursor] {
-	case 't':
-		if err := validateTrue(buf, cursor); err != nil {
-			return 0, err
+	case 'b':
+		// b:0;
+		// b:1;
+
+		cursor++
+		if buf[cursor] != ':' {
+			return 0, errors.ErrUnexpectedEnd("':' before bool value", cursor)
 		}
-		cursor += 4
-		**(**bool)(unsafe.Pointer(&p)) = true
-		return cursor, nil
-	case 'f':
-		if err := validateFalse(buf, cursor); err != nil {
-			return 0, err
+		cursor++
+		switch buf[cursor] {
+		case '0':
+		case '1':
+			**(**bool)(unsafe.Pointer(&p)) = true
+		default:
+			return 0, errors.ErrUnexpectedEnd("'0' pr '1' af bool value", cursor)
 		}
-		cursor += 5
-		**(**bool)(unsafe.Pointer(&p)) = false
+		cursor++
+		if buf[cursor] != ';' {
+			return 0, errors.ErrUnexpectedEnd("';' end bool value", cursor)
+		}
+		cursor++
 		return cursor, nil
-	case 'n':
+
+	case 'N':
 		if err := validateNull(buf, cursor); err != nil {
 			return 0, err
 		}
-		cursor += 4
+		cursor += 2
 		return cursor, nil
 	}
 	return 0, errors.ErrUnexpectedEnd("bool", cursor)
