@@ -37,59 +37,8 @@ func (d *unmarshalPHPDecoder) annotateError(cursor int64, err error) {
 }
 
 var (
-	nullbytes = []byte(`null`)
+	nullbytes = []byte(`N;`)
 )
-
-func (d *unmarshalPHPDecoder) DecodeStream(s *Stream, depth int64, p unsafe.Pointer) error {
-	s.skipWhiteSpace()
-	start := s.cursor
-	if err := s.skipValue(depth); err != nil {
-		return err
-	}
-	src := s.buf[start:s.cursor]
-	if len(src) > 0 {
-		switch src[0] {
-		case '[':
-			return &errors.UnmarshalTypeError{
-				Value:  "array",
-				Type:   runtime.RType2Type(d.typ),
-				Offset: s.totalOffset(),
-			}
-		case '{':
-			return &errors.UnmarshalTypeError{
-				Value:  "object",
-				Type:   runtime.RType2Type(d.typ),
-				Offset: s.totalOffset(),
-			}
-		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			return &errors.UnmarshalTypeError{
-				Value:  "number",
-				Type:   runtime.RType2Type(d.typ),
-				Offset: s.totalOffset(),
-			}
-		case 'n':
-			if bytes.Equal(src, nullbytes) {
-				*(*unsafe.Pointer)(p) = nil
-				return nil
-			}
-		}
-	}
-	dst := make([]byte, len(src))
-	copy(dst, src)
-
-	if b, ok := unquoteBytes(dst); ok {
-		dst = b
-	}
-	v := *(*interface{})(unsafe.Pointer(&emptyInterface{
-		typ: d.typ,
-		ptr: p,
-	}))
-	if err := v.(encoding.TextUnmarshaler).UnmarshalText(dst); err != nil {
-		d.annotateError(s.cursor, err)
-		return err
-	}
-	return nil
-}
 
 func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
@@ -119,7 +68,7 @@ func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p
 				Type:   runtime.RType2Type(d.typ),
 				Offset: start,
 			}
-		case 'n':
+		case 'N':
 			if bytes.Equal(src, nullbytes) {
 				*(*unsafe.Pointer)(p) = nil
 				return end, nil

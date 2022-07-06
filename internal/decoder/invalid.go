@@ -24,16 +24,6 @@ func newInvalidDecoder(typ *runtime.Type, structName, fieldName string) *invalid
 	}
 }
 
-func (d *invalidDecoder) DecodeStream(s *Stream, depth int64, p unsafe.Pointer) error {
-	return &errors.UnmarshalTypeError{
-		Value:  "object",
-		Type:   runtime.RType2Type(d.typ),
-		Offset: s.totalOffset(),
-		Struct: d.structName,
-		Field:  d.fieldName,
-	}
-}
-
 func (d *invalidDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	return 0, &errors.UnmarshalTypeError{
 		Value:  "object",

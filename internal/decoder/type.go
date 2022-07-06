@@ -8,8 +8,7 @@ import (
 )
 
 type Decoder interface {
-	Decode(*RuntimeContext, int64, int64, unsafe.Pointer) (int64, error)
-	DecodeStream(*Stream, int64, unsafe.Pointer) error
+	Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error)
 }
 
 const (

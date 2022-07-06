@@ -118,8 +118,6 @@ func compile(typ *runtime.Type, structName, fieldName string, structTypeToDecode
 		return compileFloat32(structName, fieldName)
 	case reflect.Float64:
 		return compileFloat64(structName, fieldName)
-	case reflect.Func:
-		return compileFunc(typ, structName, fieldName)
 	}
 	return newInvalidDecoder(typ, structName, fieldName), nil
 }
@@ -298,10 +296,6 @@ func compileMap(typ *runtime.Type, structName, fieldName string, structTypeToDec
 
 func compileInterface(typ *runtime.Type, structName, fieldName string) (Decoder, error) {
 	return newInterfaceDecoder(typ, structName, fieldName), nil
-}
-
-func compileFunc(typ *runtime.Type, strutName, fieldName string) (Decoder, error) {
-	return newFuncDecoder(typ, strutName, fieldName), nil
 }
 
 func typeToStructTags(typ *runtime.Type) runtime.StructTags {

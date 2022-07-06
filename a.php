@@ -6,5 +6,11 @@ print serialize(array(
         "one",
         "two",
         "q"
-    )
+    ),
+    false=>true,
+    "value2"=> array(
+                    "1",
+                    "2",
+                    "3"
+                ),
 ));
