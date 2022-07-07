@@ -58,31 +58,43 @@ func (d *uintDecoder) parseUint(b []byte) (uint64, error) {
 }
 
 func (d *uintDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
-	for {
-		switch buf[cursor] {
-		case ' ', '\n', '\t', '\r':
-			cursor++
-			continue
-		case '0':
-			cursor++
-			return numZeroBuf, cursor, nil
-		case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			start := cursor
-			cursor++
-			for numTable[buf[cursor]] {
-				cursor++
-			}
-			num := buf[start:cursor]
-			return num, cursor, nil
-		case 'n':
-			if err := validateNull(buf, cursor); err != nil {
-				return nil, 0, err
-			}
-			cursor += 4
-			return nil, cursor, nil
-		default:
-			return nil, 0, d.typeError([]byte{buf[cursor]}, cursor)
+	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
+	if char(b, cursor) != 'i' {
+		return nil, cursor, errors.ErrExpected("int", cursor)
+	}
+
+	cursor++
+	if char(b, cursor) != ':' {
+		return nil, cursor, errors.ErrExpected("int sep ':'", cursor)
+	}
+	cursor++
+
+	switch char(b, cursor) {
+	case '0':
+		cursor++
+		if char(b, cursor) != ';' {
+			return nil, cursor, errors.ErrExpected("';' end int", cursor)
 		}
+		return numZeroBuf, cursor + 1, nil
+	case '-', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		start := cursor
+		cursor++
+		for numTable[char(b, cursor)] {
+			cursor++
+		}
+		if char(b, cursor) != ';' {
+			return nil, cursor, errors.ErrExpected("';' end int", cursor)
+		}
+		num := buf[start:cursor]
+		return num, cursor + 1, nil
+	case 'N':
+		if err := validateNull(buf, cursor); err != nil {
+			return nil, 0, err
+		}
+		cursor += 2
+		return nil, cursor, nil
+	default:
+		return nil, 0, d.typeError([]byte{char(b, cursor)}, cursor)
 	}
 }
 

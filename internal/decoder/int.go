@@ -101,12 +101,18 @@ func (d *intDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error)
 	switch char(b, cursor) {
 	case '0':
 		cursor++
+		if char(b, cursor) != ';' {
+			return nil, cursor, errors.ErrExpected("';' end int", cursor)
+		}
 		return numZeroBuf, cursor + 1, nil
 	case '-', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		start := cursor
 		cursor++
 		for numTable[char(b, cursor)] {
 			cursor++
+		}
+		if char(b, cursor) != ';' {
+			return nil, cursor, errors.ErrExpected("';' end int", cursor)
 		}
 		num := buf[start:cursor]
 		return num, cursor + 1, nil
