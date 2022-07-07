@@ -128,7 +128,6 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			if err != nil {
 				return cursor, err
 			}
-			cursor = cursor + 3
 
 			dst := (*sliceHeader)(p)
 			if dst.data == nil {
@@ -136,8 +135,8 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			} else {
 				dst.len = 0
 			}
-			cursor++
-			return cursor, nil
+
+			return cursor + 4, nil
 		}
 
 		arrLen, end, err := readLengthInt(buf, cursor-1)
@@ -167,6 +166,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			if err != nil {
 				return 0, err
 			}
+
 			idx = currentIndex
 			cursor = end
 
@@ -194,8 +194,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			}
 
 			cursor = c
-			switch buf[cursor] {
-			case '}':
+			if buf[cursor] == '}' {
 				slice.cap = capacity
 				slice.len = idx + 1
 				slice.data = data

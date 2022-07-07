@@ -37,72 +37,73 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 		return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
 	}
 
-	for {
-		switch buf[cursor] {
-		case 'N':
-			if err := validateNull(buf, cursor); err != nil {
+	switch buf[cursor] {
+	case 'N':
+		if err := validateNull(buf, cursor); err != nil {
+			return 0, err
+		}
+		cursor += 2
+		return cursor, nil
+	case 'a':
+		cursor++
+		if buf[cursor] != ':' {
+			return cursor, errors.ErrExpected("':' before array length", cursor)
+		}
+
+		cursor++
+		if buf[cursor] == '0' {
+			err := validateEmptyArray(buf, cursor)
+			if err != nil {
+				return cursor, err
+			}
+
+			for i := 0; i < d.alen; i++ {
+				*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(i)*d.size)) = d.zeroValue
+			}
+
+			return cursor + 4, nil
+		}
+
+		_, end, err := readLengthInt(buf, cursor-1)
+		if err != nil {
+			return cursor, err
+		}
+		cursor = end + 1
+
+		idx := 0
+		for {
+			currentIndex, end, err := readInt(buf, cursor)
+			if err != nil {
 				return 0, err
 			}
-			cursor += 2
-			return cursor, nil
-		case 'a':
-			cursor++
-			if buf[cursor] != ':' {
-				return cursor, errors.ErrExpected("':' before array length", cursor)
+
+			idx = currentIndex
+			cursor = end
+
+			if idx < d.alen {
+				c, err := d.valueDecoder.Decode(ctx, cursor, depth, unsafe.Pointer(uintptr(p)+uintptr(idx)*d.size))
+				if err != nil {
+					return 0, err
+				}
+				cursor = c
+			} else {
+				c, err := skipValue(buf, cursor, depth)
+				if err != nil {
+					return 0, err
+				}
+				cursor = c
 			}
 
-			cursor++
-			if buf[cursor] == '0' {
-				err := validateEmptyArray(buf, cursor)
-				if err != nil {
-					return cursor, err
-				}
-				cursor = cursor + 4
-
-				dst := (*sliceHeader)(p)
-				if dst.data == nil {
-					dst.data = newArray(d.elemType, 0)
-				} else {
-					dst.len = 0
+			if buf[cursor] == '}' {
+				for idx < d.alen {
+					*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(idx)*d.size)) = d.zeroValue
+					idx++
 				}
 				cursor++
 				return cursor, nil
 			}
-
-			// TODO
-			idx := 0
-			for {
-				if idx < d.alen {
-					c, err := d.valueDecoder.Decode(ctx, cursor, depth, unsafe.Pointer(uintptr(p)+uintptr(idx)*d.size))
-					if err != nil {
-						return 0, err
-					}
-					cursor = c
-				} else {
-					c, err := skipValue(buf, cursor, depth)
-					if err != nil {
-						return 0, err
-					}
-					cursor = c
-				}
-				idx++
-				switch buf[cursor] {
-				case ']':
-					for idx < d.alen {
-						*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(idx)*d.size)) = d.zeroValue
-						idx++
-					}
-					cursor++
-					return cursor, nil
-				case ',':
-					cursor++
-					continue
-				default:
-					return 0, errors.ErrInvalidCharacter(buf[cursor], "array", cursor)
-				}
-			}
-		default:
-			return 0, errors.ErrUnexpectedEnd("array", cursor)
 		}
+	default:
+		return 0, errors.ErrUnexpectedEnd("array", cursor)
 	}
 }

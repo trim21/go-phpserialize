@@ -162,7 +162,7 @@ func (d *intDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 func readInt(buf []byte, cursor int64) (int, int64, error) {
 	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
 	if char(b, cursor) != 'i' {
-		return 0, cursor, errors.ErrExpected("int", cursor)
+		return 0, cursor, errors.ErrExpected("'i' to start a int", cursor)
 	}
 
 	cursor++

@@ -324,7 +324,6 @@ func decodeKeyByBitmapUint16(d *structDecoder, buf []byte, cursor int64) (int64,
 			cursor = i
 			c := char(b, cursor)
 			curBit &= bitmap[keyIdx][largeToSmallTable[c]]
-			fmt.Println(string(buf[cursor:]))
 			if curBit == 0 {
 				return decodeKeyNotFound(b, cursor)
 			}
@@ -334,14 +333,12 @@ func decodeKeyByBitmapUint16(d *structDecoder, buf []byte, cursor int64) (int64,
 		fieldSetIndex := bits.TrailingZeros16(curBit)
 		field := d.sortedFieldSets[fieldSetIndex]
 		cursor++
-		fmt.Println(string(buf[cursor:]))
 		if sLen < field.keyLen {
 			// early match
 			return cursor, nil, nil
 		}
 		cursor++ // '"'
 		cursor++ // ';'
-		fmt.Println(string(buf[cursor:]))
 		return cursor, field, nil
 	}
 

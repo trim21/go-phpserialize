@@ -3,7 +3,6 @@ package errors
 import (
 	"fmt"
 	"reflect"
-	"runtime/debug"
 	"strconv"
 )
 
@@ -134,7 +133,6 @@ func ErrNotAtBeginningOfValue(cursor int64) *SyntaxError {
 }
 
 func ErrUnexpectedEnd(msg string, cursor int64) *SyntaxError {
-	debug.PrintStack()
 	return &SyntaxError{
 		msg:    fmt.Sprintf("json: %s unexpected end of JSON input", msg),
 		Offset: cursor,
@@ -153,7 +151,6 @@ func ErrExpected(msg string, cursor int64) *SyntaxError {
 }
 
 func ErrInvalidCharacter(c byte, context string, cursor int64) *SyntaxError {
-	debug.PrintStack()
 	if c == 0 {
 		return &SyntaxError{
 			msg:    fmt.Sprintf("json: invalid character as %s", context),
@@ -167,7 +164,6 @@ func ErrInvalidCharacter(c byte, context string, cursor int64) *SyntaxError {
 }
 
 func ErrInvalidBeginningOfValue(c byte, cursor int64) *SyntaxError {
-	debug.PrintStack()
 	return &SyntaxError{
 		msg:    fmt.Sprintf("invalid character '%c' looking for beginning of value", c),
 		Offset: cursor,
