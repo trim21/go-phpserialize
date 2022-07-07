@@ -203,20 +203,19 @@ func decodeKeyCharByEscapedChar(buf []byte, cursor int64) ([]byte, int64) {
 	return nil, cursor
 }
 
+// TODO: not finished
 func decodeKeyByBitmapUint8(d *structDecoder, buf []byte, cursor int64) (int64, *structFieldSet, error) {
 	var (
 		curBit uint8 = math.MaxUint8
 	)
 	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
 	for {
-		fmt.Println("for in decodeKeyByBitmapUint8")
 		switch char(b, cursor) {
 		case 'i':
 			// array with int key, should we skip or just omit?
 
 		// case '"':
 		case 's':
-			fmt.Println("switch 's'")
 			cursor++
 			c := char(b, cursor)
 			if c != ':' {

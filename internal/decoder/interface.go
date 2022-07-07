@@ -18,26 +18,22 @@ type interfaceDecoder struct {
 	floatDecoder  *floatDecoder
 	stringDecoder *stringDecoder
 	intDecode     *intDecoder
-	boolDecoder   *boolDecoder
 	mapKeyDecoder *mapKeyDecoder
 }
 
 func newEmptyInterfaceDecoder(structName, fieldName string) *interfaceDecoder {
 	ifaceDecoder := &interfaceDecoder{
-		typ:        emptyInterfaceType,
-		structName: structName,
-		fieldName:  fieldName,
-		floatDecoder: newFloatDecoder(structName, fieldName, func(p unsafe.Pointer, v float64) {
-			*(*interface{})(p) = v
-		}),
-		intDecode: newIntDecoder(interfaceIntType, structName, fieldName, func(p unsafe.Pointer, v int64) {
-			*(*int64)(p) = v
-		}),
-		boolDecoder:   newBoolDecoder(structName, fieldName),
+		typ:           emptyInterfaceType,
+		structName:    structName,
+		fieldName:     fieldName,
+		floatDecoder:  newFloatDecoder(structName, fieldName, func(p unsafe.Pointer, v float64) { *(*any)(p) = v }),
+		intDecode:     newIntDecoder(interfaceIntType, structName, fieldName, func(p unsafe.Pointer, v int64) { *(*any)(p) = v }),
 		stringDecoder: newStringDecoder(structName, fieldName),
 	}
 
-	ifaceDecoder.mapKeyDecoder = newInterfaceMapKeyDecoder(ifaceDecoder.intDecode, ifaceDecoder.stringDecoder)
+	ifaceDecoder.mapKeyDecoder = newInterfaceMapKeyDecoder(
+		newIntDecoder(interfaceIntType, structName, fieldName, func(p unsafe.Pointer, v int64) { *(*int64)(p) = v }),
+		ifaceDecoder.stringDecoder)
 
 	ifaceDecoder.sliceDecoder = newSliceDecoder(
 		ifaceDecoder,
@@ -62,10 +58,9 @@ func newInterfaceDecoder(typ *runtime.Type, structName, fieldName string) *inter
 	emptyIfaceDecoder := newEmptyInterfaceDecoder(structName, fieldName)
 	stringDecoder := newStringDecoder(structName, fieldName)
 	return &interfaceDecoder{
-		typ:         typ,
-		structName:  structName,
-		fieldName:   fieldName,
-		boolDecoder: newBoolDecoder(structName, fieldName),
+		typ:        typ,
+		structName: structName,
+		fieldName:  fieldName,
 		sliceDecoder: newSliceDecoder(
 			emptyIfaceDecoder,
 			emptyInterfaceType,
@@ -81,9 +76,7 @@ func newInterfaceDecoder(typ *runtime.Type, structName, fieldName string) *inter
 			structName,
 			fieldName,
 		),
-		floatDecoder: newFloatDecoder(structName, fieldName, func(p unsafe.Pointer, v float64) {
-			*(*interface{})(p) = v
-		}),
+		floatDecoder:  emptyIfaceDecoder.floatDecoder,
 		stringDecoder: stringDecoder,
 		intDecode:     emptyIfaceDecoder.intDecode,
 		mapKeyDecoder: emptyIfaceDecoder.mapKeyDecoder,
@@ -93,7 +86,7 @@ func newInterfaceDecoder(typ *runtime.Type, structName, fieldName string) *inter
 var (
 	emptyInterfaceType = runtime.Type2RType(reflect.TypeOf((*any)(nil)).Elem())
 	interfaceMapType   = runtime.Type2RType(reflect.TypeOf((*map[any]any)(nil)).Elem())
-	interfaceIntType   = runtime.Type2RType(reflect.TypeOf((*int64)(nil)))
+	interfaceIntType   = runtime.Type2RType(reflect.TypeOf((*int64)(nil))).Elem()
 )
 
 func decodePHPUnmarshaler(buf []byte, cursor, depth int64, unmarshaler Unmarshaler, p unsafe.Pointer) (int64, error) {
@@ -134,7 +127,7 @@ func (d *interfaceDecoder) errUnmarshalType(typ reflect.Type, offset int64) *err
 func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
 
-	runtimeInterfaceValue := *(*interface{})(unsafe.Pointer(&emptyInterface{typ: d.typ, ptr: p}))
+	runtimeInterfaceValue := *(*any)(unsafe.Pointer(&emptyInterface{typ: d.typ, ptr: p}))
 	rv := reflect.ValueOf(runtimeInterfaceValue)
 	if rv.NumMethod() > 0 && rv.CanInterface() {
 		if u, ok := rv.Interface().(Unmarshaler); ok {
@@ -145,7 +138,7 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p un
 				return 0, err
 			}
 			cursor += 2
-			**(**interface{})(unsafe.Pointer(&p)) = nil
+			**(**any)(unsafe.Pointer(&p)) = nil
 			return cursor, nil
 		}
 		return 0, d.errUnmarshalType(rv.Type(), cursor)
@@ -166,7 +159,7 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p un
 			return 0, err
 		}
 		cursor += 2
-		**(**interface{})(unsafe.Pointer(&p)) = nil
+		**(**any)(unsafe.Pointer(&p)) = nil
 		return cursor, nil
 	}
 	decoder, err := CompileToGetDecoder(typ)
@@ -186,22 +179,39 @@ func (d *interfaceDecoder) decodeEmptyInterface(ctx *RuntimeContext, cursor, dep
 		if err != nil {
 			return 0, err
 		}
-		**(**interface{})(unsafe.Pointer(&p)) = v
+		**(**any)(unsafe.Pointer(&p)) = v
 		return cursor, nil
-	case 'd':
+	case 'd': // with op
 		return d.floatDecoder.Decode(ctx, cursor, depth, p)
 	case 's':
-		return d.stringDecoder.Decode(ctx, cursor, depth, p)
-	case 'i':
+		cursor++
+		b, end, err := readString(buf, cursor)
+		if err != nil {
+			return 0, err
+		}
+		*(*any)(p) = string(b)
+		return end, nil
+	case 'i': // with op
 		return d.intDecode.Decode(ctx, cursor, depth, p)
 	case 'b':
-		return d.boolDecoder.Decode(ctx, cursor, depth, p)
+		v, err := readBool(buf, cursor)
+		if err != nil {
+			return 0, err
+		}
+
+		if v {
+			**(**any)(unsafe.Pointer(&p)) = true
+		} else {
+			**(**any)(unsafe.Pointer(&p)) = false
+		}
+
+		return cursor + 3, nil
 	case 'N':
 		if err := validateNull(buf, cursor); err != nil {
 			return 0, err
 		}
 		cursor += 2
-		**(**interface{})(unsafe.Pointer(&p)) = nil
+		**(**any)(unsafe.Pointer(&p)) = nil
 		return cursor, nil
 	}
 	return cursor, errors.ErrInvalidBeginningOfValue(buf[cursor], cursor)
@@ -223,7 +233,7 @@ func (d *mapKeyDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 		if err != nil {
 			return 0, err
 		}
-		**(**interface{})(unsafe.Pointer(&p)) = v
+		*(*any)(p) = v
 		return cursor, nil
 	// string key
 	case 'i':
@@ -233,7 +243,7 @@ func (d *mapKeyDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 		if err != nil {
 			return 0, err
 		}
-		**(**interface{})(unsafe.Pointer(&p)) = v
+		*(*any)(p) = v
 		return cursor, nil
 	default:
 		return 0, errors.ErrExpected("array key", cursor)

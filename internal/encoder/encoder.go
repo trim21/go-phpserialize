@@ -13,7 +13,7 @@ const DefaultStructTag = "php"
 var (
 	typeToEncoderMap sync.Map
 	ctxPool          = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return &Ctx{
 				b:        make([]byte, 0, 1024),
 				KeepRefs: make([]unsafe.Pointer, 0, 8),
@@ -46,7 +46,7 @@ func freeCtx(ctx *Ctx) {
 
 type encoder func(ctx *Ctx, p uintptr) error
 
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	// Technique 1.
 	// Get type information and pointer from interface{} rValue without allocation.
 	typ, ptr := reflect.TypeAndPtrOf(v)

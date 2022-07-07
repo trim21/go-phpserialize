@@ -15,7 +15,7 @@ type emptyInterface struct {
 	ptr unsafe.Pointer
 }
 
-func unmarshal(data []byte, v interface{}) error {
+func unmarshal(data []byte, v any) error {
 	src := make([]byte, len(data)) // append nul byte to the end
 	copy(src, data)
 
@@ -39,7 +39,7 @@ func unmarshal(data []byte, v interface{}) error {
 	return validateEndBuf(src, cursor)
 }
 
-func unmarshalNoEscape(data []byte, v interface{}) error {
+func unmarshalNoEscape(data []byte, v any) error {
 	src := make([]byte, len(data)+1) // append nul byte to the end
 	copy(src, data)
 

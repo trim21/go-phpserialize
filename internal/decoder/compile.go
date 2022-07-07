@@ -151,12 +151,13 @@ func compileMapKey(typ *runtime.Type, structName, fieldName string, structTypeTo
 	if err != nil {
 		return nil, err
 	}
+
 	for {
 		switch t := dec.(type) {
 		case *stringDecoder, *interfaceDecoder:
 			return dec, nil
 		case *boolDecoder, *intDecoder, *uintDecoder:
-			return newWrappedStringDecoder(typ, dec, structName, fieldName), nil
+			return newWrappedStringDecoder(typ, dec, structName, fieldName)
 		case *ptrDecoder:
 			dec = t.dec
 		default:
@@ -387,7 +388,10 @@ func compileStruct(typ *runtime.Type, structName, fieldName string, structTypeTo
 			}
 		} else {
 			if tag.IsString && isStringTagSupportedType(runtime.Type2RType(field.Type)) {
-				dec = newWrappedStringDecoder(runtime.Type2RType(field.Type), dec, structName, field.Name)
+				dec, err = newWrappedStringDecoder(runtime.Type2RType(field.Type), dec, structName, field.Name)
+				if err != nil {
+					return nil, err
+				}
 			}
 			var key string
 			if tag.Key != "" {

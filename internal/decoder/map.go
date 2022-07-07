@@ -126,6 +126,7 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 		if err != nil {
 			return 0, err
 		}
+
 		d.mapassign(d.mapType, mapValue, k, v)
 		cursor = valueCursor
 		if buf[cursor] == '}' {

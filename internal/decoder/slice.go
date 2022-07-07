@@ -1,7 +1,6 @@
 package decoder
 
 import (
-	"fmt"
 	"reflect"
 	"sync"
 	"unsafe"
@@ -47,8 +46,7 @@ func newSliceDecoder(dec Decoder, elemType *runtime.Type, size uintptr, structNa
 		isElemPointerType: elemType.Kind() == reflect.Ptr || elemType.Kind() == reflect.Map,
 		size:              size,
 		arrayPool: sync.Pool{
-			New: func() interface{} {
-				fmt.Println("slice decoder new slice")
+			New: func() any {
 				return &sliceHeader{
 					data: newArray(elemType, defaultSliceCapacity),
 					len:  0,

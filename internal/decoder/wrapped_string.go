@@ -1,7 +1,6 @@
 package decoder
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 	"unsafe"
@@ -23,7 +22,7 @@ type wrappedStringDecoder struct {
 	isPtrType     bool
 }
 
-func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldName string) *wrappedStringDecoder {
+func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldName string) (*wrappedStringDecoder, error) {
 	var innerDec stringWrappedDecoder
 	switch v := dec.(type) {
 	case *boolDecoder:
@@ -34,6 +33,8 @@ func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldNa
 		innerDec = newStringUintDecoder(structName, fieldName, v)
 	case *intDecoder:
 		innerDec = newStringIntDecoder(structName, fieldName, v)
+	default:
+		return nil, &errors.UnsupportedTypeError{Type: runtime.RType2Type(typ)}
 	}
 
 	return &wrappedStringDecoder{
@@ -43,11 +44,10 @@ func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldNa
 		structName:    structName,
 		fieldName:     fieldName,
 		isPtrType:     typ.Kind() == reflect.Ptr,
-	}
+	}, nil
 }
 
 func (d *wrappedStringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
-	fmt.Println("wrappedStringDecoder", string(ctx.Buf[cursor:]))
 	bytes, c, err := d.stringDecoder.decodeByte(ctx.Buf, cursor)
 	if err != nil {
 		return 0, err
@@ -58,14 +58,10 @@ func (d *wrappedStringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, 
 		}
 		return c, nil
 	}
-	// bytes = append(bytes, nul)
-	// oldBuf := ctx.Buf
-	// ctx.Buf = bytes
-	fmt.Println(string(ctx.Buf))
+
 	if err := d.dec.DecodeString(ctx, bytes, cursor, p); err != nil {
 		return 0, err
 	}
-	// ctx.Buf = oldBuf
 	return c, nil
 }
 
@@ -125,6 +121,8 @@ func (d stringUintDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCu
 	return err
 }
 
+var _ stringWrappedDecoder = (*stringIntDecoder)(nil)
+
 func newStringIntDecoder(structName string, fieldName string, decoder *intDecoder) *stringIntDecoder {
 	return &stringIntDecoder{intDecoder: decoder}
 }
@@ -134,7 +132,6 @@ type stringIntDecoder struct {
 }
 
 func (d *stringIntDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error {
-	fmt.Println(string(bytes))
 	_, err := d.intDecoder.processBytes(bytes, topCursor, p)
 	return err
 }

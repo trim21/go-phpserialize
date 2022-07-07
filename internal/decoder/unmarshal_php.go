@@ -82,7 +82,7 @@ func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p
 	if s, ok := unquoteBytes(src); ok {
 		src = s
 	}
-	v := *(*interface{})(unsafe.Pointer(&emptyInterface{
+	v := *(*any)(unsafe.Pointer(&emptyInterface{
 		typ: d.typ,
 		ptr: *(*unsafe.Pointer)(unsafe.Pointer(&p)),
 	}))

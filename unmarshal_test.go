@@ -350,3 +350,59 @@ func TestUnmarshal_string_wrapper(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int(233), c.Value)
 }
+
+func TestUnmarshal_map(t *testing.T) {
+	t.Parallel()
+
+	t.Run("map[string]string", func(t *testing.T) {
+		raw := `a:1:{s:5:"value";a:5:{s:3:"one";s:1:"1";s:3:"two";s:1:"2";s:5:"three";s:1:"3";s:4:"four";s:1:"4";s:4:"five";s:1:"5";}}`
+		var c struct {
+			Value map[string]string `php:"value"`
+		}
+
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{
+			"one":   "1",
+			"two":   "2",
+			"three": "3",
+			"four":  "4",
+			"five":  "5",
+		}, c.Value)
+	})
+
+	t.Run("map[any]string", func(t *testing.T) {
+		raw := `a:1:{s:5:"value";a:5:{i:1;s:3:"one";i:2;s:3:"two";i:3;s:5:"three";i:4;s:4:"four";i:5;s:4:"five";}}`
+		var c struct {
+			Value map[any]string `php:"value"`
+		}
+
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, map[any]string{
+			int64(1): "one",
+			int64(2): "two",
+			int64(3): "three",
+			int64(4): "four",
+			int64(5): "five",
+		}, c.Value)
+	})
+
+	t.Run("any", func(t *testing.T) {
+		raw := `a:1:{s:5:"value";a:5:{i:1;s:3:"one";i:2;s:3:"two";i:3;s:5:"three";i:4;s:4:"four";i:5;s:4:"five";}}`
+		var c struct {
+			Value any `php:"value"`
+		}
+
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, map[any]any{
+			int64(1): "one",
+			int64(2): "two",
+			int64(3): "three",
+			int64(4): "four",
+			int64(5): "five",
+		}, c.Value)
+	})
+
+}

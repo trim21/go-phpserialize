@@ -159,7 +159,9 @@ func (d *intDecoder) processBytes(bytes []byte, cursor int64, p unsafe.Pointer) 
 			return 0, d.typeError(bytes, cursor)
 		}
 	}
+
 	d.op(p, i64)
+
 	return cursor, nil
 }
 

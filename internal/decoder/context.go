@@ -14,7 +14,7 @@ type RuntimeContext struct {
 
 var (
 	runtimeContextPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return &RuntimeContext{}
 		},
 	}
@@ -287,4 +287,30 @@ func parseByteStringInt(b []byte) int {
 	}
 
 	return l
+}
+
+func readBool(buf []byte, cursor int64) (bool, error) {
+	if cursor+1 >= int64(len(buf)) {
+		return false, errors.ErrUnexpectedEnd("null", cursor)
+	}
+
+	if buf[cursor+1] != ':' {
+		return false, errors.ErrInvalidCharacter(buf[cursor+1], "bool", cursor)
+	}
+
+	var v bool
+	switch buf[cursor+2] {
+	case '1':
+		v = true
+	case '0':
+		v = false
+	default:
+		return false, errors.ErrInvalidCharacter(buf[cursor+2], "bool", cursor)
+	}
+
+	if buf[cursor+3] != ';' {
+		return false, errors.ErrInvalidCharacter(buf[cursor+3], "bool", cursor+3)
+	}
+
+	return v, nil
 }
