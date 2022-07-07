@@ -1,12 +1,14 @@
 # go-phpserialize
 
-PHP `serialize()` and `unserialize()` (in future) for Go.
+PHP `serialize()` and `unserialize()` for Go.
 
 Support All go type including `map`, `slice`, `strcut`, and simple type like `int`, `uint` ...etc.
 
 ## Use case:
 
-You serialize all data into php array only, php object (or stdClass) is not supported.
+You serialize all data into php array only, and decoding php serialized array only
+
+php object (or stdClass) is not supported.
 
 ### Advantage:
 
@@ -15,7 +17,7 @@ Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 #### Performance Hint
 
 Encoder will try to build an optimized path for a type. When encoding `interface`,
-encoder will fall back to reflect, which is much slower. 
+encoder will fall back to reflect, which is much slower.
 
 If you care about performance, you should avoid using interface.
 
@@ -58,7 +60,7 @@ type Inner struct {
 type With struct {
 	Users   []User `php:"users"`
 	Obj     Inner  `php:"obj"`
-  	Ignored bool   `php:"-"`
+	Ignored bool   `php:"-"`
 }
 
 type User struct {
@@ -92,10 +94,10 @@ TL;DR: Don't unmarshal content you can't trust.
 
 Attackers may consume large memory with very few bytes.
 
-php serialized array has a length prefix `a:1:{i:0;s:3:"one";}`, when decoding php serialized array into go `slice` or go `map`, 
+php serialized array has a length prefix `a:1:{i:0;s:3:"one";}`, when decoding php serialized array into go `slice` or go `map`,
 `go-phpserialize` may call golang's `make()` to create a map or slice with given length.
 
 So a malicious input like `a:100000000:{}` may become `make([]T, 100000000)` and consume high memory.
 
-If you have to decode some un-trusted bytes, make sure only decode them into fixed-length golang array or struct, 
+If you have to decode some un-trusted bytes, make sure only decode them into fixed-length golang array or struct,
 never decode them to `interface`, `slice` or `map`.
