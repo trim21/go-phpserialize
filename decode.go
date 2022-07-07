@@ -30,7 +30,6 @@ func unmarshal(data []byte, v interface{}) error {
 	}
 	ctx := decoder.TakeRuntimeContext()
 	ctx.Buf = src
-	ctx.Option.Flags = 0
 	cursor, err := dec.Decode(ctx, 0, 0, header.ptr)
 	if err != nil {
 		decoder.ReleaseRuntimeContext(ctx)
@@ -56,7 +55,6 @@ func unmarshalNoEscape(data []byte, v interface{}) error {
 
 	ctx := decoder.TakeRuntimeContext()
 	ctx.Buf = src
-	ctx.Option.Flags = 0
 	cursor, err := dec.Decode(ctx, 0, 0, noescape(header.ptr))
 	if err != nil {
 		decoder.ReleaseRuntimeContext(ctx)

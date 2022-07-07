@@ -9,16 +9,13 @@ import (
 )
 
 type RuntimeContext struct {
-	Buf    []byte
-	Option *Option
+	Buf []byte
 }
 
 var (
 	runtimeContextPool = sync.Pool{
 		New: func() interface{} {
-			return &RuntimeContext{
-				Option: &Option{},
-			}
+			return &RuntimeContext{}
 		},
 	}
 )

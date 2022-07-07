@@ -97,5 +97,5 @@ php serialized array has a length prefix `a:1:{i:0;s:3:"one";}`, when decoding p
 
 So a malicious input like `a:100000000:{}` may become `make([]T, 100000000)` and consume high memory.
 
-If you have to decode some un-trusted bytes, make sure only decode then into fixed-length golang array or struct, 
+If you have to decode some un-trusted bytes, make sure only decode them into fixed-length golang array or struct, 
 never decode them to `interface`, `slice` or `map`.
