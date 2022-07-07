@@ -83,6 +83,19 @@ func main() {
 }
 ```
 
-Marshaler is heavily inspired by https://github.com/goccy/go-json
+Heavily inspired by https://github.com/goccy/go-json
 
-this is different with https://github.com/elliotchance/phpserialize
+
+## Security
+
+TL;DR: Don't unmarshal content you can't trust.
+
+Attackers may consume large memory with very few bytes.
+
+php serialized array has a length prefix `a:1:{i:0;s:3:"one";}`, when decoding php serialized array into go `slice` or go `map`, 
+`go-phpserialize` may call golang's `make()` to create a map or slice with given length.
+
+So a malicious input like `a:100000000:{}` may become `make([]T, 100000000)` and consume high memory.
+
+If you have to decode some un-trusted bytes, make sure only decode them into fixed-length golang array or struct, 
+never decode them to `interface`, `slice` or `map`.
