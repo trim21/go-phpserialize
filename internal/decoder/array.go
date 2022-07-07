@@ -50,17 +50,16 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			return cursor, errors.ErrExpected("':' before array length", cursor)
 		}
 
+		for i := 0; i < d.alen; i++ {
+			*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(i)*d.size)) = d.zeroValue
+		}
+
 		cursor++
 		if buf[cursor] == '0' {
 			err := validateEmptyArray(buf, cursor)
 			if err != nil {
 				return cursor, err
 			}
-
-			for i := 0; i < d.alen; i++ {
-				*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(i)*d.size)) = d.zeroValue
-			}
-
 			return cursor + 4, nil
 		}
 
@@ -95,11 +94,6 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			}
 
 			if buf[cursor] == '}' {
-				idx++
-				for idx < d.alen {
-					*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(idx)*d.size)) = d.zeroValue
-					idx++
-				}
 				cursor++
 				return cursor, nil
 			}
