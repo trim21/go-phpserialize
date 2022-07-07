@@ -1,7 +1,6 @@
 package decoder
 
 import (
-	"fmt"
 	"strconv"
 	"unsafe"
 
@@ -84,7 +83,6 @@ func (d *floatDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, erro
 }
 
 func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
-	fmt.Println("floatDecoder.Decode")
 	buf := ctx.Buf
 	bytes, cursor, err := d.decodeByte(buf, cursor)
 	if err != nil {
