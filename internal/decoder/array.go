@@ -46,17 +46,31 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			cursor += 2
 			return cursor, nil
 		case 'a':
-			// TODO
-			idx := 0
 			cursor++
-			if buf[cursor] == ']' {
-				for idx < d.alen {
-					*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(idx)*d.size)) = d.zeroValue
-					idx++
+			if buf[cursor] != ':' {
+				return cursor, errors.ErrExpected("':' before array length", cursor)
+			}
+
+			cursor++
+			if buf[cursor] == '0' {
+				err := validateEmptyArray(buf, cursor)
+				if err != nil {
+					return cursor, err
+				}
+				cursor = cursor + 4
+
+				dst := (*sliceHeader)(p)
+				if dst.data == nil {
+					dst.data = newArray(d.elemType, 0)
+				} else {
+					dst.len = 0
 				}
 				cursor++
 				return cursor, nil
 			}
+
+			// TODO
+			idx := 0
 			for {
 				if idx < d.alen {
 					c, err := d.valueDecoder.Decode(ctx, cursor, depth, unsafe.Pointer(uintptr(p)+uintptr(idx)*d.size))

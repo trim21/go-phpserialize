@@ -225,3 +225,42 @@ func TestUnmarshal_struct_int(t *testing.T) {
 		require.Equal(t, int64(5740000), c.F)
 	})
 }
+
+func TestUnmarshal_slice(t *testing.T) {
+	t.Parallel()
+
+	t.Run("empty", func(t *testing.T) {
+		type Container struct {
+			Value []string `php:"value"`
+		}
+
+		var c Container
+		raw := `a:1:{s:5:"value";a:0:{}}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Len(t, c.Value, 0)
+	})
+
+	t.Run("string", func(t *testing.T) {
+		type Container struct {
+			Value []string `php:"value"`
+		}
+		var c Container
+		raw := `a:3:{s:2:"bb";b:1;s:5:"value";a:3:{i:0;s:3:"one";i:1;s:3:"two";i:2;s:1:"q";}}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, []string{"one", "two", "q"}, c.Value)
+	})
+}
+
+func TestUnmarshal_skip_value(t *testing.T) {
+	type Container struct {
+		Value []string `php:"value"`
+	}
+
+	var c Container
+	raw := `a:3:{s:2:"bb";b:1;s:5:"value";a:3:{i:0;s:3:"one";i:1;s:3:"two";i:2;s:1:"q";}s:6:"value2";a:3:{i:0;s:1:"1";i:1;s:1:"2";i:2;s:1:"3";}}`
+	err := phpserialize.Unmarshal([]byte(raw), &c)
+	require.NoError(t, err)
+	require.Equal(t, []string{"one", "two", "q"}, c.Value)
+}

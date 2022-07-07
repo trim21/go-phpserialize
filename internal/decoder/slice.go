@@ -124,16 +124,11 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 
 		cursor++
 		if buf[cursor] == '0' {
-			if buf[cursor+1] != ':' {
-				return cursor, errors.ErrExpected("':' before array length", cursor+1)
+			err := validateEmptyArray(buf, cursor)
+			if err != nil {
+				return cursor, err
 			}
-			if buf[cursor+2] != '{' {
-				return cursor, errors.ErrInvalidBeginningOfArray(buf[cursor+2], cursor+2)
-			}
-			if buf[cursor+3] != '}' {
-				return cursor, errors.ErrExpected("empty array end with ']'", cursor+3)
-
-			}
+			cursor = cursor + 3
 
 			dst := (*sliceHeader)(p)
 			if dst.data == nil {
@@ -220,40 +215,5 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 		return 0, d.errNumber(cursor)
 	default:
 		return 0, errors.ErrUnexpectedEnd("slice", cursor)
-	}
-}
-
-func (d *sliceDecoder) decodeByteKey(buf []byte, cursor int64) ([]byte, int64, error) {
-	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
-	if char(b, cursor) != 'i' {
-		return nil, cursor, errors.ErrExpected("int", cursor)
-	}
-
-	cursor++
-	if char(b, cursor) != ':' {
-		return nil, cursor, errors.ErrExpected("int sep ':'", cursor)
-	}
-	cursor++
-
-	switch char(b, cursor) {
-	case '0':
-		cursor++
-		return numZeroBuf, cursor, nil
-	case '-', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		start := cursor
-		cursor++
-		for numTable[char(b, cursor)] {
-			cursor++
-		}
-		num := buf[start:cursor]
-		return num, cursor + 1, nil
-	case 'N':
-		if err := validateNull(buf, cursor); err != nil {
-			return nil, 0, err
-		}
-		cursor += 2
-		return nil, cursor, nil
-	default:
-		return nil, 0, errors.ErrExpected("php array to go slice with only int key", cursor)
 	}
 }

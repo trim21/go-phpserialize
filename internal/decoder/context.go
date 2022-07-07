@@ -69,63 +69,35 @@ func skipLengthWithBothColon(buf []byte, cursor int64) (int64, error) {
 	return cursor, nil
 }
 
-func skipObject(buf []byte, cursor, depth int64) (int64, error) {
-	braceCount := 1
-	for {
-		switch buf[cursor] {
-		case '{':
-			braceCount++
-			depth++
-			if depth > maxDecodeNestingDepth {
-				return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
-			}
-		case '}':
-			depth--
-			braceCount--
-			if braceCount == 0 {
-				return cursor + 1, nil
-			}
-		case '[':
-			depth++
-			if depth > maxDecodeNestingDepth {
-				return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
-			}
-		case ']':
-			depth--
-		case '"':
-			for {
-				cursor++
-				switch buf[cursor] {
-				case '\\':
-					cursor++
-					if buf[cursor] == nul {
-						return 0, errors.ErrUnexpectedEnd("string of object", cursor)
-					}
-				case '"':
-					goto SWITCH_OUT
-				case nul:
-					return 0, errors.ErrUnexpectedEnd("string of object", cursor)
-				}
-			}
-		case nul:
-			return 0, errors.ErrUnexpectedEnd("object of object", cursor)
-		}
-	SWITCH_OUT:
-		cursor++
+func skipString(buf []byte, cursor int64) (int64, error) {
+	cursor++
+	sLen, end, err := readLength(buf, cursor)
+	if err != nil {
+		return cursor, err
 	}
+
+	return end + sLen + 3, nil
 }
 
 func skipArray(buf []byte, cursor, depth int64) (int64, error) {
 	bracketCount := 1
+	end, err := skipLengthWithBothColon(buf, cursor)
+	if err != nil {
+		return cursor, err
+	}
+	cursor = end
+
 	for {
 		switch buf[cursor] {
-		case '[':
-			bracketCount++
-			depth++
-			if depth > maxDecodeNestingDepth {
-				return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
+		// '{' and '}' may only appear in array or string,
+		// we will skip value content, it's easy to only scan char '{' and '}'
+		case 's':
+			end, err := skipString(buf, cursor)
+			if err != nil {
+				return cursor, err
 			}
-		case ']':
+			cursor = end
+		case '}':
 			bracketCount--
 			depth--
 			if bracketCount == 0 {
@@ -136,87 +108,58 @@ func skipArray(buf []byte, cursor, depth int64) (int64, error) {
 			if depth > maxDecodeNestingDepth {
 				return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
 			}
-		case '}':
-			depth--
-		case '"':
-			for {
-				cursor++
-				switch buf[cursor] {
-				case '\\':
-					cursor++
-					if buf[cursor] == nul {
-						return 0, errors.ErrUnexpectedEnd("string of object", cursor)
-					}
-				case '"':
-					goto SWITCH_OUT
-				case nul:
-					return 0, errors.ErrUnexpectedEnd("string of object", cursor)
-				}
-			}
-		case nul:
-			return 0, errors.ErrUnexpectedEnd("array of object", cursor)
+			cursor++
+		default:
+			cursor++
 		}
-	SWITCH_OUT:
-		cursor++
 	}
 }
 
 func skipValue(buf []byte, cursor, depth int64) (int64, error) {
-	for {
-		switch buf[cursor] {
-		case ' ', '\t', '\n', '\r':
-			cursor++
-			continue
-		case '{':
-			return skipObject(buf, cursor+1, depth+1)
-		case '[':
-			return skipArray(buf, cursor+1, depth+1)
-		case '"':
-			for {
-				cursor++
-				switch buf[cursor] {
-				case '\\':
-					cursor++
-					if buf[cursor] == nul {
-						return 0, errors.ErrUnexpectedEnd("string of object", cursor)
-					}
-				case '"':
-					return cursor + 1, nil
-				case nul:
-					return 0, errors.ErrUnexpectedEnd("string of object", cursor)
-				}
-			}
-		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			for {
-				cursor++
-				if floatTable[buf[cursor]] {
-					continue
-				}
-				break
-			}
-			return cursor, nil
-		case 't':
-			if err := validateTrue(buf, cursor); err != nil {
-				return 0, err
-			}
-			cursor += 4
-			return cursor, nil
-		case 'f':
-			if err := validateFalse(buf, cursor); err != nil {
-				return 0, err
-			}
-			cursor += 5
-			return cursor, nil
-		case 'n':
-			if err := validateNull(buf, cursor); err != nil {
-				return 0, err
-			}
-			cursor += 4
-			return cursor, nil
-		default:
-			return cursor, errors.ErrUnexpectedEnd("null", cursor)
+
+	switch buf[cursor] {
+	case 'a':
+		return skipArray(buf, cursor+1, depth+1)
+	case 's':
+		return skipString(buf, cursor+1)
+	// case 'd':
+
+	case 'i':
+		cursor++
+		end, err := skipLengthWithBothColon(buf, cursor)
+		if err != nil {
+			return cursor, err
 		}
+		return end + 1, nil
+	case 'b':
+		cursor++
+		if buf[cursor] != ':' {
+			return 0, errors.ErrUnexpectedEnd("':' before bool value", cursor)
+		}
+		cursor++
+		switch buf[cursor] {
+		case '0':
+		case '1':
+		default:
+			return 0, errors.ErrUnexpectedEnd("'0' pr '1' af bool value", cursor)
+		}
+		cursor++
+		if buf[cursor] != ';' {
+			return 0, errors.ErrUnexpectedEnd("';' end bool value", cursor)
+		}
+		cursor++
+		return cursor, nil
+
+	case 'N':
+		if err := validateNull(buf, cursor); err != nil {
+			return 0, err
+		}
+		cursor += 2
+		return cursor, nil
+	default:
+		return cursor, errors.ErrUnexpectedEnd("null", cursor)
 	}
+
 }
 
 func validateTrue(buf []byte, cursor int64) error {
@@ -251,6 +194,26 @@ func validateFalse(buf []byte, cursor int64) error {
 	if buf[cursor+4] != 'e' {
 		return errors.ErrInvalidCharacter(buf[cursor+4], "false", cursor)
 	}
+	return nil
+}
+
+// caller should check `a:0` , this function check  `0:{};`
+func validateEmptyArray(buf []byte, cursor int64) error {
+	if cursor+4 >= int64(len(buf)) {
+		return errors.ErrUnexpectedEnd("null", cursor)
+	}
+
+	if buf[cursor+1] != ':' {
+		return errors.ErrExpected("':' before array length", cursor+1)
+	}
+	if buf[cursor+2] != '{' {
+		return errors.ErrInvalidBeginningOfArray(buf[cursor+2], cursor+2)
+	}
+	if buf[cursor+3] != '}' {
+		return errors.ErrExpected("empty array end with '}'", cursor+3)
+
+	}
+
 	return nil
 }
 
