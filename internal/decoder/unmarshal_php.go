@@ -2,7 +2,6 @@ package decoder
 
 import (
 	"bytes"
-	"encoding"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -11,6 +10,10 @@ import (
 	"github.com/trim21/go-phpserialize/internal/errors"
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
+
+type Unmarshaler interface {
+	UnmarshalPHP([]byte) error
+}
 
 type unmarshalPHPDecoder struct {
 	typ        *runtime.Type
@@ -83,7 +86,7 @@ func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p
 		typ: d.typ,
 		ptr: *(*unsafe.Pointer)(unsafe.Pointer(&p)),
 	}))
-	if err := v.(encoding.TextUnmarshaler).UnmarshalText(src); err != nil {
+	if err := v.(Unmarshaler).UnmarshalPHP(src); err != nil {
 		d.annotateError(cursor, err)
 		return 0, err
 	}

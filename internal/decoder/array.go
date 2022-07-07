@@ -95,6 +95,7 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			}
 
 			if buf[cursor] == '}' {
+				idx++
 				for idx < d.alen {
 					*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(idx)*d.size)) = d.zeroValue
 					idx++

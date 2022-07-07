@@ -6,7 +6,6 @@ import (
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/ifce"
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
@@ -97,7 +96,7 @@ var (
 	interfaceIntType   = runtime.Type2RType(reflect.TypeOf((*int64)(nil)))
 )
 
-func decodeTextUnmarshaler(buf []byte, cursor, depth int64, unmarshaler ifce.Unmarshaler, p unsafe.Pointer) (int64, error) {
+func decodePHPUnmarshaler(buf []byte, cursor, depth int64, unmarshaler Unmarshaler, p unsafe.Pointer) (int64, error) {
 	start := cursor
 	end, err := skipValue(buf, cursor, depth)
 	if err != nil {
@@ -138,8 +137,8 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p un
 	runtimeInterfaceValue := *(*interface{})(unsafe.Pointer(&emptyInterface{typ: d.typ, ptr: p}))
 	rv := reflect.ValueOf(runtimeInterfaceValue)
 	if rv.NumMethod() > 0 && rv.CanInterface() {
-		if u, ok := rv.Interface().(ifce.Unmarshaler); ok {
-			return decodeTextUnmarshaler(buf, cursor, depth, u, p)
+		if u, ok := rv.Interface().(Unmarshaler); ok {
+			return decodePHPUnmarshaler(buf, cursor, depth, u, p)
 		}
 		if buf[cursor] == 'N' {
 			if err := validateNull(buf, cursor); err != nil {

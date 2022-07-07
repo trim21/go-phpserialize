@@ -121,7 +121,7 @@ func skipValue(buf []byte, cursor, depth int64) (int64, error) {
 	case 'a':
 		return skipArray(buf, cursor+1, depth+1)
 	case 's':
-		return skipString(buf, cursor+1)
+		return skipString(buf, cursor)
 	// case 'd':
 
 	case 'i':

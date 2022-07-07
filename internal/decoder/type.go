@@ -3,8 +3,6 @@ package decoder
 import (
 	"reflect"
 	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/ifce"
 )
 
 type Decoder interface {
@@ -17,5 +15,5 @@ const (
 )
 
 var (
-	unmarshalPHPType = reflect.TypeOf((*ifce.Unmarshaler)(nil)).Elem()
+	unmarshalPHPType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
 )

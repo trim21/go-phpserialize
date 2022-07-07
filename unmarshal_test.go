@@ -284,7 +284,7 @@ func TestUnmarshal_array(t *testing.T) {
 			Value [5]string `php:"value"`
 		}
 		var c Container
-		raw := `a:3:{s:2:"bb";b:1;s:5:"value";a:3:{i:0;s:3:"one";i:1;s:3:"two";i:2;s:1:"q";}}`
+		raw := `a:1:{s:5:"value";a:3:{i:0;s:3:"one";i:1;s:3:"two";i:2;s:1:"q";}}`
 		err := phpserialize.Unmarshal([]byte(raw), &c)
 		require.NoError(t, err)
 		require.Equal(t, [5]string{"one", "two", "q"}, c.Value)
@@ -312,4 +312,26 @@ func TestUnmarshal_skip_value(t *testing.T) {
 	err := phpserialize.Unmarshal([]byte(raw), &c)
 	require.NoError(t, err)
 	require.Equal(t, []string{"one", "two", "q"}, c.Value)
+}
+
+var _ phpserialize.Unmarshaler = (*unmarshaler)(nil)
+
+type unmarshaler []byte
+
+func (u *unmarshaler) UnmarshalPHP(bytes []byte) error {
+	*u = append((*u)[0:0], bytes...)
+
+	return nil
+}
+
+func TestUnmarshal_unmarshaler(t *testing.T) {
+	type Container struct {
+		Value unmarshaler `php:"value"`
+	}
+
+	var c Container
+	raw := `a:1:{s:5:"value";a:3:{i:0;s:3:"one";i:1;s:3:"two";i:2;s:1:"q";}}`
+	err := phpserialize.Unmarshal([]byte(raw), &c)
+	require.NoError(t, err)
+	require.Equal(t, `a:3:{i:0;s:3:"one";i:1;s:3:"two";i:2;s:1:"q";}`, string(c.Value))
 }
