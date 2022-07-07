@@ -1,7 +1,6 @@
 package decoder
 
 import (
-	"encoding/base64"
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
@@ -46,19 +45,13 @@ func (d *bytesDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 		return c, nil
 	}
 	cursor = c
-	decodedLen := base64.StdEncoding.DecodedLen(len(bytes))
-	b := make([]byte, decodedLen)
-	n, err := base64.StdEncoding.Decode(b, bytes)
-	if err != nil {
-		return 0, err
-	}
-	*(*[]byte)(p) = b[:n]
+	*(*[]byte)(p) = bytes
 	return cursor, nil
 }
 
 func (d *bytesDecoder) decodeBinary(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) ([]byte, int64, error) {
 	buf := ctx.Buf
-	if buf[cursor] == '[' {
+	if buf[cursor] == 'a' {
 		if d.sliceDecoder == nil {
 			return nil, 0, &errors.UnmarshalTypeError{
 				Type:   runtime.RType2Type(d.typ),

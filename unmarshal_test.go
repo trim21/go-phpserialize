@@ -36,6 +36,34 @@ func TestUnmarshal_struct_string(t *testing.T) {
 	})
 }
 
+func TestUnmarshal_struct_bytes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("value", func(t *testing.T) {
+		type Container struct {
+			F []byte `php:"f1q"`
+		}
+
+		var c Container
+		raw := `a:1:{s:3:"f1q";s:10:"0147852369";}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, []byte("0147852369"), c.F)
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		type Container struct {
+			F []byte `php:"f"`
+		}
+
+		var c Container
+		raw := `a:0:{}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Nil(t, c.F)
+	})
+}
+
 func TestUnmarshal_struct_float(t *testing.T) {
 	t.Parallel()
 
