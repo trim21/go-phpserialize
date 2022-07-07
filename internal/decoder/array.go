@@ -50,6 +50,7 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			return cursor, errors.ErrExpected("':' before array length", cursor)
 		}
 
+		// set zero value first, php array may skip some index
 		for i := 0; i < d.alen; i++ {
 			*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(i)*d.size)) = d.zeroValue
 		}
