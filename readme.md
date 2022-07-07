@@ -88,4 +88,14 @@ Heavily inspired by https://github.com/goccy/go-json
 
 ## Security
 
-Don't unmarshal content you can't trust, it may cause a high memory usage and causing deny of service.
+TL;DR: Don't unmarshal content you can't trust.
+
+Attackers may consume large memory with very few bytes.
+
+php serialized array has a length prefix `a:1:{i:0;s:3:"one";}`, when decoding php serialized array into go `slice` or go `map`, 
+`go-phpserialize` may call golang's `make()` to create a map or slice with given length.
+
+So a malicious input like `a:1000000:{}` will become `make([]T, 1000000)` and consume high memory.
+
+If you have to decode some un-trusted bytes, make sure only decode then into fixed-length golang array or struct, 
+never decode them to `interface`, `slice` or `map`.
