@@ -432,5 +432,31 @@ func TestUnmarshal_map(t *testing.T) {
 			int64(5): "five",
 		}, c.Value)
 	})
+}
 
+func TestUnmarshal_ptr_string(t *testing.T) {
+	t.Parallel()
+
+	t.Run("value", func(t *testing.T) {
+		var c struct {
+			F *string `php:"f1q"`
+		}
+
+		raw := `a:1:{s:3:"f1q";s:10:"0147852369";}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.NotNil(t, c.F)
+		require.Equal(t, "0147852369", *c.F)
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		var c struct {
+			F *string `php:"f"`
+		}
+
+		raw := `a:0:{}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Nil(t, c.F)
+	})
 }
