@@ -1,7 +1,6 @@
 package decoder
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -13,7 +12,6 @@ import (
 )
 
 var (
-	jsonNumberType   = reflect.TypeOf(json.Number(""))
 	typeAddr         *runtime.TypeAddr
 	cachedDecoderMap unsafe.Pointer // map[uintptr]decoder
 	cachedDecoder    []Decoder
@@ -157,7 +155,7 @@ func compileMapKey(typ *runtime.Type, structName, fieldName string, structTypeTo
 		switch t := dec.(type) {
 		case *stringDecoder, *interfaceDecoder:
 			return dec, nil
-		case *boolDecoder, *intDecoder, *uintDecoder, *numberDecoder:
+		case *boolDecoder, *intDecoder, *uintDecoder:
 			return newWrappedStringDecoder(typ, dec, structName, fieldName), nil
 		case *ptrDecoder:
 			dec = t.dec
@@ -248,11 +246,6 @@ func compileFloat64(structName, fieldName string) (Decoder, error) {
 }
 
 func compileString(typ *runtime.Type, structName, fieldName string) (Decoder, error) {
-	if typ == runtime.Type2RType(jsonNumberType) {
-		return newNumberDecoder(structName, fieldName, func(p unsafe.Pointer, v json.Number) {
-			*(*json.Number)(p) = v
-		}), nil
-	}
 	return newStringDecoder(structName, fieldName), nil
 }
 

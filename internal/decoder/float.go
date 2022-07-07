@@ -92,11 +92,16 @@ func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 	if buf[cursor] != ';' {
 		return cursor, errors.ErrExpected("float end with ';'", cursor)
 	}
+	cursor++
 
 	if bytes == nil {
 		return cursor, nil
 	}
 
+	return d.processBytes(bytes, cursor, p)
+}
+
+func (d *floatDecoder) processBytes(bytes []byte, cursor int64, p unsafe.Pointer) (int64, error) {
 	s := *(*string)(unsafe.Pointer(&bytes))
 	f64, err := strconv.ParseFloat(s, 64)
 	if err != nil {
@@ -105,5 +110,5 @@ func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 
 	d.op(p, f64)
 
-	return cursor + 1, nil
+	return cursor, nil
 }

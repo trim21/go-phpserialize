@@ -107,6 +107,11 @@ func (d *uintDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.
 		return c, nil
 	}
 	cursor = c
+
+	return d.processBytes(bytes, cursor, p)
+}
+
+func (d *uintDecoder) processBytes(bytes []byte, cursor int64, p unsafe.Pointer) (int64, error) {
 	u64, err := d.parseUint(bytes)
 	if err != nil {
 		return 0, d.typeError(bytes, cursor)

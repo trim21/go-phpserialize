@@ -106,18 +106,3 @@ func (d *stringDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, err
 
 	return s, end, nil
 }
-
-var unescapeMap = [256]byte{
-	'"':  '"',
-	'\\': '\\',
-	'/':  '/',
-	'b':  '\b',
-	'f':  '\f',
-	'n':  '\n',
-	'r':  '\r',
-	't':  '\t',
-}
-
-func unsafeAdd(ptr unsafe.Pointer, offset int) unsafe.Pointer {
-	return unsafe.Pointer(uintptr(ptr) + uintptr(offset))
-}
