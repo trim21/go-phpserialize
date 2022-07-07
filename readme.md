@@ -83,6 +83,9 @@ func main() {
 }
 ```
 
-Marshaler is heavily inspired by https://github.com/goccy/go-json
+Heavily inspired by https://github.com/goccy/go-json
 
-this is different with https://github.com/elliotchance/phpserialize
+
+## Security
+
+Don't unmarshal content you can't trust, it may cause a high memory usage and causing deny of service.
