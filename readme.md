@@ -8,7 +8,7 @@ Support All go type including `map`, `slice`, `strcut`, and simple type like `in
 
 You serialize all data into php array only, and decoding php serialized array only
 
-php object (or stdClass) is not supported.
+decoding php object (or class) is not supported yet.
 
 ### Advantage:
 
@@ -87,14 +87,14 @@ func main() {
 
 Heavily inspired by https://github.com/goccy/go-json
 
-
 ## Security
 
 TL;DR: Don't unmarshal content you can't trust.
 
 Attackers may consume large memory with very few bytes.
 
-php serialized array has a length prefix `a:1:{i:0;s:3:"one";}`, when decoding php serialized array into go `slice` or go `map`,
+php serialized array has a length prefix `a:1:{i:0;s:3:"one";}`, when decoding php serialized array into go `slice` or
+go `map`,
 `go-phpserialize` may call golang's `make()` to create a map or slice with given length.
 
 So a malicious input like `a:100000000:{}` may become `make([]T, 100000000)` and consume high memory.

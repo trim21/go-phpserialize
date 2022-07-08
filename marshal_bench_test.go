@@ -6,9 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	elliotchance_phpserialize "github.com/elliotchance/phpserialize"
 	"github.com/trim21/go-phpserialize"
-	"github.com/trim21/go-phpserialize/internal/encoder"
 )
 
 func BenchmarkMarshal_type(b *testing.B) {
@@ -16,7 +14,10 @@ func BenchmarkMarshal_type(b *testing.B) {
 		data := data
 		b.Run(data.Name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				phpserialize.Marshal(data.Data)
+				_, err := phpserialize.Marshal(data.Data)
+				if err != nil {
+					b.FailNow()
+				}
 			}
 		})
 	}
@@ -27,7 +28,10 @@ func BenchmarkMarshal_field_as_string(b *testing.B) {
 		F int `php:",string"`
 	}{}
 	for i := 0; i < b.N; i++ {
-		phpserialize.Marshal(data)
+		_, err := phpserialize.Marshal(data)
+		if err != nil {
+			b.FailNow()
+		}
 	}
 }
 
@@ -36,7 +40,10 @@ func BenchmarkMarshal_ifce(b *testing.B) {
 		data := data
 		b.Run(data.Name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				phpserialize.Marshal(data)
+				_, err := phpserialize.Marshal(data)
+				if err != nil {
+					b.FailNow()
+				}
 			}
 		})
 	}
@@ -52,7 +59,10 @@ func BenchmarkMarshal_map_type(b *testing.B) {
 			}
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					encoder.Marshal(m)
+					_, err := phpserialize.Marshal(m)
+					if err != nil {
+						b.FailNow()
+					}
 				}
 			})
 		})
@@ -70,7 +80,10 @@ func BenchmarkMarshal_map_as_ifce(b *testing.B) {
 			b.RunParallel(func(pb *testing.PB) {
 				var v = struct{ Value any }{m}
 				for pb.Next() {
-					encoder.Marshal(v)
+					_, err := phpserialize.Marshal(v)
+					if err != nil {
+						b.FailNow()
+					}
 				}
 			})
 		})
@@ -87,7 +100,10 @@ func BenchmarkMarshal_map_with_ifce_value(b *testing.B) {
 			}
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					encoder.Marshal(m)
+					_, err := phpserialize.Marshal(m)
+					if err != nil {
+						b.FailNow()
+					}
 				}
 			})
 		})
@@ -107,7 +123,10 @@ func BenchmarkMarshal_slice_of_value(b *testing.B) {
 			}
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					encoder.Marshal(D{m})
+					_, err := phpserialize.Marshal(D{m})
+					if err != nil {
+						b.FailNow()
+					}
 				}
 			})
 		})
@@ -127,7 +146,10 @@ func BenchmarkMarshal_ifce_slice_as_value(b *testing.B) {
 			}
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					encoder.Marshal(D{m})
+					_, err := phpserialize.Marshal(D{m})
+					if err != nil {
+						b.FailNow()
+					}
 				}
 			})
 			runtime.KeepAlive(m)
@@ -148,7 +170,10 @@ func BenchmarkMarshal_slice_of_type(b *testing.B) {
 			}
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					encoder.Marshal(D{m})
+					_, err := phpserialize.Marshal(D{m})
+					if err != nil {
+						b.FailNow()
+					}
 				}
 			})
 			runtime.KeepAlive(m)
@@ -169,7 +194,10 @@ func BenchmarkMarshal_ifce_slice_of_type(b *testing.B) {
 			}
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					encoder.Marshal(D{Value: m})
+					_, err := phpserialize.Marshal(D{Value: m})
+					if err != nil {
+						b.FailNow()
+					}
 				}
 			})
 			runtime.KeepAlive(m)
@@ -190,47 +218,13 @@ func BenchmarkMarshal_ifce_slice_of_ifce(b *testing.B) {
 			}
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
-					encoder.Marshal(D{Value: m})
+					_, err := phpserialize.Marshal(D{Value: m})
+					if err != nil {
+						b.FailNow()
+					}
 				}
 			})
 			runtime.KeepAlive(m)
 		})
-	}
-}
-
-func Benchmark_marshal_compare(b *testing.B) {
-	type Obj struct {
-		V int `php:"v"`
-		S int `php:"s"`
-	}
-
-	type TestData struct {
-		Users []User `php:"users"`
-		Obj   Obj    `php:"obj"`
-	}
-
-	var data = TestData{
-		Users: []User{
-			{ID: 1, Name: "sai"},
-			{ID: 2, Name: "trim21"},
-		},
-		Obj: Obj{V: 2, S: 3},
-	}
-
-	for i := 0; i < b.N; i++ {
-		phpserialize.Marshal(data)
-	}
-}
-
-func Benchmark_elliotchance_phpserialize_marshal(b *testing.B) {
-	var data = map[any]any{
-		"users": []map[any]any{
-			{"id": 1, "name": "sai"},
-			{"id": 2, "name": "trim21"},
-		},
-		"obj": map[string]int{"v": 2, "s": 3},
-	}
-	for i := 0; i < b.N; i++ {
-		elliotchance_phpserialize.Marshal(data, nil)
 	}
 }
