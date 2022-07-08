@@ -2,19 +2,13 @@ package encoder
 
 import (
 	"sync"
-	"unsafe"
 
 	"github.com/goccy/go-reflect"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-var mapIterPool = sync.Pool{
-	New: func() any {
-		return &mapIter{}
-	},
-}
-
 // !!! not safe to use in reflect case !!!
-func compileMap(rt reflect.Type, rv reflect.Value) (encoder, error) {
+func compileMap(rt reflect.Type) (encoder, error) {
 	// for map[int]string, keyType is int, valueType is string
 	keyType := rt.Key()
 	valueType := rt.Elem()
@@ -27,95 +21,73 @@ func compileMap(rt reflect.Type, rv reflect.Value) (encoder, error) {
 		return nil, &UnsupportedTypeAsMapKeyError{Type: keyType}
 	}
 
-	keyEncoder, err := compile(keyType, reflect.New(keyType).Elem())
+	keyEncoder, err := compile(keyType)
 	if err != nil {
 		return nil, err
 	}
 
-	valueEncoder, err := compile(valueType, reflect.New(valueType).Elem())
+	valueEncoder, err := compile(valueType)
 	if err != nil {
 		return nil, err
 	}
-
-	flag := reflectValueToLocal(rv).flag
 
 	return func(ctx *Ctx, p uintptr) error {
-		rv := reflectValueMapFromPtr(rt, p, flag)
-
-		if rv.IsNil() {
+		if p == 0 {
+			// nil
 			appendNil(ctx)
 			return nil
 		}
 
-		mapLen := rv.Len()
-		appendArrayBegin(ctx, int64(mapLen))
+		ptr := ptrToUnsafePtr(p)
+		// ptr := *(*unsafe.Pointer)(unsafe.Pointer(p))
+
+		mapLen := runtime.MapLen(ptr)
 
 		if mapLen == 0 {
-			ctx.b = append(ctx.b, '}')
+			appendEmptyArray(ctx)
 			return nil
 		}
 
-		var mr = mapIterPool.Get().(*mapIter)
-		defer mapIterPool.Put(mr)
-		defer mr.reset()
+		appendArrayBegin(ctx, int64(mapLen))
 
-		mr.m = *(*rValue)(unsafe.Pointer(&rv))
-		for mr.Next() {
-			err := keyEncoder(ctx, mr.KeyUnsafeAddress())
+		var mapCtx = newMapCtx()
+		defer freeMapCtx(mapCtx)
+
+		// ctx.KeepRefs = append(ctx.KeepRefs, unsafe.Pointer(mapCtx))
+
+		mapIterInit(rt, ptr, &mapCtx.hiter)
+
+		for i := 0; i < mapLen; i++ {
+			err := keyEncoder(ctx, uintptr(mapIterKey(&mapCtx.hiter)))
 			if err != nil {
 				return err
 			}
 
-			err = valueEncoder(ctx, mr.ValueUnsafeAddress())
+			err = valueEncoder(ctx, uintptr(mapIterValue(&mapCtx.hiter)))
 			if err != nil {
 				return err
 			}
+
+			mapIterNext(&mapCtx.hiter)
 		}
 		ctx.b = append(ctx.b, '}')
 		return nil
 	}, nil
 }
 
-type mapEncoder struct {
-	rt           reflect.Type
-	flag         uintptr
-	keyEncoder   encoder
-	valueEncoder encoder
+var mapCtxPool = sync.Pool{
+	New: func() any {
+		return &mapIter{}
+	},
 }
 
-func (e *mapEncoder) encode(ctx *Ctx, p uintptr) error {
-	rv := reflectValueMapFromPtr(e.rt, p, e.flag)
+func newMapCtx() *mapIter {
+	ctx := mapCtxPool.Get().(*mapIter)
+	ctx.hiter = hiter{}
 
-	if rv.IsNil() {
-		appendNil(ctx)
-		return nil
-	}
+	return ctx
+}
 
-	mapLen := rv.Len()
-	appendArrayBegin(ctx, int64(mapLen))
-
-	if mapLen == 0 {
-		ctx.b = append(ctx.b, '}')
-		return nil
-	}
-
-	var mr = mapIterPool.Get().(*mapIter)
-	defer mapIterPool.Put(mr)
-	defer mr.reset()
-
-	mr.m = *(*rValue)(unsafe.Pointer(&rv))
-	for mr.Next() {
-		err := e.keyEncoder(ctx, mr.KeyUnsafeAddress())
-		if err != nil {
-			return err
-		}
-
-		err = e.valueEncoder(ctx, mr.ValueUnsafeAddress())
-		if err != nil {
-			return err
-		}
-	}
-
-	ctx.b = append(ctx.b, '}')
-	return nil
+func freeMapCtx(ctx *mapIter) {
+	mapCtxPool.Put(ctx)
 }

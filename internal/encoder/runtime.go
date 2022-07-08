@@ -2,8 +2,6 @@ package encoder
 
 import (
 	"unsafe"
-
-	"github.com/goccy/go-reflect"
 )
 
 // without doing any allocations.
@@ -14,8 +12,8 @@ type hiter struct {
 	h           unsafe.Pointer
 	buckets     unsafe.Pointer
 	bptr        unsafe.Pointer
-	overflow    *[]unsafe.Pointer
-	oldoverflow *[]unsafe.Pointer
+	overflow    unsafe.Pointer
+	oldoverflow unsafe.Pointer
 	startBucket uintptr
 	offset      uint8
 	wrapped     bool
@@ -27,7 +25,7 @@ type hiter struct {
 
 //go:linkname mapIterInit runtime.mapiterinit
 //go:noescape
-func mapIterInit(mapType *rtype, m unsafe.Pointer, it *hiter)
+func mapIterInit(mapType reflect.Type, m unsafe.Pointer, it *hiter)
 
 //go:linkname mapIterNext reflect.mapiternext
 //go:noescape
@@ -47,53 +45,11 @@ func (h *hiter) initialized() bool {
 // A mapIter is an iterator for ranging over a map.
 // See ValueUnsafeAddress.MapRange.
 type mapIter struct {
-	m     rValue
 	hiter hiter
 }
 
 func (iter *mapIter) reset() {
 	iter.hiter = hiter{}
-}
-
-// KeyUnsafeAddress returns the key of iter's current map entry without alloc.
-func (iter *mapIter) KeyUnsafeAddress() uintptr {
-	iterKey := mapIterKey(&iter.hiter)
-	return uintptr(iterKey)
-}
-
-// ValueUnsafeAddress returns the value of iter's current map entry.
-func (iter *mapIter) ValueUnsafeAddress() uintptr {
-	return uintptr(mapIterValue(&iter.hiter))
-}
-
-// Value return a reflect.Value for reflect encoder.
-func (iter *mapIter) Value() reflect.Value {
-	iterElem := mapIterValue(&iter.hiter)
-	if iterElem == nil {
-		panic("MapIter.Value called on exhausted iterator")
-	}
-
-	t := (*mapType)(unsafe.Pointer(iter.m.typ))
-	vtype := t.elem
-	return *(*reflect.Value)(unsafe.Pointer(&rValue{vtype, uintptr(iterElem), ro(iter.m.flag) | flag(vtype.Kind())}))
-}
-
-// Next advances the map iterator and reports whether there is another
-// entry. It returns false when iter is exhausted; subsequent
-// calls to KeyUnsafeAddress, ValueUnsafeAddress, or Next will panic.
-func (iter *mapIter) Next() bool {
-	if !iter.m.IsValid() {
-		panic("mapIter.Next called on an iterator that does not have an associated map ValueUnsafeAddress")
-	}
-	if !iter.hiter.initialized() {
-		mapIterInit(iter.m.typ, iter.m.pointer(), &iter.hiter)
-	} else {
-		if mapIterKey(&iter.hiter) == nil {
-			panic("mapIter.Next called on exhausted iterator")
-		}
-		mapIterNext(&iter.hiter)
-	}
-	return mapIterKey(&iter.hiter) != nil
 }
 
 // mapType represents a map type.

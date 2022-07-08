@@ -2,11 +2,15 @@ package encoder
 
 import (
 	"strings"
+	"sync"
+	"unsafe"
 
 	"github.com/goccy/go-reflect"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func compileStruct(rt reflect.Type, rv reflect.Value) (encoder, error) {
+func compileStruct(rt reflect.Type) (encoder, error) {
+	indirect := runtime.IfaceIndir(*(**runtime.Type)(unsafe.Pointer(&rt)))
 	var encoders []encoder
 
 	var fields int64
@@ -24,7 +28,7 @@ func compileStruct(rt reflect.Type, rv reflect.Value) (encoder, error) {
 		encoders = append(encoders, enc)
 
 		if cfg.AsString {
-			enc, err = compileAsString(field.Type, rv.Field(i))
+			enc, err = compileAsString(field.Type)
 			if err != nil {
 				return nil, err
 			}
@@ -38,19 +42,28 @@ func compileStruct(rt reflect.Type, rv reflect.Value) (encoder, error) {
 			continue
 		}
 
-		enc, err = compile(field.Type, rv.Field(i))
+		enc, err = compile(field.Type)
 		if err != nil {
 			return nil, err
 		}
 
 		fields++
 		offset := field.Offset
-		encoders = append(encoders, func(buf *Ctx, p uintptr) error {
-			return enc(buf, p+offset)
-		})
+		if indirect && field.Type.Kind() == reflect.Map {
+			encoders = append(encoders, func(buf *Ctx, p uintptr) error {
+				return enc(buf, ptrOfPtr(p+offset))
+			})
+		} else {
+			encoders = append(encoders, func(buf *Ctx, p uintptr) error {
+				return enc(buf, p+offset)
+			})
+		}
 	}
 
 	return func(ctx *Ctx, p uintptr) error {
+		sc := newStructCtx()
+		defer freeStructCtx(sc)
+
 		appendArrayBegin(ctx, fields)
 
 		for _, enc := range encoders {
@@ -63,27 +76,25 @@ func compileStruct(rt reflect.Type, rv reflect.Value) (encoder, error) {
 	}, nil
 }
 
-func getFieldName(field reflect.StructField) string {
-	tag := field.Tag.Get(DefaultStructTag)
+type structCtx struct {
+	b            []byte
+	writtenField int64
+}
 
-	if tag == "" {
-		return field.Name
+var structCtxPool = sync.Pool{New: func() any {
+	return &structCtx{
+		b: make([]byte, 0, 512),
 	}
+}}
 
-	if tag == "-" {
-		return ""
-	}
+func newStructCtx() *structCtx {
+	return structCtxPool.Get().(*structCtx)
+}
 
-	i := strings.IndexByte(tag, ',')
-	if i <= 0 {
-		return tag
-	}
-
-	if i == 0 {
-		return field.Name
-	}
-
-	return tag[:i]
+func freeStructCtx(ctx *structCtx) {
+	ctx.b = ctx.b[:]
+	ctx.writtenField = 0
+	structCtxPool.Put(ctx)
 }
 
 type fieldConfig struct {

@@ -370,3 +370,72 @@ func jsonEncode(t *testing.T, value any) string {
 
 	return string(v)
 }
+
+func TestMarshal_ptr(t *testing.T) {
+	t.Parallel()
+
+	t.Run("*string", func(t *testing.T) {
+		type Data struct {
+			Value *string `php:"value"`
+		}
+		var s = "abcdefg"
+		var data = Data{&s}
+
+		actual, err := phpserialize.Marshal(data)
+		require.NoError(t, err)
+		expected := `a:1:{s:5:"value";s:7:"abcdefg";}`
+		require.Equal(t, []byte(expected), actual)
+	})
+
+	t.Run("*int", func(t *testing.T) {
+		type Data struct {
+			Value *int `php:"value"`
+		}
+		var s = 644
+		var data = Data{&s}
+
+		actual, err := phpserialize.Marshal(data)
+		require.NoError(t, err)
+		expected := `a:1:{s:5:"value";i:644;}`
+		require.Equal(t, []byte(expected), actual)
+	})
+}
+
+func TestMarshal_map(t *testing.T) {
+	t.Parallel()
+
+	t.Run("direct", func(t *testing.T) {
+		// map in struct is a direct ptr
+		type MapOnly struct {
+			Map map[string]int64 `php:"map" json:"map"`
+		}
+		actual, err := phpserialize.Marshal(MapOnly{Map: nil})
+		require.NoError(t, err)
+		expected := `a:1:{s:3:"map";N;}`
+		require.Equal(t, []byte(expected), actual)
+	})
+
+	t.Run("direct", func(t *testing.T) {
+		// map in struct is a direct ptr
+		type MapOnly struct {
+			Map map[string]int64 `php:"map" json:"map"`
+		}
+		actual, err := phpserialize.Marshal(MapOnly{Map: map[string]int64{"abcdef": 1}})
+		require.NoError(t, err)
+		expected := `a:1:{s:3:"map";a:1:{s:6:"abcdef";i:1;}}`
+		require.Equal(t, []byte(expected), actual)
+	})
+
+	t.Run("indirect", func(t *testing.T) {
+		// map in struct is an indirect ptr
+		type MapPtr struct {
+			Users []Item           `php:"users" json:"users"`
+			Map   map[string]int64 `php:"map" json:"map"`
+		}
+
+		actual, err := phpserialize.Marshal(MapPtr{Map: map[string]int64{"abcdef": 1}})
+		require.NoError(t, err)
+		expected := `a:2:{s:5:"users";N;s:3:"map";a:1:{s:6:"abcdef";i:1;}}`
+		require.Equal(t, []byte(expected), actual)
+	})
+}

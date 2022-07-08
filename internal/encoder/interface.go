@@ -17,27 +17,6 @@ func reflectInterface(ctx *Ctx, p uintptr) error {
 	return reflectInterfaceValue(ctx, rv)
 }
 
-// // slow path of encoding struct
-// func encodeStruct(buf *Ctx, rv reflect.ValueUnsafeAddress) error {
-// 	typeID := uintptr(unsafe.Pointer(rv.Type()))
-//
-// 	appendArrayBegin(buf, int64(rv.NumField()))
-//
-// 	for i := 0; i < rv.NumField(); i++ {
-// 		field := rv.Field(i)
-// 		p := field.UnsafeAddr()
-// 		switch field.Kind() {
-// 		case reflect.Uint8:
-// 			appendUint(buf, uint64(*(*uint)(p)))
-// 			field.Uint()
-//
-// 		}
-// 	}
-//
-// 	buf.b = append(buf.b, '}')
-// 	return nil
-// }
-
 func reflectInterfaceValue(ctx *Ctx, rv reflect.Value) error {
 	// simple type
 	switch v := rv.Interface().(type) {

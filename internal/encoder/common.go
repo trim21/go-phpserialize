@@ -8,6 +8,10 @@ func appendArrayBegin(ctx *Ctx, fieldNum int64) {
 	ctx.b = append(ctx.b, ':', '{')
 }
 
+func appendEmptyArray(ctx *Ctx) {
+	ctx.b = append(ctx.b, 'a', ':', '0', ':', '{', '}')
+}
+
 func appendString(ctx *Ctx, s string) {
 	ctx.b = append(ctx.b, 's', ':')
 	ctx.b = strconv.AppendInt(ctx.b, int64(len(s)), 10)

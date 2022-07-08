@@ -9,6 +9,14 @@ import (
 	"github.com/goccy/go-reflect"
 )
 
+func ptrOfPtr(p uintptr) uintptr {
+	return uintptr(**(**unsafe.Pointer)(unsafe.Pointer(&p)))
+}
+
+func ptrToUnsafePtr(p uintptr) unsafe.Pointer {
+	return *(*unsafe.Pointer)(unsafe.Pointer(&p))
+}
+
 func reflectValueMapFromPtr(typ reflect.Type, p uintptr, flag uintptr) reflect.Value {
 	return *(*reflect.Value)(unsafe.Pointer(&rValueReflectType{typ: typ, ptr: p, flag: flag}))
 }

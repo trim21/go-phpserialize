@@ -35,7 +35,7 @@ func reflectConcreteSlice(ctx *Ctx, rt reflect.Type, rv reflect.Value) error {
 		return enc.(encoder)(ctx, reflectValueToLocal(rv).ptr)
 	}
 
-	enc, err := compile(rt, reflect.New(rt.Elem()))
+	enc, err := compile(rt)
 	if err != nil {
 		panic(err)
 	}

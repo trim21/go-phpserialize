@@ -79,8 +79,7 @@ func Marshal(v any) ([]byte, error) {
 
 	// First time,
 	// builds an optimized path by type and caches it with typeID.
-	rv := reflect.ValueOf(v)
-	enc, err := compile(typ, rv)
+	enc, err := compile(typ)
 	if err != nil {
 		return nil, err
 	}
@@ -96,29 +95,31 @@ func Marshal(v any) ([]byte, error) {
 	return b, nil
 }
 
-func compile(typ reflect.Type, rv reflect.Value) (encoder, error) {
-	switch typ.Kind() {
+func compile(rt reflect.Type) (encoder, error) {
+	switch rt.Kind() {
 	case reflect.Bool:
-		return compileBool(typ)
+		return compileBool(rt)
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		return compileInt(typ)
+		return compileInt(rt)
 	case reflect.String:
 		return encodeStringVariable, nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
-		return compileUint(typ)
+		return compileUint(rt)
 	case reflect.Float32, reflect.Float64:
-		return compileFloat(typ)
+		return compileFloat(rt)
 	case reflect.Struct:
-		return compileStruct(typ, rv)
+		return compileStruct(rt)
 	case reflect.Slice:
-		return compileSlice(typ, rv)
+		return compileSlice(rt)
 	case reflect.Map:
-		return compileMap(typ, rv)
+		return compileMap(rt)
 	case reflect.Interface:
-		return compileInterface(typ)
+		return compileInterface(rt)
+	case reflect.Ptr:
+		return compilePtr(rt)
 	}
 
-	return nil, fmt.Errorf("failed to build encoder, unsupported type %s (kind %s)", typ.String(), typ.Kind())
+	return nil, fmt.Errorf("failed to build encoder, unsupported type %s (kind %s)", rt.String(), rt.Kind())
 }
 
 func compileMapKey(typ reflect.Type) (encoder, error) {
@@ -151,7 +152,7 @@ func compileMapKey(typ reflect.Type) (encoder, error) {
 	return nil, fmt.Errorf("failed to build encoder for map key, unsupported type %s (kind %s)", typ.String(), typ.Kind())
 }
 
-func compileAsString(typ reflect.Type, rv reflect.Value) (encoder, error) {
+func compileAsString(typ reflect.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.Bool:
 		return compileBoolAsString(typ)
