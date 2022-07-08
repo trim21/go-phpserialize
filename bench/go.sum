@@ -7,4 +7,6 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PKk=
 github.com/trim21/go-phpserialize v0.0.0-20220707052211-d8f292bf3bfb h1:rx82gHWcdlF33kB0vFFC6ApygFW2Tbqrgk2zZrXc0p0=
 github.com/trim21/go-phpserialize v0.0.0-20220707052211-d8f292bf3bfb/go.mod h1:VDraauzOm7P4H3+dwEpeckq+IdSAyAEnMrKO18I9lCg=
+github.com/trim21/go-phpserialize v0.0.0-20220708071425-f57e12bef0b4 h1:fHxtRrKxOwLXKkfHUwlsJ9KsVJ8D5xJ561KAn9kq8Wc=
+github.com/trim21/go-phpserialize v0.0.0-20220708071425-f57e12bef0b4/go.mod h1:acw1oELchzm3TL5cTeCHvaWxVRj3B4nP3ivS2ocsQ+Y=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
