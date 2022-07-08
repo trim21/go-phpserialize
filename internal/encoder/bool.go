@@ -3,10 +3,10 @@ package encoder
 import (
 	"unsafe"
 
-	"github.com/goccy/go-reflect"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func compileBool(typ reflect.Type) (encoder, error) {
+func compileBool(typ *runtime.Type) (encoder, error) {
 	return encodeBool, nil
 }
 

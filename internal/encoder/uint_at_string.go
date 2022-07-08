@@ -2,13 +2,14 @@ package encoder
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"unsafe"
 
-	"github.com/goccy/go-reflect"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func compileUintAsString(rt reflect.Type) (encoder, error) {
+func compileUintAsString(rt *runtime.Type) (encoder, error) {
 	switch rt.Kind() {
 	case reflect.Uint8:
 		return encodeUint8AsString, nil

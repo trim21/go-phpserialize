@@ -1,6 +1,8 @@
 package encoder
 
-import "github.com/goccy/go-reflect"
+import (
+	"reflect"
+)
 
 type UnsupportedTypeError struct {
 	Type reflect.Type

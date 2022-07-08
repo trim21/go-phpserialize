@@ -1,13 +1,14 @@
 package encoder
 
 import (
+	"reflect"
 	"unsafe"
 
-	"github.com/goccy/go-reflect"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 // fast array for map reflect
-var mapKeyEncoder = []encoder{
+var mapKeyEncoder = [25]encoder{
 	reflect.String: encodeStringVariable,
 	reflect.Int:    encodeInt,
 	reflect.Int8:   encodeInt8,
@@ -57,28 +58,28 @@ func reflectMap(ctx *Ctx, rv reflect.Value) error {
 	var mr = newMapCtx()
 	defer freeMapCtx(mr)
 
-	mapIterInit(rt, unsafe.Pointer(rv.Pointer()), &mr.hiter)
+	valueEncoder, err := compileInterface(runtime.Type2RType(rt.Elem()))
+	if err != nil {
+		return err
+	}
 
-	m := *(*rValue)(unsafe.Pointer(&rv))
-	t := (*mapType)(unsafe.Pointer(m.typ))
-	vtype := t.elem
-	// map length is checked, always > 0
+	mapIterInit(runtime.Type2RType(rt), unsafe.Pointer(rv.Pointer()), &mr.Iter)
 	for i := 0; i < mapLen; i++ {
-		err := keyEncoder(ctx, uintptr(mapIterKey(&mr.hiter)))
+		err := keyEncoder(ctx, uintptr(mapIterKey(&mr.Iter)))
 		if err != nil {
 			return err
 		}
 
-		iterElem := mapIterValue(&mr.hiter)
+		iterElem := mapIterValue(&mr.Iter)
 
-		value := *(*reflect.Value)(unsafe.Pointer(&rValue{m.typ, uintptr(iterElem), ro(m.flag) | flag(vtype.Kind())}))
+		// value := *(*reflect.Value)(unsafe.Pointer(&rValue{m.typ, uintptr(iterElem), ro(m.flag) | flag(vtype)}))
 
-		err = reflectInterfaceValue(ctx, value)
+		err = valueEncoder(ctx, uintptr(iterElem))
 		if err != nil {
 			return err
 		}
 
-		mapIterNext(&mr.hiter)
+		mapIterNext(&mr.Iter)
 	}
 
 	ctx.b = append(ctx.b, '}')
@@ -101,11 +102,11 @@ func reflectConcreteMap(ctx *Ctx, rt reflect.Type, rv reflect.Value, keyType ref
 	var err error
 	var valueType = rt.Elem()
 
-	valueTypeID := uintptr(unsafe.Pointer(valueType))
+	valueTypeID := uintptr(unsafe.Pointer(runtime.Type2RType(valueType)))
 
 	enc, ok := typeToEncoderMap.Load(valueTypeID)
 	if !ok {
-		valueEncoder, err = compile(valueType)
+		valueEncoder, err = compile(runtime.Type2RType(valueType))
 		if err != nil {
 			return err
 		}
@@ -115,23 +116,31 @@ func reflectConcreteMap(ctx *Ctx, rt reflect.Type, rv reflect.Value, keyType ref
 		valueEncoder = enc.(encoder)
 	}
 
+	if rt.Elem().Kind() == reflect.Map {
+		originValueEncoder := valueEncoder
+		valueEncoder = func(ctx *Ctx, p uintptr) error {
+			return originValueEncoder(ctx, ptrOfPtr(p))
+		}
+	}
+
 	keyEncoder := mapKeyEncoder[keyType.Kind()]
 
 	var mr = newMapCtx()
 	defer freeMapCtx(mr)
 
-	mapIterInit(rt, unsafe.Pointer(rv.Pointer()), &mr.hiter)
+	mapIterInit(runtime.Type2RType(rt), unsafe.Pointer(rv.Pointer()), &mr.Iter)
 	for i := 0; i < mapLen; i++ {
-		err := keyEncoder(ctx, uintptr(mapIterKey(&mr.hiter)))
+		err := keyEncoder(ctx, uintptr(mapIterKey(&mr.Iter)))
 		if err != nil {
 			return err
 		}
 
-		err = valueEncoder(ctx, uintptr(mapIterValue(&mr.hiter)))
+		value := uintptr(mapIterValue(&mr.Iter))
+		err = valueEncoder(ctx, value)
 		if err != nil {
 			return err
 		}
-		mapIterNext(&mr.hiter)
+		mapIterNext(&mr.Iter)
 	}
 	ctx.b = append(ctx.b, '}')
 	return nil

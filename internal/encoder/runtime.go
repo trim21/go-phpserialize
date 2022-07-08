@@ -2,6 +2,8 @@ package encoder
 
 import (
 	"unsafe"
+
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 // without doing any allocations.
@@ -25,7 +27,7 @@ type hiter struct {
 
 //go:linkname mapIterInit runtime.mapiterinit
 //go:noescape
-func mapIterInit(mapType reflect.Type, m unsafe.Pointer, it *hiter)
+func mapIterInit(mapType *runtime.Type, m unsafe.Pointer, it *hiter)
 
 //go:linkname mapIterNext reflect.mapiternext
 //go:noescape
@@ -45,23 +47,9 @@ func (h *hiter) initialized() bool {
 // A mapIter is an iterator for ranging over a map.
 // See ValueUnsafeAddress.MapRange.
 type mapIter struct {
-	hiter hiter
+	Iter hiter
 }
 
 func (iter *mapIter) reset() {
-	iter.hiter = hiter{}
-}
-
-// mapType represents a map type.
-type mapType struct {
-	rtype
-	key    *rtype // map key type
-	elem   *rtype // map element (value) type
-	bucket *rtype // internal bucket structure
-	// function for hashing keys (ptr to key, seed) -> hash
-	hasher     func(unsafe.Pointer, uintptr) uintptr
-	keysize    uint8  // size of key slot
-	valuesize  uint8  // size of value slot
-	bucketsize uint16 // size of bucket
-	flags      uint32
+	iter.Iter = hiter{}
 }

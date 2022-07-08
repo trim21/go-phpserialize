@@ -1,59 +1,25 @@
 package encoder
 
 import (
-	"github.com/goccy/go-reflect"
+	"reflect"
+	"unsafe"
+
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func reflectStruct(ctx *Ctx, rv reflect.Value) error {
-	rt := rv.Type()
-	// typeID := uintptr(unsafe.Pointer(rt))
-	//
-	// struct {
-	//
-	// }{}
-	//
-
-	var fieldsCfg = make([]fieldConfig, rv.NumField())
-
-	var fields int64
-	for i := 0; i < rv.NumField(); i++ {
-		cfg := getFieldConfig(rt.Field(i))
-		fieldsCfg[i] = cfg
-		if !cfg.Ignore {
-			fields++
-		}
+func reflectStruct(ctx *Ctx, rv reflect.Value, p uintptr) error {
+	rt := runtime.Type2RType(rv.Type())
+	typeID := uintptr(unsafe.Pointer(rt))
+	if enc, ok := typeToEncoderMap.Load(typeID); ok {
+		return enc.(encoder)(ctx, p)
 	}
 
-	appendArrayBegin(ctx, fields)
-
-	for i := 0; i < rv.NumField(); i++ {
-		cfg := fieldsCfg[i]
-		if cfg.Ignore {
-			continue
-		}
-
-		appendString(ctx, cfg.Name)
-
-		if cfg.AsString {
-			err := reflectInterfaceValue(ctx, rv.Field(i))
-			if err != nil {
-				return err
-			}
-
-			continue
-		}
-
-		err := reflectInterfaceValue(ctx, rv.Field(i))
-		if err != nil {
-			return err
-		}
+	encoder, err := compileStruct(rt)
+	if err != nil {
+		return err
 	}
 
-	ctx.b = append(ctx.b, '}')
+	typeToEncoderMap.Store(typeID, encoder)
 
-	return nil
-}
-
-type structFieldConfig struct {
-	fieldNames []string
+	return encoder(ctx, p)
 }

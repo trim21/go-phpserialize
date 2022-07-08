@@ -1,25 +1,33 @@
 package encoder
 
 import (
+	"reflect"
 	"unsafe"
 
-	"github.com/goccy/go-reflect"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 const lenOffset = unsafe.Offsetof(reflect.SliceHeader{}.Len)
 
-func compileSlice(rt reflect.Type) (encoder, error) {
-	elType := rt.Elem()
-
+func compileSlice(rt *runtime.Type) (encoder, error) {
 	offset := rt.Elem().Size()
+	var enc encoder
+	var err error
 
-	encoder, err := compile(elType)
-	if err != nil {
-		return nil, err
+	if rt.Elem().Kind() == reflect.Map {
+		enc, err = compile(runtime.PtrTo(rt.Elem()))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		enc, err = compile(rt.Elem())
+		if err != nil {
+			return nil, err
+		}
 	}
-
 	return func(ctx *Ctx, p uintptr) error {
 		dataPtr := *(*uintptr)(unsafe.Pointer(p))
+		// fmt.Println(unsafe.Pointer(p))
 
 		// no data ptr, nil slice
 		// even empty slice has a non-zero data ptr
@@ -34,7 +42,7 @@ func compileSlice(rt reflect.Type) (encoder, error) {
 
 		for i := 0; i < length; i++ {
 			appendInt(ctx, int64(i))
-			err = encoder(ctx, dataPtr+offset*uintptr(i))
+			err = enc(ctx, dataPtr+offset*uintptr(i))
 			if err != nil {
 				return err
 			}

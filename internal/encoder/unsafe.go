@@ -3,10 +3,10 @@
 package encoder
 
 import (
-	stdReflect "reflect"
+	"reflect"
 	"unsafe"
 
-	"github.com/goccy/go-reflect"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 func ptrOfPtr(p uintptr) uintptr {
@@ -17,38 +17,26 @@ func ptrToUnsafePtr(p uintptr) unsafe.Pointer {
 	return *(*unsafe.Pointer)(unsafe.Pointer(&p))
 }
 
-func reflectValueMapFromPtr(typ reflect.Type, p uintptr, flag uintptr) reflect.Value {
-	return *(*reflect.Value)(unsafe.Pointer(&rValueReflectType{typ: typ, ptr: p, flag: flag}))
-}
-
-func reflectValueFromPtr(typ reflect.Type, p uintptr) reflect.Value {
-	return *(*reflect.Value)(unsafe.Pointer(&rValueReflectType{typ: typ, ptr: p, flag: uintptr(typ.Kind())}))
-}
-
 func reflectValueToLocal(value reflect.Value) rValue {
 	return *(*rValue)(unsafe.Pointer(&value))
 }
 
-func localToReflectValue(value rValue) reflect.Value {
-	return *(*reflect.Value)(unsafe.Pointer(&value))
-}
-
-func stdReflectValueToLocal(value stdReflect.Value) rValue {
-	return *(*rValue)(unsafe.Pointer(&value))
-}
-
 type emptyInterface struct {
-	typ reflect.Type
+	typ *runtime.Type  // value type
+	ptr unsafe.Pointer // value address
+}
+
+type nonEmptyInterface struct {
+	itab *struct {
+		ityp *runtime.Type // static interface type
+		typ  *runtime.Type // dynamic concrete type
+		// unused fields...
+	}
 	ptr unsafe.Pointer
 }
 
 // to get reflect.Value unexported ptr field.
 // used in map encoder
-type rValueReflectType struct {
-	typ  reflect.Type
-	ptr  uintptr
-	flag uintptr
-}
 
 // to get reflect.Value unexported ptr field.
 // used in map encoder
@@ -57,27 +45,6 @@ type rValue struct {
 	ptr  uintptr
 	flag uintptr
 }
-
-const PtrSize = 4 << (^uintptr(0) >> 63)
-
-// pointer returns the underlying pointer represented by v.
-// v.Kind() must be Pointer, Map, Chan, Func, or UnsafePointer
-// if v.Kind() == Pointer, the base type must not be go:notinheap.
-func (v rValue) pointer() unsafe.Pointer {
-	if v.typ.size != PtrSize || !v.typ.pointers() {
-		panic("can't call pointer on a non-pointer Value")
-	}
-	if v.flag&flagIndir != 0 {
-		return *(*unsafe.Pointer)(unsafe.Pointer(v.ptr))
-	}
-	return unsafe.Pointer(v.ptr)
-}
-
-const (
-	kindDirectIface = 1 << 5
-	kindGCProg      = 1 << 6 // Type.gc points to GC program
-	kindMask        = (1 << 5) - 1
-)
 
 // rtype is the common implementation of most values.
 // It is embedded in other struct types.
@@ -99,36 +66,6 @@ type rtype struct {
 	ptrToThis int32 // type for pointer to this type, may be zero
 }
 
-func (t *rtype) Kind() reflect.Kind { return reflect.Kind(t.kind & kindMask) }
-
-func (t *rtype) pointers() bool { return t.ptrdata != 0 }
-
-// IsValid reports whether v represents a value.
-// It returns false if v is the zero Value.
-// If IsValid returns false, all other methods except String panic.
-// Most functions and methods never return an invalid Value.
-// If one does, its documentation states the conditions explicitly.
-func (v rValue) IsValid() bool {
-	return v.flag != 0
-}
-
-type flag = uintptr
-
-const (
-	flagKindWidth        = 5 // there are 27 kinds
-	flagKindMask    flag = 1<<flagKindWidth - 1
-	flagStickyRO    flag = 1 << 5
-	flagEmbedRO     flag = 1 << 6
-	flagIndir       flag = 1 << 7
-	flagAddr        flag = 1 << 8
-	flagMethod      flag = 1 << 9
-	flagMethodShift      = 10
-	flagRO          flag = flagStickyRO | flagEmbedRO
-)
-
-func ro(f uintptr) flag {
-	if f&flagRO != 0 {
-		return flagStickyRO
-	}
-	return 0
+func ifcePtrToValuePtr(p uintptr) unsafe.Pointer {
+	return ((*emptyInterface)(unsafe.Pointer(p))).ptr
 }

@@ -2,10 +2,11 @@ package encoder
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 	"unsafe"
 
-	"github.com/goccy/go-reflect"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 const DefaultStructTag = "php"
@@ -46,67 +47,36 @@ func freeCtx(ctx *Ctx) {
 
 type encoder func(ctx *Ctx, p uintptr) error
 
-func Marshal(v any) ([]byte, error) {
-	// Technique 1.
-	// Get type information and pointer from interface{} rValue without allocation.
-	typ, ptr := reflect.TypeAndPtrOf(v)
-	// so value will have a writing barrier until we release it.
-	header := (*emptyInterface)(unsafe.Pointer(&v))
-
-	typeID := uintptr(unsafe.Pointer(header.typ))
-
-	p := uintptr(ptr)
-
-	// Technique 2.
-	// Reuse the Ctx once allocated using sync.Pool
-	ctx := newCtx()
-	defer freeCtx(ctx)
-	ctx.KeepRefs = append(ctx.KeepRefs, header.ptr)
-	// ctx.KeepRefs = append(ctx.KeepRefs, unsafe.Pointer(&p))
-
-	// Technique 3.
-	// builds an optimized path by typeID and caches it
-	if enc, ok := typeToEncoderMap.Load(typeID); ok {
-		if err := enc.(encoder)(ctx, p); err != nil {
-			return nil, err
-		}
-
-		// allocate a new Ctx required length only
-		b := make([]byte, len(ctx.b))
-		copy(b, ctx.b)
-		return b, nil
-	}
-
-	// First time,
-	// builds an optimized path by type and caches it with typeID.
-	enc, err := compile(typ)
-	if err != nil {
-		return nil, err
-	}
-	typeToEncoderMap.Store(typeID, enc)
-	if err := enc(ctx, p); err != nil {
-		return nil, err
-	}
-
-	// allocate a new Ctx required length only
-	b := make([]byte, len(ctx.b))
-
-	copy(b, ctx.b)
-	return b, nil
-}
-
-func compile(rt reflect.Type) (encoder, error) {
+func compile(rt *runtime.Type) (encoder, error) {
 	switch rt.Kind() {
 	case reflect.Bool:
 		return compileBool(rt)
-	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		return compileInt(rt)
+	case reflect.Int8:
+		return encodeInt8, nil
+	case reflect.Int16:
+		return encodeInt16, nil
+	case reflect.Int32:
+		return encodeInt32, nil
+	case reflect.Int64:
+		return encodeInt64, nil
+	case reflect.Int:
+		return encodeInt, nil
 	case reflect.String:
 		return encodeStringVariable, nil
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
-		return compileUint(rt)
-	case reflect.Float32, reflect.Float64:
-		return compileFloat(rt)
+	case reflect.Uint8:
+		return encodeUint8, nil
+	case reflect.Uint16:
+		return encodeUint16, nil
+	case reflect.Uint32:
+		return encodeUint32, nil
+	case reflect.Uint64:
+		return encodeUint64, nil
+	case reflect.Uint:
+		return encodeUint, nil
+	case reflect.Float32:
+		return encodeFloat32, nil
+	case reflect.Float64:
+		return encodeFloat64, nil
 	case reflect.Struct:
 		return compileStruct(rt)
 	case reflect.Slice:
@@ -122,7 +92,7 @@ func compile(rt reflect.Type) (encoder, error) {
 	return nil, fmt.Errorf("failed to build encoder, unsupported type %s (kind %s)", rt.String(), rt.Kind())
 }
 
-func compileMapKey(typ reflect.Type) (encoder, error) {
+func compileMapKey(typ *runtime.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.String:
 		return encodeStringVariable, nil
@@ -152,21 +122,24 @@ func compileMapKey(typ reflect.Type) (encoder, error) {
 	return nil, fmt.Errorf("failed to build encoder for map key, unsupported type %s (kind %s)", typ.String(), typ.Kind())
 }
 
-func compileAsString(typ reflect.Type) (encoder, error) {
-	switch typ.Kind() {
+func compileAsString(rt *runtime.Type) (encoder, error) {
+	switch rt.Kind() {
 	case reflect.Bool:
-		return compileBoolAsString(typ)
+		return compileBoolAsString(rt)
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		return compileIntAsString(typ)
+		return compileIntAsString(rt)
 	case reflect.String:
 		return encodeStringVariable, nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
-		return compileUintAsString(typ)
+		return compileUintAsString(rt)
 	case reflect.Float32, reflect.Float64:
-		return compileFloatAsString(typ)
+		return compileFloatAsString(rt)
+	case reflect.Interface:
+		return compileInterfaceAsString(rt)
+
 	}
 
 	return nil, fmt.Errorf(
 		"failed to build encoder for struct field (as string), unsupported type %s (kind %s)",
-		typ.String(), typ.Kind())
+		rt.String(), rt.Kind())
 }

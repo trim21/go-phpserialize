@@ -1,16 +1,15 @@
 package encoder
 
 import (
+	"reflect"
 	"strings"
 	"sync"
-	"unsafe"
 
-	"github.com/goccy/go-reflect"
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func compileStruct(rt reflect.Type) (encoder, error) {
-	indirect := runtime.IfaceIndir(*(**runtime.Type)(unsafe.Pointer(&rt)))
+func compileStruct(rt *runtime.Type) (encoder, error) {
+	indirect := runtime.IfaceIndir(rt)
 	var encoders []encoder
 
 	var fields int64
@@ -28,7 +27,7 @@ func compileStruct(rt reflect.Type) (encoder, error) {
 		encoders = append(encoders, enc)
 
 		if cfg.AsString {
-			enc, err = compileAsString(field.Type)
+			enc, err = compileAsString(runtime.Type2RType(field.Type))
 			if err != nil {
 				return nil, err
 			}
@@ -42,7 +41,7 @@ func compileStruct(rt reflect.Type) (encoder, error) {
 			continue
 		}
 
-		enc, err = compile(field.Type)
+		enc, err = compile(runtime.Type2RType(field.Type))
 		if err != nil {
 			return nil, err
 		}
@@ -52,6 +51,10 @@ func compileStruct(rt reflect.Type) (encoder, error) {
 		if indirect && field.Type.Kind() == reflect.Map {
 			encoders = append(encoders, func(buf *Ctx, p uintptr) error {
 				return enc(buf, ptrOfPtr(p+offset))
+			})
+		} else if indirect && field.Type.Kind() == reflect.Interface {
+			encoders = append(encoders, func(buf *Ctx, p uintptr) error {
+				return enc(buf, p+offset)
 			})
 		} else {
 			encoders = append(encoders, func(buf *Ctx, p uintptr) error {
@@ -101,20 +104,21 @@ type fieldConfig struct {
 	Name     string
 	Ignore   bool
 	AsString bool
+	Offset   uintptr
 }
 
 func getFieldConfig(field reflect.StructField) fieldConfig {
 	tag := field.Tag.Get(DefaultStructTag)
 
 	if tag == "" {
-		return fieldConfig{Name: field.Name}
+		return fieldConfig{Name: field.Name, Offset: field.Offset}
 	}
 
 	if tag == "-" {
 		return fieldConfig{Ignore: true}
 	}
 
-	cfg := fieldConfig{Name: field.Name}
+	cfg := fieldConfig{Name: field.Name, Offset: field.Offset}
 	s := strings.Split(tag, ",")
 
 	if s[0] != "" {

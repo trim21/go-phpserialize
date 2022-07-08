@@ -1,10 +1,9 @@
 package encoder
 
 import (
+	"reflect"
 	"strconv"
 	"unsafe"
-
-	"github.com/goccy/go-reflect"
 )
 
 // encode string "result" to `s:6:"result";`
@@ -18,13 +17,13 @@ func compileConstString(s string) (encoder, error) {
 	}, nil
 }
 
-func encodeStringVariable(buf *Ctx, p uintptr) error {
+func encodeStringVariable(ctx *Ctx, p uintptr) error {
 	s := (*reflect.StringHeader)(unsafe.Pointer(p))
 	sVal := *(*string)(unsafe.Pointer(p))
-	buf.b = append(buf.b, 's', ':')
-	buf.b = strconv.AppendInt(buf.b, int64(s.Len), 10)
-	buf.b = append(buf.b, ':')
-	buf.b = strconv.AppendQuote(buf.b, sVal)
-	buf.b = append(buf.b, ';')
+	ctx.b = append(ctx.b, 's', ':')
+	ctx.b = strconv.AppendInt(ctx.b, int64(s.Len), 10)
+	ctx.b = append(ctx.b, ':')
+	ctx.b = strconv.AppendQuote(ctx.b, sVal)
+	ctx.b = append(ctx.b, ';')
 	return nil
 }

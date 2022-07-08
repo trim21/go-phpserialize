@@ -1,25 +1,47 @@
 package encoder
 
 import (
+	"reflect"
 	"unsafe"
 
-	"github.com/goccy/go-reflect"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func reflectSlice(ctx *Ctx, rv reflect.Value) error {
-	l := rv.Len()
+func unpackIface(p uintptr) uintptr {
+	return uintptr((*(*emptyInterface)(unsafe.Pointer(p))).ptr)
+}
+
+func reflectSlice(ctx *Ctx, rv reflect.Value, p uintptr) error {
 	rt := rv.Type()
 
 	// not slice of interface, fast path
 	if rt.Elem().Kind() != reflect.Interface {
-		return reflectConcreteSlice(ctx, rt, rv)
+		return reflectConcreteSlice(ctx, runtime.Type2RType(rt), p)
 	}
 
-	// slow path with O(N) allocation.
-	appendArrayBegin(ctx, int64(l))
-	for i := 0; i < l; i++ {
+	shPtr := unpackIface(p)
+	// no data ptr, nil slice
+	// even empty slice has a non-zero data ptr
+	if shPtr == 0 {
+		appendNil(ctx)
+		return nil
+	}
+
+	el := runtime.Type2RType(rt.Elem())
+
+	encoder, err := compileInterface(el)
+	if err != nil {
+		return err
+	}
+
+	sh := *(*runtime.SliceHeader)(unsafe.Pointer(shPtr))
+	offset := rt.Elem().Size()
+
+	dataPtr := uintptr(sh.Data)
+	appendArrayBegin(ctx, int64(sh.Len))
+	for i := 0; i < sh.Len; i++ {
 		appendInt(ctx, int64(i))
-		err := reflectInterfaceValue(ctx, rv.Index(i))
+		err := encoder(ctx, dataPtr+uintptr(i)*offset)
 		if err != nil {
 			return err
 		}
@@ -28,11 +50,13 @@ func reflectSlice(ctx *Ctx, rv reflect.Value) error {
 	return nil
 }
 
-func reflectConcreteSlice(ctx *Ctx, rt reflect.Type, rv reflect.Value) error {
-	typeID := uintptr(unsafe.Pointer(rt))
+func reflectConcreteSlice(ctx *Ctx, rt *runtime.Type, p uintptr) error {
+	var typeID = uintptr(unsafe.Pointer(rt))
+
+	p = unpackIface(p)
 
 	if enc, ok := typeToEncoderMap.Load(typeID); ok {
-		return enc.(encoder)(ctx, reflectValueToLocal(rv).ptr)
+		return enc.(encoder)(ctx, p)
 	}
 
 	enc, err := compile(rt)
@@ -40,5 +64,5 @@ func reflectConcreteSlice(ctx *Ctx, rt reflect.Type, rv reflect.Value) error {
 		panic(err)
 	}
 
-	return enc(ctx, reflectValueToLocal(rv).ptr)
+	return enc(ctx, p)
 }

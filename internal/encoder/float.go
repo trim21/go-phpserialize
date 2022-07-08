@@ -3,26 +3,16 @@ package encoder
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"unsafe"
 
-	"github.com/goccy/go-reflect"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func compileFloat(typ reflect.Type) (encoder, error) {
-	switch typ.Kind() {
-	case reflect.Float32:
-		return encodeFloat32, nil
-	case reflect.Float64:
-		return encodeFloat64, nil
-	}
-
-	panic(fmt.Sprintf("unexpected kind %s", typ.Kind()))
-}
-
-func encodeFloat32(buf *Ctx, p uintptr) error {
+func encodeFloat32(ctx *Ctx, p uintptr) error {
 	value := *(*float32)(unsafe.Pointer(p))
-	appendFloat32(buf, value)
+	appendFloat32(ctx, value)
 	return nil
 }
 
@@ -66,7 +56,7 @@ func appendFloat64(ctx *Ctx, f64 float64) {
 	ctx.b = append(ctx.b, ';')
 }
 
-func compileFloatAsString(typ reflect.Type) (encoder, error) {
+func compileFloatAsString(typ *runtime.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.Float32:
 		return encodeFloat32AsString, nil

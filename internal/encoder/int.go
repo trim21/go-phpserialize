@@ -1,29 +1,9 @@
 package encoder
 
 import (
-	"fmt"
 	"strconv"
 	"unsafe"
-
-	"github.com/goccy/go-reflect"
 )
-
-func compileInt(typ reflect.Type) (encoder, error) {
-	switch typ.Kind() {
-	case reflect.Int8:
-		return encodeInt8, nil
-	case reflect.Int16:
-		return encodeInt16, nil
-	case reflect.Int32:
-		return encodeInt32, nil
-	case reflect.Int64:
-		return encodeInt64, nil
-	case reflect.Int:
-		return encodeInt, nil
-	}
-
-	panic(fmt.Sprintf("unexpected kind %s", typ.Kind()))
-}
 
 func encodeInt8(ctx *Ctx, p uintptr) error {
 	value := *(*int8)(unsafe.Pointer(p))
