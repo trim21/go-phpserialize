@@ -52,10 +52,6 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 			encoders = append(encoders, func(buf *Ctx, p uintptr) error {
 				return enc(buf, ptrOfPtr(p+offset))
 			})
-		} else if indirect && field.Type.Kind() == reflect.Interface {
-			encoders = append(encoders, func(buf *Ctx, p uintptr) error {
-				return enc(buf, p+offset)
-			})
 		} else {
 			encoders = append(encoders, func(buf *Ctx, p uintptr) error {
 				return enc(buf, p+offset)
