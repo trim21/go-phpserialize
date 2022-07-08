@@ -14,22 +14,6 @@ decoding php object (or class) is not supported yet.
 
 Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 
-#### Performance Hint
-
-Encoder will try to build an optimized path for a type. When encoding `interface`,
-encoder will fall back to reflect, which is much slower.
-
-If you care about performance, you should avoid using interface.
-
-Using type is 2x faster than interface in average.
-
-In the worst condition, it may be 8x slower (or more).
-
-```text
-BenchmarkMarshal_type/struct_with_all-16      2814640        431.0 ns/op      256 B/op     1 allocs/op
-BenchmarkMarshal_ifce/struct_with_all-16       374654         3247 ns/op      849 B/op    35 allocs/op
-```
-
 ### Disadvantage:
 
 heavy usage of `unsafe`.
@@ -37,9 +21,7 @@ heavy usage of `unsafe`.
 #### Limitation:
 
 1. No `omitempty` support (yet).
-2. Anonymous Struct field (embedding struct) working like named field.
-
-If any of these limitations affect you, please create an issue to let me know.
+2. `Marshaling` Anonymous Struct field (embedding struct) working like named field, `Unmarshal` works fine.
 
 example:
 
