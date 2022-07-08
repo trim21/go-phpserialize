@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/elliotchance/phpserialize v1.3.3
 	github.com/goccy/go-reflect v1.2.0
-	github.com/gookit/goutil v0.5.5
+	github.com/gookit/goutil v0.5.6
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.0
 )
