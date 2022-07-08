@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "local>Trim21/renovate-config"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "github.com/trim21/go-phpserialize"
+      ],
+      "enabled": false
+    }
+  ]
+}
