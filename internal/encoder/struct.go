@@ -2,7 +2,6 @@ package encoder
 
 import (
 	"reflect"
-	"strings"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
@@ -10,14 +9,14 @@ import (
 type structFieldEncoder func(ctx *Ctx, sc *structCtx, b []byte, p uintptr) ([]byte, error)
 
 func compileStruct(rt *runtime.Type) (encoder, error) {
-	var fieldConfigs = make([]fieldConfig, 0, rt.NumField())
+	var fieldConfigs = make([]*runtime.StructTag, 0, rt.NumField())
 	var hasOmitEmptyField = false
 
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
-		cfg := getFieldConfig(field)
+		cfg := runtime.StructTagFromField(field)
 		fieldConfigs = append(fieldConfigs, cfg)
-		if cfg.OmitEmpty {
+		if cfg.IsOmitEmpty {
 			hasOmitEmptyField = true
 		}
 	}
@@ -31,15 +30,15 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
 		cfg := fieldConfigs[i]
-		if cfg.Ignore {
+		if cfg.Key == "-" {
 			continue
 		}
 
-		filedNameEncoder := compileConstStringNoError(cfg.Name)
+		filedNameEncoder := compileConstStringNoError(cfg.Key)
 
 		var fieldEncoder, wrappedEncoder encoder
 		var err error
-		if cfg.AsString {
+		if cfg.IsString {
 			fieldEncoder, err = compileAsString(runtime.Type2RType(field.Type))
 			if err != nil {
 				return nil, err
@@ -70,7 +69,7 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 			}
 		}
 
-		if cfg.OmitEmpty {
+		if cfg.IsOmitEmpty {
 			hasOmitEmptyField = true
 			isEmpty, err := compileEmptyer(runtime.Type2RType(field.Type))
 			if err != nil {
@@ -108,22 +107,22 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 }
 
 // struct don't have `omitempty` tag, fast path
-func compileStructNoOmitEmpty(rt *runtime.Type, fieldConfigs []fieldConfig) (encoder, error) {
+func compileStructNoOmitEmpty(rt *runtime.Type, fieldConfigs []*runtime.StructTag) (encoder, error) {
 	indirect := runtime.IfaceIndir(rt)
 	var encoders []encoder
 	var fieldCount int64
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
 		cfg := fieldConfigs[i]
-		if cfg.Ignore {
+		if cfg.Key == "-" {
 			continue
 		}
 
 		fieldCount++
 
-		filedNameEncoder := compileConstStringNoError(cfg.Name)
+		filedNameEncoder := compileConstStringNoError(cfg.Key)
 
-		if cfg.AsString {
+		if cfg.IsString {
 			fieldValueEncoder, err := compileAsString(runtime.Type2RType(field.Type))
 			if err != nil {
 				return nil, err
@@ -192,53 +191,4 @@ func fieldEncoderWithEmpty(enc encoder, empty isEmpty) structFieldEncoder {
 
 		return enc(ctx, structBuffer, p)
 	}
-}
-
-type fieldConfig struct {
-	Name      string
-	Ignore    bool
-	AsString  bool
-	OmitEmpty bool
-}
-
-func getFieldConfig(field reflect.StructField) fieldConfig {
-	tag := field.Tag.Get(DefaultStructTag)
-
-	if tag == "" {
-		return fieldConfig{Name: field.Name}
-	}
-
-	if tag == "-" {
-		return fieldConfig{Ignore: true}
-	}
-
-	cfg := fieldConfig{Name: field.Name}
-	s := strings.Split(tag, ",")
-
-	if s[0] != "" {
-		cfg.Name = s[0]
-	}
-
-	if len(s) == 1 {
-		return cfg
-	}
-
-	if contains(s[1:], "string") {
-		cfg.AsString = true
-	}
-
-	if contains(s[1:], "omitempty") {
-		cfg.OmitEmpty = true
-	}
-
-	return cfg
-}
-
-func contains[T comparable](elems []T, v T) bool {
-	for _, s := range elems {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }

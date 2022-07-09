@@ -63,12 +63,6 @@ type Generic[T any] struct {
 	Value T
 }
 
-type WithIgnore struct {
-	V       int
-	Ignored string `php:"-" json:"-"`
-	D       any
-}
-
 var testCase = []struct {
 	Name string
 	Data any
@@ -305,27 +299,47 @@ func TestMarshal_float64_as_string(t *testing.T) {
 	})
 }
 
+func TestMarshal_struct_ignore(t *testing.T) {
+	type Ignore struct {
+		V       int
+		Ignored string `php:"-"`
+	}
+
+	t.Run("ignore", func(t *testing.T) {
+		v, err := phpserialize.Marshal(Ignore{
+			V:       3,
+			Ignored: "vvv",
+		})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"V";i:3;}`
+		require.Equal(t, expected, string(v))
+	})
+}
+
 func TestMarshal_float64_as_string_reflect(t *testing.T) {
 	type Container struct {
+		Value any `php:"value"`
+	}
+	type S struct {
 		F float64 `php:"f,string"`
 	}
 
 	t.Run("negative", func(t *testing.T) {
-		v, err := phpserialize.Marshal(WithIgnore{D: Container{F: 3.14}}.D)
+		v, err := phpserialize.Marshal(Container{Value: S{F: 3.14}}.Value)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:4:"3.14";}`
 		require.Equal(t, expected, string(v))
 	})
 
 	t.Run("positive", func(t *testing.T) {
-		v, err := phpserialize.Marshal(WithIgnore{D: Container{F: 1.00}}.D)
+		v, err := phpserialize.Marshal(Container{Value: S{F: 1.00}}.Value)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:1:"1";}`
 		require.Equal(t, expected, string(v))
 	})
 
 	t.Run("zero", func(t *testing.T) {
-		v, err := phpserialize.Marshal(WithIgnore{D: Container{F: -3.14}}.D)
+		v, err := phpserialize.Marshal(Container{Value: S{F: -3.14}}.Value)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
 		require.Equal(t, expected, string(v))
