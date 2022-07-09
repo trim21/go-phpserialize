@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/stretchr/testify v1.8.0
 	github.com/trim21/go-phpserialize v0.0.0
-	github.com/trim21/test v0.0.0
+	trim21.me/test v0.0.0
 )
 
 require (
@@ -19,6 +19,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/trim21/go-phpserialize => ../../../
+replace github.com/trim21/go-phpserialize v0.0.0 => ../../../
 
-replace github.com/trim21/test => ../test/
+replace trim21.me/test v0.0.0 => ../test/

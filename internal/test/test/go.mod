@@ -1,6 +1,6 @@
-module github.com/trim21/test
+module trim21.me/test
 
-go 1.18
+go 1.17
 
 require (
 	github.com/fatih/color v1.13.0
