@@ -1,18 +1,17 @@
 package phpserialize_test
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 	"testing"
 
+	"github.com/fatih/color"
 	"github.com/stretchr/testify/require"
 	"github.com/trim21/go-phpserialize"
 )
+
+func init() {
+	color.NoColor = false // force color
+}
 
 type Inner struct {
 	V int    `php:"v" json:"v"`
@@ -41,11 +40,6 @@ type ContainerNonAnonymous struct {
 	V    int
 }
 
-type ContainerAnonymous struct {
-	OK   bool
-	Item `json:"item" php:"item"`
-}
-
 // map in struct is an indirect ptr
 type MapPtr struct {
 	Users []Item           `php:"users" json:"users"`
@@ -64,77 +58,126 @@ type Generic[T any] struct {
 }
 
 var testCase = []struct {
-	Name string
-	Data any
+	Name     string
+	Data     any
+	Expected string `php:"-" json:"-"`
 }{
-	{Name: "bool true", Data: true},
-	{Name: "bool false", Data: false},
-	{Name: "int8", Data: int8(7)},
-	{Name: "int16", Data: int16(7)},
-	{Name: "int32", Data: int32(7)},
-	{Name: "int64", Data: int64(7)},
-	{Name: "int", Data: int(8)},
-	{Name: "uint8", Data: uint8(7)},
-	{Name: "uint16", Data: uint16(7)},
-	{Name: "uint32", Data: uint32(7)},
-	{Name: "uint64", Data: uint64(7)},
-	{Name: "uint", Data: uint(9)},
-	{Name: "float32", Data: float32(3.14)},
-	{Name: "float64", Data: float64(3.14)},
-	{Name: "string", Data: strings.Repeat("qasd", 5)},
-	{Name: "simple slice", Data: []int{1, 4, 6, 2, 3}},
-	{Name: "struct slice", Data: []Item{{V: 6}, {V: 5}, {4}, {3}, {2}}},
-	{Name: "struct with map ptr", Data: MapPtr{
-		Users: []Item{},
-		Map:   map[string]int64{"one": 1},
-	}},
-	{Name: "struct with map embed", Data: MapOnly{
-		Map: map[string]int64{"one": 1},
-	}},
+	{Name: "bool true", Data: true, Expected: "b:1;"},
+	{Name: "bool false", Data: false, Expected: "b:0;"},
+	{Name: "int8", Data: int8(7), Expected: "i:7;"},
+	{Name: "int16", Data: int16(7), Expected: "i:7;"},
+	{Name: "int32", Data: int32(7), Expected: "i:7;"},
+	{Name: "int64", Data: int64(7), Expected: "i:7;"},
+	{Name: "int", Data: int(8), Expected: "i:8;"},
+	{Name: "uint8", Data: uint8(7), Expected: "i:7;"},
+	{Name: "uint16", Data: uint16(7), Expected: "i:7;"},
+	{Name: "uint32", Data: uint32(7), Expected: "i:7;"},
+	{Name: "uint64", Data: uint64(7777), Expected: "i:7777;"},
+	{Name: "uint", Data: uint(9), Expected: "i:9;"},
+	{Name: "float32", Data: float32(3.14), Expected: "d:3.14;"},
+	{Name: "float64", Data: float64(3.14), Expected: "d:3.14;"},
+	{Name: "string", Data: `qwer"qwer`, Expected: `s:9:"qwer"qwer";`},
+	{Name: "simple slice", Data: []int{1, 4, 6, 2, 3}, Expected: `a:5:{i:0;i:1;i:1;i:4;i:2;i:6;i:3;i:2;i:4;i:3;}`},
+	{
+		Name:     "struct slice",
+		Data:     []Item{{V: 6}, {V: 5}, {4}, {3}, {2}},
+		Expected: `a:5:{i:0;a:1:{s:1:"v";i:6;}i:1;a:1:{s:1:"v";i:5;}i:2;a:1:{s:1:"v";i:4;}i:3;a:1:{s:1:"v";i:3;}i:4;a:1:{s:1:"v";i:2;}}`,
+	},
+	{
+		Name:     "struct with map ptr",
+		Data:     MapPtr{Users: []Item{}, Map: map[string]int64{"one": 1}},
+		Expected: `a:2:{s:5:"users";a:0:{}s:3:"map";a:1:{s:3:"one";i:1;}}`,
+	},
+	{
+		Name:     "struct with map embed",
+		Data:     MapOnly{Map: map[string]int64{"one": 1}},
+		Expected: `a:1:{s:3:"map";a:1:{s:3:"one";i:1;}}`,
+	},
 
-	{Name: "nil map", Data: (map[string]string)(nil)},
+	{
+		Name:     "nil map",
+		Data:     (map[string]string)(nil),
+		Expected: `N;`,
+	},
 
-	{Name: "nested struct not anonymous", Data: ContainerNonAnonymous{
-		OK:   true,
-		Item: Item{V: 5},
-		V:    9999,
-	}},
-
-	{Name: "nested struct anonymous", Data: ContainerAnonymous{
-		Item: Item{V: 5},
-	}},
-
-	{Name: "struct with all", Data: TestData{
-		Users: []User{
-			{ID: 1, Name: "sai"},
-			{ID: 2, Name: "trim21"},
+	{
+		Name: "nested struct not anonymous",
+		Data: ContainerNonAnonymous{
+			OK:   true,
+			Item: Item{V: 5},
+			V:    9999,
 		},
-		B:   false,
-		Obj: Inner{V: 2, S: "vvv"},
+		Expected: `a:3:{s:2:"OK";b:1;s:4:"Item";a:1:{s:1:"v";i:5;}s:1:"V";i:9999;}`,
+	},
 
-		Map: map[int]struct{ V int }{7: {V: 4}},
-	}},
+	// {
+	// 	Name:     "nested struct anonymous",
+	// 	Data:     ContainerAnonymous{Item: Item{V: 5}},
+	// 	Expected: `a:2:{s:2:"OK";b:0;s:4:"item";a:1:{s:1:"v";i:5;}}`,
+	// },
 
-	{Name: "nested map", Data: NestedMap{
-		1: map[uint]string{4: "ok"},
-	}},
+	{
+		Name: "struct with all",
+		Data: TestData{
+			Users: []User{
+				{ID: 1, Name: "sai"},
+				{ID: 2, Name: "trim21"},
+			},
+			B:   false,
+			Obj: Inner{V: 2, S: "vvv"},
 
-	{Name: "map[type]any(map)", Data: map[int]any{
-		1: map[uint]string{4: "ok"},
-	}},
+			Map: map[int]struct{ V int }{7: {V: 4}},
+		},
+		Expected: `a:4:{s:5:"users";a:2:{i:0;a:2:{s:2:"id";i:1;s:4:"name";s:3:"sai";}i:1;a:2:{s:2:"id";i:2;s:4:"name";s:6:"trim21";}}s:3:"obj";a:2:{s:1:"v";i:2;s:37:"a long string name replace field name";s:3:"vvv";}s:2:"ok";b:0;s:3:"map";a:1:{i:7;a:1:{s:1:"V";i:4;}}}`,
+	},
 
-	{Name: "map[type]any(slice)", Data: map[int]any{
-		1: []int{3, 1, 4},
-	}},
+	{
+		Name:     "nested map",
+		Data:     NestedMap{1: map[uint]string{4: "ok"}},
+		Expected: `a:1:{i:1;a:1:{i:4;s:2:"ok";}}`,
+	},
 
-	{Name: "map[type]any(struct)", Data: map[int]any{
-		1: User{},
-	}},
+	{
+		Name:     "map[type]any(map)",
+		Data:     map[int]any{1: map[uint]string{4: "ok"}},
+		Expected: `a:1:{i:1;a:1:{i:4;s:2:"ok";}}`,
+	},
 
-	{Name: "generic[int]", Data: Generic[int]{1}},
-	{Name: "generic[struct]", Data: Generic[User]{User{}}},
-	{Name: "generic[map]", Data: Generic[map[string]int]{map[string]int{"one": 1}}},
-	{Name: "generic[slice]", Data: Generic[[]string]{[]string{"hello", "world"}}},
+	{
+		Name:     "map[type]any(slice)",
+		Data:     map[int]any{1: []int{3, 1, 4}},
+		Expected: `a:1:{i:1;a:3:{i:0;i:3;i:1;i:1;i:2;i:4;}}`,
+	},
+
+	{
+		Name:     "map[type]any(struct)",
+		Data:     map[int]any{1: User{}},
+		Expected: `a:1:{i:1;a:2:{s:2:"id";i:0;s:4:"name";s:0:"";}}`,
+	},
+
+	{
+		Name:     "generic[int]",
+		Data:     Generic[int]{1},
+		Expected: `a:1:{s:5:"Value";i:1;}`,
+	},
+
+	{
+		Name:     "generic[struct]",
+		Data:     Generic[User]{User{}},
+		Expected: `a:1:{s:5:"Value";a:2:{s:2:"id";i:0;s:4:"name";s:0:"";}}`,
+	},
+
+	{
+		Name:     "generic[map]",
+		Data:     Generic[map[string]int]{map[string]int{"one": 1}},
+		Expected: `a:1:{s:5:"Value";a:1:{s:3:"one";i:1;}}`,
+	},
+
+	{
+		Name:     "generic[slice]",
+		Data:     Generic[[]string]{[]string{"hello", "world"}},
+		Expected: `a:1:{s:5:"Value";a:2:{i:0;s:5:"hello";i:1;s:5:"world";}}`,
+	},
 }
 
 func TestMarshal_concrete_types(t *testing.T) {
@@ -142,13 +185,13 @@ func TestMarshal_concrete_types(t *testing.T) {
 	for _, data := range testCase {
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
-			t.Parallel()
 			b, err := phpserialize.Marshal(data.Data)
 			require.NoError(t, err)
 
-			j := decodeWithRealPhp(t, b)
-
-			require.JSONEq(t, jsonEncode(t, data.Data), j, "lib: "+string(b)+"\nphp to php: "+j+"\njson.Marshal(data): "+jsonEncode(t, data.Data))
+			actual := string(b)
+			if actual != data.Expected {
+				t.Errorf("Result not as expected:\n%v", CharacterDiff(data.Expected, actual))
+			}
 		})
 	}
 }
@@ -162,9 +205,11 @@ func TestMarshal_interface(t *testing.T) {
 			b, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 
-			j := decodeWithRealPhp(t, b)
-
-			require.JSONEq(t, jsonEncode(t, data), j, "lib: "+string(b)+"\nphp to php: "+j+"\njson.Marshal(data): "+jsonEncode(t, data))
+			expected := fmt.Sprintf(`a:2:{s:4:"Name";s:%d:"%s";s:4:"Data";`, len(data.Name), data.Name) + data.Expected + "}"
+			actual := string(b)
+			if actual != expected {
+				t.Errorf("Result not as expected:\n%v", CharacterDiff(expected, actual))
+			}
 		})
 	}
 }
@@ -344,45 +389,6 @@ func TestMarshal_float64_as_string_reflect(t *testing.T) {
 		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
 		require.Equal(t, expected, string(v))
 	})
-}
-
-func decodeWithRealPhp(t *testing.T, s []byte) string {
-	os.MkdirAll("./tmp/", 0700)
-	fs := t.Name()
-	for _, c := range "/{}()<>" {
-		fs = strings.ReplaceAll(fs, string(c), "-")
-	}
-
-	fs = filepath.Join("./tmp/", fs) + ".php"
-
-	file, err := os.Create(fs)
-	require.NoError(t, err)
-
-	fmt.Fprintf(file, `<?php
-
-$val = unserialize('%s');
-
-print json_encode($val);
-`, s)
-
-	require.NoError(t, file.Close())
-
-	var buf = bytes.NewBuffer(nil)
-
-	cmd := exec.Command("php", fs)
-	cmd.Stdout = buf
-
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	return buf.String()
-}
-
-func jsonEncode(t *testing.T, value any) string {
-	v, err := json.Marshal(value)
-	require.NoError(t, err)
-
-	return string(v)
 }
 
 func TestMarshal_ptr(t *testing.T) {
