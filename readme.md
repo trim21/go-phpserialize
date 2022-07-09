@@ -4,10 +4,10 @@ PHP `serialize()` and `unserialize()` for Go.
 
 Support All go type including `map`, `slice`, `strcut`, and simple type like `int`, `uint` ...etc.
 
-supported go version:
+## supported and tested go version
 
 - 1.17
-- 1.18 (tested with generic)
+- 1.18 (go 1.18+ with have extra generic type tests)
 
 ## Use case:
 
@@ -71,7 +71,7 @@ func main() {
 }
 ```
 
-you can un-serialize it in php to 
+you can un-serialize it in php to
 
 ```php
 array(
@@ -138,8 +138,7 @@ you will see
 }
 ```
 
-
-`any` type will be decoded to `map[any]any`, where key maybe `int64` or `string`, and value can be anything. 
+`any` type will be decoded to `map[any]any`, where key maybe `int64` or `string`, and value can be anything.
 
 Heavily inspired by https://github.com/goccy/go-json
 
@@ -157,3 +156,7 @@ So a malicious input like `a:100000000:{}` may become `make([]T, 100000000)` and
 
 If you have to decode some un-trusted bytes, make sure only decode them into fixed-length golang array or struct,
 never decode them to `interface`, `slice` or `map`.
+
+## License
+
+MIT License
