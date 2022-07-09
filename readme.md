@@ -82,7 +82,7 @@ array(
         ),
     ),
     "obj" => array(
-        "v" => "2",
+        "v" => 2,
         "a long string name replace field name" => "vvv",
     ),
 );
