@@ -2,7 +2,7 @@
 
 you can see full result at [benchmark.txt](./benchmark.txt)
 
-compare with https://github.comm/elliotchance/phpserialize (will have to use map to marshal php array)
+compare with https://github.com/elliotchance/phpserialize (will have to use map to marshal php array)
 
 ```text
 goos: windows
