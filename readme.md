@@ -40,7 +40,7 @@ type Inner struct {
 }
 
 type With struct {
-	Users   []User `php:"users"`
+	Users   []User `php:"users,omitempty"`
 	Obj     Inner  `php:"obj"`
 	Ignored bool   `php:"-"`
 }
