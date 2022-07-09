@@ -13,6 +13,10 @@ func init() {
 	color.NoColor = false // force color
 }
 
+type Contianer struct {
+	Value any `php:"value"`
+}
+
 type Inner struct {
 	V int    `php:"v" json:"v"`
 	S string `php:"a long string name replace field name" json:"a long string name replace field name"`
@@ -201,10 +205,10 @@ func TestMarshal_concrete_types(t *testing.T) {
 	for _, data := range testCase {
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
-			b, err := phpserialize.Marshal(data.Data)
+			actual, err := phpserialize.Marshal(data.Data)
 			require.NoError(t, err)
 
-			stringEqual(t, data.Expected, string(b))
+			stringEqual(t, data.Expected, string(actual))
 		})
 	}
 }
@@ -215,12 +219,11 @@ func TestMarshal_interface(t *testing.T) {
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
 			t.Parallel()
-			b, err := phpserialize.Marshal(data)
+			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 
 			expected := fmt.Sprintf(`a:2:{s:4:"Name";s:%d:"%s";s:4:"Data";`, len(data.Name), data.Name) + data.Expected + "}"
-			actual := string(b)
-			stringEqual(t, expected, actual)
+			stringEqual(t, expected, string(actual))
 		})
 	}
 }
@@ -238,17 +241,17 @@ func TestMarshal_int_as_string(t *testing.T) {
 	})
 
 	t.Run("positive", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{I: 1040})
+		actual, err := phpserialize.Marshal(Container{I: 1040})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:4:"1040";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 
 	t.Run("zero", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{I: 0})
+		actual, err := phpserialize.Marshal(Container{I: 0})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:1:"0";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 }
 
@@ -258,17 +261,17 @@ func TestMarshal_uint_as_string(t *testing.T) {
 	}
 
 	t.Run("zero", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{I: 0})
+		actual, err := phpserialize.Marshal(Container{I: 0})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:1:"0";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 
 	t.Run("positive", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{I: 1040})
+		actual, err := phpserialize.Marshal(Container{I: 1040})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:4:"1040";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 }
 
@@ -278,15 +281,15 @@ func TestMarshal_bool_as_string(t *testing.T) {
 	}
 
 	t.Run("true", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{true})
+		actual, err := phpserialize.Marshal(Container{true})
 		require.NoError(t, err)
-		require.Equal(t, `a:1:{s:1:"B";s:4:"true";}`, string(v))
+		require.Equal(t, `a:1:{s:1:"B";s:4:"true";}`, string(actual))
 	})
 
 	t.Run("false", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{false})
+		actual, err := phpserialize.Marshal(Container{false})
 		require.NoError(t, err)
-		require.Equal(t, `a:1:{s:1:"B";s:5:"false";}`, string(v))
+		require.Equal(t, `a:1:{s:1:"B";s:5:"false";}`, string(actual))
 	})
 }
 
@@ -296,24 +299,24 @@ func TestMarshal_float32_as_string(t *testing.T) {
 	}
 
 	t.Run("negative", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{F: 3.14})
+		actual, err := phpserialize.Marshal(Container{F: 3.14})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:4:"3.14";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 
 	t.Run("positive", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{F: 1.00})
+		actual, err := phpserialize.Marshal(Container{F: 1.00})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:1:"1";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 
 	t.Run("zero", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{F: -3.14})
+		actual, err := phpserialize.Marshal(Container{F: -3.14})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 }
 
@@ -323,24 +326,24 @@ func TestMarshal_float64_as_string(t *testing.T) {
 	}
 
 	t.Run("negative", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{F: 3.14})
+		actual, err := phpserialize.Marshal(Container{F: 3.14})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:4:"3.14";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 
 	t.Run("positive", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{F: 1.00})
+		actual, err := phpserialize.Marshal(Container{F: 1.00})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:1:"1";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 
 	t.Run("zero", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{F: -3.14})
+		actual, err := phpserialize.Marshal(Container{F: -3.14})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 }
 
@@ -353,24 +356,24 @@ func TestMarshal_float64_as_string_reflect(t *testing.T) {
 	}
 
 	t.Run("negative", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{Value: S{F: 3.14}}.Value)
+		actual, err := phpserialize.Marshal(Container{Value: S{F: 3.14}}.Value)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:4:"3.14";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 
 	t.Run("positive", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{Value: S{F: 1.00}}.Value)
+		actual, err := phpserialize.Marshal(Container{Value: S{F: 1.00}}.Value)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:1:"1";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 
 	t.Run("zero", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Container{Value: S{F: -3.14}}.Value)
+		actual, err := phpserialize.Marshal(Container{Value: S{F: -3.14}}.Value)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
-		stringEqual(t, expected, string(v))
+		stringEqual(t, expected, string(actual))
 	})
 }
 
@@ -412,7 +415,7 @@ func TestMarshal_ptr(t *testing.T) {
 		var p = &v
 		var a any = &p
 
-		expected := `a:1:{s:3:"f1q";s:10:"0147852369";}`
+		expected := `a:1:{s:5:"value";i:8;}`
 		actual, err := phpserialize.Marshal(Container{Value: &a})
 		require.NoError(t, err)
 		stringEqual(t, expected, string(actual))
@@ -456,6 +459,28 @@ func TestMarshal_map(t *testing.T) {
 		expected := `a:2:{s:5:"users";N;s:3:"map";a:1:{s:6:"abcdef";i:1;}}`
 		stringEqual(t, expected, string(actual))
 	})
+}
+
+type M interface {
+	Bool() bool
+}
+
+type mImpl struct {
+}
+
+func (m mImpl) Bool() bool {
+	return true
+}
+
+func TestMarshal_interface_with_method(t *testing.T) {
+	t.Parallel()
+
+	var data M = mImpl{}
+
+	actual, err := phpserialize.Marshal(Contianer{Value: data})
+	require.NoError(t, err)
+	expected := `a:1:{s:5:"value";a:0:{}}`
+	stringEqual(t, expected, string(actual))
 }
 
 func stringEqual(t *testing.T, expected, actual string) {

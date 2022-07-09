@@ -18,8 +18,7 @@ heavy usage of `unsafe`.
 
 #### Limitation:
 
-1. `Marshaling` Anonymous Struct field (embedding struct) working like named field, `Unmarshal` works fine.
-2. if you want to marshal struct with interface, only `any` (`interface` without any methods) is supported.
+`Marshaling` Anonymous Struct field (embedding struct) working like named field, `Unmarshal` works fine.
 
 ## example
 
