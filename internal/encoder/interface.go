@@ -11,24 +11,23 @@ import (
 // will need to get type message at marshal time, slow path.
 // should avoid interface for performance thinking.
 func compileInterface(rt *runtime.Type) (encoder, error) {
-	return func(ctx *Ctx, p uintptr) error {
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		v := *(*any)(unsafe.Pointer(&emptyInterface{
 			typ: rt,
 			ptr: unsafe.Pointer(p),
 		}))
 
-		return reflectInterfaceValue(ctx, reflect.ValueOf(v), p)
+		return reflectInterfaceValue(ctx, b, reflect.ValueOf(v), p)
 	}, nil
 }
 
-func reflectInterfaceValue(ctx *Ctx, rv reflect.Value, p uintptr) error {
+func reflectInterfaceValue(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, error) {
 LOOP:
 	for {
 		switch rv.Kind() {
 		case reflect.Ptr, reflect.Interface:
 			if rv.IsNil() || rv.IsZero() {
-				appendNil(ctx)
-				return nil
+				return appendNilBytes(b), nil
 			}
 			rv = rv.Elem()
 		default:
@@ -44,33 +43,33 @@ LOOP:
 	// simple type
 	switch v.typ.Kind() {
 	case reflect.Bool:
-		return encodeBool(ctx, pp)
+		return encodeBool(ctx, b, pp)
 	case reflect.Uint8:
-		return encodeUint8(ctx, pp)
+		return encodeUint8(ctx, b, pp)
 	case reflect.Uint16:
-		return encodeUint16(ctx, pp)
+		return encodeUint16(ctx, b, pp)
 	case reflect.Uint32:
-		return encodeUint32(ctx, pp)
+		return encodeUint32(ctx, b, pp)
 	case reflect.Uint64:
-		return encodeUint64(ctx, pp)
+		return encodeUint64(ctx, b, pp)
 	case reflect.Uint:
-		return encodeUint(ctx, pp)
+		return encodeUint(ctx, b, pp)
 	case reflect.Int8:
-		return encodeInt8(ctx, pp)
+		return encodeInt8(ctx, b, pp)
 	case reflect.Int16:
-		return encodeInt16(ctx, pp)
+		return encodeInt16(ctx, b, pp)
 	case reflect.Int32:
-		return encodeInt32(ctx, pp)
+		return encodeInt32(ctx, b, pp)
 	case reflect.Int64:
-		return encodeInt64(ctx, pp)
+		return encodeInt64(ctx, b, pp)
 	case reflect.Int:
-		return encodeInt(ctx, pp)
+		return encodeInt(ctx, b, pp)
 	case reflect.Float32:
-		return encodeFloat32(ctx, pp)
+		return encodeFloat32(ctx, b, pp)
 	case reflect.Float64:
-		return encodeFloat64(ctx, pp)
+		return encodeFloat64(ctx, b, pp)
 	case reflect.String:
-		return encodeStringVariable(ctx, pp)
+		return encodeStringVariable(ctx, b, pp)
 	}
 
 	// if rv.Type().Kind() == reflect.Slice {
@@ -89,35 +88,34 @@ LOOP:
 
 	switch rv.Kind() {
 	case reflect.Slice:
-		return reflectSlice(ctx, rv, p)
+		return reflectSlice(ctx, b, rv, p)
 	case reflect.Map:
-		return reflectMap(ctx, rv)
+		return reflectMap(ctx, b, rv)
 	case reflect.Struct:
-		return reflectStruct(ctx, rv, pp)
+		return reflectStruct(ctx, b, rv, pp)
 	}
 
-	return &UnsupportedInterfaceTypeError{rv.Type()}
+	return b, &UnsupportedInterfaceTypeError{rv.Type()}
 }
 
 func compileInterfaceAsString(rt *runtime.Type) (encoder, error) {
-	return func(ctx *Ctx, p uintptr) error {
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		v := *(*any)(unsafe.Pointer(&emptyInterface{
 			typ: rt,
 			ptr: unsafe.Pointer(p),
 		}))
 
-		return reflectInterfaceValueAsString(ctx, reflect.ValueOf(v))
+		return reflectInterfaceValueAsString(ctx, b, reflect.ValueOf(v))
 	}, nil
 }
 
-func reflectInterfaceValueAsString(ctx *Ctx, rv reflect.Value) error {
+func reflectInterfaceValueAsString(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 LOOP:
 	for {
 		switch rv.Kind() {
 		case reflect.Ptr, reflect.Interface:
 			if rv.IsNil() || rv.IsZero() {
-				appendNil(ctx)
-				return nil
+				return appendNilBytes(b), nil
 			}
 			rv = rv.Elem()
 		default:
@@ -133,33 +131,33 @@ LOOP:
 	// simple type
 	switch v.typ.Kind() {
 	case reflect.Bool:
-		return encodeBoolAsString(ctx, p)
+		return encodeBoolAsString(ctx, b, p)
 	case reflect.Uint8:
-		return encodeUint8AsString(ctx, p)
+		return encodeUint8AsString(ctx, b, p)
 	case reflect.Uint16:
-		return encodeUint16AsString(ctx, p)
+		return encodeUint16AsString(ctx, b, p)
 	case reflect.Uint32:
-		return encodeUint32AsString(ctx, p)
+		return encodeUint32AsString(ctx, b, p)
 	case reflect.Uint64:
-		return encodeUint64AsString(ctx, p)
+		return encodeUint64AsString(ctx, b, p)
 	case reflect.Uint:
-		return encodeUintAsString(ctx, p)
+		return encodeUintAsString(ctx, b, p)
 	case reflect.Int8:
-		return encodeInt8AsString(ctx, p)
+		return encodeInt8AsString(ctx, b, p)
 	case reflect.Int16:
-		return encodeInt16AsString(ctx, p)
+		return encodeInt16AsString(ctx, b, p)
 	case reflect.Int32:
-		return encodeInt32AsString(ctx, p)
+		return encodeInt32AsString(ctx, b, p)
 	case reflect.Int64:
-		return encodeInt64AsString(ctx, p)
+		return encodeInt64AsString(ctx, b, p)
 	case reflect.Int:
-		return encodeIntAsString(ctx, p)
+		return encodeIntAsString(ctx, b, p)
 	case reflect.Float32:
-		return encodeFloat32AsString(ctx, p)
+		return encodeFloat32AsString(ctx, b, p)
 	case reflect.Float64:
-		return encodeFloat64AsString(ctx, p)
+		return encodeFloat64AsString(ctx, b, p)
 	}
 
 	// slice, map and struct as interface are not supported yet.
-	return fmt.Errorf("failed to encode %s as string", rv.Kind())
+	return b, fmt.Errorf("failed to encode %s as string", rv.Kind())
 }

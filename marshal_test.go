@@ -154,7 +154,7 @@ func TestMarshal_concrete_types(t *testing.T) {
 
 			j := decodeWithRealPhp(t, b)
 
-			require.JSONEq(t, jsonEncode(t, data.Data), j)
+			require.JSONEq(t, jsonEncode(t, data.Data), j, "lib: "+string(b)+"\nphp to json: "+j+"\njson.Marshal(data): "+jsonEncode(t, data.Data))
 		})
 	}
 }

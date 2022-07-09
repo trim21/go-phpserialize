@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
@@ -12,12 +13,18 @@ const DefaultStructTag = "php"
 
 var typeToEncoderMap sync.Map
 
-type encoder func(ctx *Ctx, p uintptr) error
+type encoder func(ctx *Ctx, b []byte, p uintptr) ([]byte, error)
+
+func compileTypeID(typeID uintptr) (encoder, error) {
+	rt := *(**runtime.Type)(unsafe.Pointer(&typeID))
+
+	return compile(rt)
+}
 
 func compile(rt *runtime.Type) (encoder, error) {
 	switch rt.Kind() {
 	case reflect.Bool:
-		return compileBool(rt)
+		return encodeBool, nil
 	case reflect.Int8:
 		return encodeInt8, nil
 	case reflect.Int16:
@@ -109,4 +116,35 @@ func compileAsString(rt *runtime.Type) (encoder, error) {
 	return nil, fmt.Errorf(
 		"failed to build encoder for struct field (as string), unsupported type %s (kind %s)",
 		rt.String(), rt.Kind())
+}
+
+func compileWithCache(rt *runtime.Type) (encoder, error) {
+	typeID := uintptr(unsafe.Pointer(rt))
+	if enc, ok := typeToEncoderMap.Load(typeID); ok {
+		return enc.(encoder), nil
+	}
+
+	encoder, err := compile(rt)
+	if err != nil {
+		return nil, err
+	}
+
+	typeToEncoderMap.Store(typeID, encoder)
+
+	return encoder, nil
+}
+
+func compileTypeIDWithCache(typeID uintptr) (encoder, error) {
+	if enc, ok := typeToEncoderMap.Load(typeID); ok {
+		return enc.(encoder), nil
+	}
+
+	encoder, err := compileTypeID(typeID)
+	if err != nil {
+		return nil, err
+	}
+
+	typeToEncoderMap.Store(typeID, encoder)
+
+	return encoder, nil
 }

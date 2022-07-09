@@ -11,58 +11,59 @@ func unpackIface(p uintptr) uintptr {
 	return uintptr((*(*emptyInterface)(unsafe.Pointer(p))).ptr)
 }
 
-func reflectSlice(ctx *Ctx, rv reflect.Value, p uintptr) error {
+func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, error) {
 	rt := rv.Type()
 
 	// not slice of interface, fast path
 	if rt.Elem().Kind() != reflect.Interface {
-		return reflectConcreteSlice(ctx, runtime.Type2RType(rt), p)
+		return reflectConcreteSlice(ctx, b, runtime.Type2RType(rt), p)
 	}
 
 	shPtr := unpackIface(p)
 	// no data ptr, nil slice
 	// even empty slice has a non-zero data ptr
 	if shPtr == 0 {
-		appendNil(ctx)
-		return nil
+		return appendNilBytes(b), nil
 	}
 
 	el := runtime.Type2RType(rt.Elem())
 
 	encoder, err := compileInterface(el)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	sh := *(*runtime.SliceHeader)(unsafe.Pointer(shPtr))
+	sh := **(**runtime.SliceHeader)(unsafe.Pointer(&shPtr))
 	offset := rt.Elem().Size()
 
 	dataPtr := uintptr(sh.Data)
-	appendArrayBegin(ctx, int64(sh.Len))
+
+	b = appendArrayBeginBytes(b, int64(sh.Len))
+
 	for i := 0; i < sh.Len; i++ {
-		appendInt(ctx, int64(i))
-		err := encoder(ctx, dataPtr+uintptr(i)*offset)
+		b = appendIntBytes(b, int64(i))
+		b, err = encoder(ctx, b, dataPtr+uintptr(i)*offset)
 		if err != nil {
-			return err
+			return b, err
 		}
 	}
-	ctx.b = append(ctx.b, '}')
-	return nil
+
+	return append(b, '}'), nil
 }
 
-func reflectConcreteSlice(ctx *Ctx, rt *runtime.Type, p uintptr) error {
+func reflectConcreteSlice(ctx *Ctx, b []byte, rt *runtime.Type, p uintptr) ([]byte, error) {
 	var typeID = uintptr(unsafe.Pointer(rt))
 
 	p = unpackIface(p)
 
 	if enc, ok := typeToEncoderMap.Load(typeID); ok {
-		return enc.(encoder)(ctx, p)
+		return enc.(encoder)(ctx, b, p)
 	}
 
-	enc, err := compile(rt)
+	enc, err := compileWithCache(rt)
 	if err != nil {
-		panic(err)
+		return b, err
 	}
 
-	return enc(ctx, p)
+	return enc(ctx, b, p)
 }

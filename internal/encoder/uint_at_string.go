@@ -26,42 +26,41 @@ func compileUintAsString(rt *runtime.Type) (encoder, error) {
 	panic(fmt.Sprintf("unexpected kind %s", rt.Kind()))
 }
 
-func encodeUint8AsString(buf *Ctx, p uintptr) error {
+func encodeUint8AsString(buf *Ctx, b []byte, p uintptr) ([]byte, error) {
 	value := *(*uint8)(unsafe.Pointer(p))
-	appendUintAsString(buf, uint64(value))
-	return nil
+	return appendUintAsString(b, uint64(value))
+
 }
 
-func encodeUint16AsString(buf *Ctx, p uintptr) error {
+func encodeUint16AsString(buf *Ctx, b []byte, p uintptr) ([]byte, error) {
 	value := *(*uint16)(unsafe.Pointer(p))
-	appendUintAsString(buf, uint64(value))
-	return nil
+	return appendUintAsString(b, uint64(value))
+
 }
 
-func encodeUint32AsString(buf *Ctx, p uintptr) error {
+func encodeUint32AsString(buf *Ctx, b []byte, p uintptr) ([]byte, error) {
 	value := *(*uint32)(unsafe.Pointer(p))
-	appendUintAsString(buf, uint64(value))
-	return nil
+	return appendUintAsString(b, uint64(value))
+
 }
 
-func encodeUint64AsString(buf *Ctx, p uintptr) error {
+func encodeUint64AsString(buf *Ctx, b []byte, p uintptr) ([]byte, error) {
 	value := *(*uint64)(unsafe.Pointer(p))
-	appendUintAsString(buf, value)
-	return nil
+	return appendUintAsString(b, uint64(value))
+
 }
 
-func encodeUintAsString(buf *Ctx, p uintptr) error {
+func encodeUintAsString(buf *Ctx, b []byte, p uintptr) ([]byte, error) {
 	value := *(*uint)(unsafe.Pointer(p))
-	appendUintAsString(buf, uint64(value))
-	return nil
+	return appendUintAsString(b, uint64(value))
 }
 
-func appendUintAsString(ctx *Ctx, v uint64) {
-	appendStringHead(ctx, uintDigitsCount(v))
-
-	ctx.b = append(ctx.b, '"')
-	ctx.b = strconv.AppendUint(ctx.b, v, 10)
-	ctx.b = append(ctx.b, '"', ';')
+func appendUintAsString(b []byte, v uint64) ([]byte, error) {
+	b = appendStringHeadBytes(b, uintDigitsCount(v))
+	b = append(b, '"')
+	b = strconv.AppendUint(b, v, 10)
+	b = append(b, '"', ';')
+	return b, nil
 }
 
 func uintDigitsCount(number uint64) int64 {

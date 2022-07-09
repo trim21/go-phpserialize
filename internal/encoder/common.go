@@ -2,30 +2,26 @@ package encoder
 
 import "strconv"
 
-func appendArrayBegin(ctx *Ctx, fieldNum int64) {
-	ctx.b = append(ctx.b, 'a', ':')
-	ctx.b = strconv.AppendInt(ctx.b, fieldNum, 10)
-	ctx.b = append(ctx.b, ':', '{')
+func appendEmptyArray(b []byte) []byte {
+	return append(b, `a:0:{}`...)
 }
 
-func appendEmptyArray(ctx *Ctx) {
-	ctx.b = append(ctx.b, 'a', ':', '0', ':', '{', '}')
+func appendNilBytes(b []byte) []byte {
+	return append(b, 'N', ';')
 }
 
-func appendString(ctx *Ctx, s string) {
-	ctx.b = append(ctx.b, 's', ':')
-	ctx.b = strconv.AppendInt(ctx.b, int64(len(s)), 10)
-	ctx.b = append(ctx.b, ':')
-	ctx.b = strconv.AppendQuote(ctx.b, s)
-	ctx.b = append(ctx.b, ';')
+func appendStringHeadBytes(b []byte, length int64) []byte {
+	b = append(b, 's', ':')
+	b = strconv.AppendInt(b, length, 10)
+	return append(b, ':')
 }
 
-func appendNil(ctx *Ctx) {
-	ctx.b = append(ctx.b, 'N', ';')
+func appendEmptyArrayBytes(b []byte) []byte {
+	return append(b, 'a', ':', '0', ':', '{', '}')
 }
 
-func appendStringHead(ctx *Ctx, length int64) {
-	ctx.b = append(ctx.b, 's', ':')
-	ctx.b = strconv.AppendInt(ctx.b, length, 10)
-	ctx.b = append(ctx.b, ':')
+func appendArrayBeginBytes(b []byte, fieldNum int64) []byte {
+	b = append(b, 'a', ':')
+	b = strconv.AppendInt(b, fieldNum, 10)
+	return append(b, ':', '{')
 }

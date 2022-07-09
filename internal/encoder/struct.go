@@ -7,95 +7,191 @@ import (
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-type structFieldEncoder func(ctx *Ctx, sc *structCtx, p uintptr) error
+type structFieldEncoder func(ctx *Ctx, sc *structCtx, b []byte, p uintptr) ([]byte, error)
 
 func compileStruct(rt *runtime.Type) (encoder, error) {
-	indirect := runtime.IfaceIndir(rt)
-	var encoders []structFieldEncoder
+	var fieldConfigs = make([]fieldConfig, 0, rt.NumField())
+	var hasOmitEmptyField = false
 
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
 		cfg := getFieldConfig(field)
+		fieldConfigs = append(fieldConfigs, cfg)
+		if cfg.OmitEmpty {
+			hasOmitEmptyField = true
+		}
+	}
+
+	if !hasOmitEmptyField {
+		return compileStructNoOmitEmpty(rt, fieldConfigs)
+	}
+
+	indirect := runtime.IfaceIndir(rt)
+	var encoders []structFieldEncoder
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+		cfg := fieldConfigs[i]
 		if cfg.Ignore {
 			continue
 		}
 
 		filedNameEncoder := compileConstStringNoError(cfg.Name)
 
-		var enc encoder
+		var fieldEncoder, wrappedEncoder encoder
 		var err error
-		var wrappedEncoder encoder
 		if cfg.AsString {
-			enc, err = compileAsString(runtime.Type2RType(field.Type))
+			fieldEncoder, err = compileAsString(runtime.Type2RType(field.Type))
 			if err != nil {
 				return nil, err
 			}
 
 			offset := field.Offset
-			wrappedEncoder = func(ctx *Ctx, p uintptr) error {
-				filedNameEncoder(ctx)
-				return enc(ctx, p+offset)
+			wrappedEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+				b = filedNameEncoder(ctx, b)
+				return fieldEncoder(ctx, b, p+offset)
 			}
 		} else {
-			enc, err = compile(runtime.Type2RType(field.Type))
+			fieldEncoder, err = compile(runtime.Type2RType(field.Type))
 			if err != nil {
 				return nil, err
 			}
 
 			offset := field.Offset
 			if indirect && field.Type.Kind() == reflect.Map {
-				wrappedEncoder = func(ctx *Ctx, p uintptr) error {
-					filedNameEncoder(ctx)
-					return enc(ctx, ptrOfPtr(p+offset))
+				wrappedEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+					b = filedNameEncoder(ctx, b)
+					return fieldEncoder(ctx, b, ptrOfPtr(p+offset))
 				}
 			} else {
-				wrappedEncoder = func(ctx *Ctx, p uintptr) error {
-					filedNameEncoder(ctx)
-					return enc(ctx, p+offset)
+				wrappedEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+					b = filedNameEncoder(ctx, b)
+					return fieldEncoder(ctx, b, p+offset)
 				}
 			}
 		}
 
-		var isEmpty = notIgnore
-
 		if cfg.OmitEmpty {
-			isEmpty, err = compileEmptyer(runtime.Type2RType(field.Type))
+			hasOmitEmptyField = true
+			isEmpty, err := compileEmptyer(runtime.Type2RType(field.Type))
 			if err != nil {
 				return nil, err
 			}
+			encoders = append(encoders, fieldEncoderWithEmpty(wrappedEncoder, isEmpty))
+		} else {
+			encoders = append(encoders, func(ctx *Ctx, sc *structCtx, structBuffer []byte, p uintptr) ([]byte, error) {
+				sc.writtenField++
+				return wrappedEncoder(ctx, structBuffer, p)
+			})
 		}
-
-		encoders = append(encoders, func(ctx *Ctx, sc *structCtx, p uintptr) error {
-			empty, err := isEmpty(ctx, p)
-			if err != nil {
-				return err
-			}
-			if empty {
-				return nil
-			}
-			sc.writtenField++
-			return wrappedEncoder(ctx, p)
-		})
 	}
 
-	return func(ctx *Ctx, p uintptr) error {
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		sc := newStructCtx()
 		defer freeStructCtx(sc)
 
-		newCtx := newCtx()
-		defer freeCtx(newCtx)
+		buf := newBuffer()
+		defer freeBuffer(buf)
 
+		var err error
 		for _, enc := range encoders {
-			if err := enc(newCtx, sc, p); err != nil {
-				return err
+			buf.b, err = enc(ctx, sc, buf.b, p)
+			if err != nil {
+				return b, err
 			}
 		}
 
-		appendArrayBegin(ctx, sc.writtenField)
-		ctx.b = append(ctx.b, newCtx.b...)
-		ctx.b = append(ctx.b, '}')
-		return nil
+		b = appendArrayBeginBytes(b, sc.writtenField)
+		b = append(b, buf.b...)
+
+		return append(b, '}'), nil
 	}, nil
+}
+
+// struct don't have `omitempty` tag, fast path
+func compileStructNoOmitEmpty(rt *runtime.Type, fieldConfigs []fieldConfig) (encoder, error) {
+	indirect := runtime.IfaceIndir(rt)
+	var encoders []encoder
+	var fieldCount int64
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+		cfg := fieldConfigs[i]
+		if cfg.Ignore {
+			continue
+		}
+
+		fieldCount++
+
+		filedNameEncoder := compileConstStringNoError(cfg.Name)
+
+		if cfg.AsString {
+			fieldValueEncoder, err := compileAsString(runtime.Type2RType(field.Type))
+			if err != nil {
+				return nil, err
+			}
+
+			offset := field.Offset
+			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+				b = filedNameEncoder(ctx, b)
+				return fieldValueEncoder(ctx, b, p+offset)
+			})
+			continue
+		}
+
+		fieldValueEncoder, err := compile(runtime.Type2RType(field.Type))
+		if err != nil {
+			return nil, err
+		}
+
+		offset := field.Offset
+		if indirect && field.Type.Kind() == reflect.Map {
+			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+				b = filedNameEncoder(ctx, b)
+				return fieldValueEncoder(ctx, b, ptrOfPtr(p+offset))
+			})
+		} else {
+			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+				b = filedNameEncoder(ctx, b)
+				return fieldValueEncoder(ctx, b, p+offset)
+			})
+		}
+	}
+
+	return structEncoderNoOmitEmpty(encoders, fieldCount), nil
+}
+
+func structEncoderNoOmitEmpty(encoders []encoder, fieldCount int64) encoder {
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+		sc := newStructCtx()
+		defer freeStructCtx(sc)
+
+		b = appendArrayBeginBytes(b, fieldCount)
+
+		var err error
+		for _, enc := range encoders {
+			b, err = enc(ctx, b, p)
+			if err != nil {
+				return b, err
+			}
+		}
+
+		return append(b, '}'), nil
+	}
+}
+
+func fieldEncoderWithEmpty(enc encoder, empty isEmpty) structFieldEncoder {
+	return func(ctx *Ctx, sc *structCtx, structBuffer []byte, p uintptr) ([]byte, error) {
+		shouldIgnore, err := empty(ctx, p)
+		if err != nil {
+			return structBuffer, err
+		}
+		if shouldIgnore {
+			return structBuffer, nil
+		}
+
+		sc.writtenField++
+
+		return enc(ctx, structBuffer, p)
+	}
 }
 
 type fieldConfig struct {

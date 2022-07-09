@@ -8,23 +8,22 @@ import (
 var ctxPool = sync.Pool{
 	New: func() any {
 		return &Ctx{
-			b:        make([]byte, 0, 1024),
-			KeepRefs: make([]unsafe.Pointer, 0, 8),
+			KeepRefs:    make([]unsafe.Pointer, 0, 8),
+			floatBuffer: make([]byte, 0, 10),
 		}
 	},
 }
 
 type Ctx struct {
-	b        []byte
-	KeepRefs []unsafe.Pointer
+	// KeepRefs []unsafe.Pointer
 
 	// a buffer to encode float as string
 	floatBuffer []byte
+	KeepRefs    []unsafe.Pointer
 }
 
 func newCtx() *Ctx {
 	ctx := ctxPool.Get().(*Ctx)
-	ctx.b = ctx.b[:0]
 
 	return ctx
 }

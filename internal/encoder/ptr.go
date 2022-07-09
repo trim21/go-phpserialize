@@ -6,7 +6,6 @@ import (
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-// TODO: why ptr work fine without an encoder?
 func compilePtr(rt *runtime.Type) (encoder, error) {
 	switch rt.Elem().Kind() {
 	case reflect.Bool:
@@ -44,7 +43,7 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 		return nil, err
 	}
 
-	return func(ctx *Ctx, p uintptr) error {
-		return enc(ctx, ptrOfPtr(p))
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+		return enc(ctx, b, ptrOfPtr(p))
 	}, nil
 }

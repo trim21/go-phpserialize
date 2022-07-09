@@ -2,7 +2,6 @@ package encoder
 
 import (
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
@@ -43,44 +42,41 @@ func compileMap(rt *runtime.Type) (encoder, error) {
 
 	// reflect.ValueOf(map[int]int{}).MapIndex()
 
-	return func(ctx *Ctx, p uintptr) error {
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		if p == 0 {
 			// nil
-			appendNil(ctx)
-			return nil
+			return appendNilBytes(b), nil
 		}
 
 		ptr := ptrToUnsafePtr(p)
 
 		mapLen := runtime.MapLen(ptr)
-
 		if mapLen == 0 {
-			appendEmptyArray(ctx)
-			return nil
+			return appendEmptyArrayBytes(b), nil
 		}
 
-		appendArrayBegin(ctx, int64(mapLen))
+		b = appendArrayBeginBytes(b, int64(mapLen))
 
 		var mapCtx = newMapCtx()
 		defer freeMapCtx(mapCtx)
 
-		ctx.KeepRefs = append(ctx.KeepRefs, unsafe.Pointer(mapCtx))
+		// ctx.KeepRefs = append(ctx.KeepRefs, unsafe.Pointer(mapCtx))
 
 		mapIterInit(rt, ptr, &mapCtx.Iter)
+		var err error // create a new error value, so shadow compiler's error
 		for i := 0; i < mapLen; i++ {
-			err := keyEncoder(ctx, uintptr(mapIterKey(&mapCtx.Iter)))
+			b, err = keyEncoder(ctx, b, uintptr(mapIterKey(&mapCtx.Iter)))
 			if err != nil {
-				return err
+				return b, err
 			}
 
-			err = valueEncoder(ctx, uintptr(mapIterValue(&mapCtx.Iter)))
+			b, err = valueEncoder(ctx, b, uintptr(mapIterValue(&mapCtx.Iter)))
 			if err != nil {
-				return err
+				return b, err
 			}
 
 			mapIterNext(&mapCtx.Iter)
 		}
-		ctx.b = append(ctx.b, '}')
-		return nil
+		return append(b, '}'), nil
 	}, nil
 }

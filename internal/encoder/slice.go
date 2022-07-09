@@ -15,39 +15,34 @@ func compileSlice(rt *runtime.Type) (encoder, error) {
 	var err error
 
 	if rt.Elem().Kind() == reflect.Map {
-		enc, err = compile(runtime.PtrTo(rt.Elem()))
+		enc, err = compileWithCache(runtime.PtrTo(rt.Elem()))
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		enc, err = compile(rt.Elem())
+		enc, err = compileWithCache(rt.Elem())
 		if err != nil {
 			return nil, err
 		}
 	}
-	return func(ctx *Ctx, p uintptr) error {
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		dataPtr := *(*uintptr)(unsafe.Pointer(p))
-		// fmt.Println(unsafe.Pointer(p))
-
 		// no data ptr, nil slice
-		// even empty slice has a non-zero data ptr
 		if dataPtr == 0 {
-			appendNil(ctx)
-			return nil
+			return appendNilBytes(b), nil
 		}
 
 		length := *(*int)(unsafe.Pointer(p + lenOffset))
 
-		appendArrayBegin(ctx, int64(length))
-
+		b = appendArrayBeginBytes(b, int64(length))
+		var err error // create a new error value, so shadow compiler's error
 		for i := 0; i < length; i++ {
-			appendInt(ctx, int64(i))
-			err = enc(ctx, dataPtr+offset*uintptr(i))
+			b = appendIntBytes(b, int64(i))
+			b, err = enc(ctx, b, dataPtr+offset*uintptr(i))
 			if err != nil {
-				return err
+				return b, err
 			}
 		}
-		ctx.b = append(ctx.b, '}')
-		return nil
+		return append(b, '}'), nil
 	}, nil
 }
