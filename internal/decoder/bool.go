@@ -29,10 +29,11 @@ func (d *boolDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.
 		cursor++
 		switch buf[cursor] {
 		case '0':
+			**(**bool)(unsafe.Pointer(&p)) = false
 		case '1':
 			**(**bool)(unsafe.Pointer(&p)) = true
 		default:
-			return 0, errors.ErrUnexpectedEnd("'0' pr '1' af bool value", cursor)
+			return 0, errors.ErrInvalidCharacter(buf[cursor], "bool value", cursor)
 		}
 		cursor++
 		if buf[cursor] != ';' {
