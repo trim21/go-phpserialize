@@ -69,6 +69,27 @@ func main() {
 }
 ```
 
+you can un-serialize it in php to 
+
+```php
+array(
+    "users" => array(
+        0 => array(
+            "id" => "1",
+            "name" => "sai",
+        ),
+        1 => array(
+            "id" => "2",
+            "name" => "trim21",
+        ),
+    ),
+    "obj" => array(
+        "v" => "2",
+        "a long string name replace field name" => "vvv",
+    ),
+);
+```
+
 ### Unmarshal
 
 ```golang
@@ -114,6 +135,9 @@ you will see
   }
 }
 ```
+
+
+`any` type will be decoded to `map[any]any`, where key maybe `int64` or `string`, and value can be anything. 
 
 Heavily inspired by https://github.com/goccy/go-json
 
