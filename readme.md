@@ -23,7 +23,9 @@ heavy usage of `unsafe`.
 1. `Marshaling` Anonymous Struct field (embedding struct) working like named field, `Unmarshal` works fine.
 2. if you want to marshal struct with interface, only `any` (`interface` without any methods) is supported.
 
-example:
+## example
+
+### Marshal
 
 ```golang
 package main
@@ -64,6 +66,52 @@ func main() {
 	}
 
 	fmt.Println(string(b))
+}
+```
+
+### Unmarshal
+
+```golang
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/trim21/go-phpserialize"
+)
+
+func main() {
+	var v struct {
+		Value map[string]string `php:"value" json:"value"`
+	}
+	raw := `a:1:{s:5:"value";a:5:{s:3:"one";s:1:"1";s:3:"two";s:1:"2";s:5:"three";s:1:"3";s:4:"four";s:1:"4";s:4:"five";s:1:"5";}}`
+
+	err := phpserialize.Unmarshal([]byte(raw), &v)
+	if err != nil {
+		panic(err)
+	}
+
+	j, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(string(j))
+}
+```
+
+you will see
+
+```json
+{
+  "value": {
+    "five": "5",
+    "four": "4",
+    "one": "1",
+    "three": "3",
+    "two": "2"
+  }
 }
 ```
 
