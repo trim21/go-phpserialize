@@ -58,6 +58,16 @@ func TestUnmarshal_stdClass(t *testing.T) {
 
 		require.Equal(t, "a str value q", m["a"])
 	})
+
+	t.Run("skip", func(t *testing.T) {
+		raw := `a:2:{s:1:"a";O:8:"stdClass":1:{s:1:"a";s:13:"a str value q";}s:5:"value";b:1;}`
+		var v struct {
+			Value bool `php:"value"`
+		}
+		require.NoError(t, phpserialize.Unmarshal([]byte(raw), &v))
+
+		require.True(t, v.Value)
+	})
 }
 
 func TestUnmarshal_struct_bytes(t *testing.T) {

@@ -392,7 +392,7 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 		if err != nil {
 			return cursor, err
 		}
-		cursor = end
+		cursor = end 
 		fallthrough
 	case 'a':
 		cursor++
