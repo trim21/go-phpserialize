@@ -1,11 +1,36 @@
-package phpserialize_test
+package test
 
 import (
 	"bytes"
+	"fmt"
+	"testing"
 
 	"github.com/fatih/color"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
+
+type Case struct {
+	Name     string
+	Data     interface{}
+	Expected string `php:"-" json:"-"`
+}
+
+func (tc Case) WrappedExpected() string {
+	return fmt.Sprintf(`a:2:{s:4:"Name";s:%d:"%s";s:4:"Data";`, len(tc.Name), tc.Name) + tc.Expected + "}"
+}
+
+type User struct {
+	ID   uint64 `php:"id" json:"id"`
+	Name string `php:"name" json:"name"`
+}
+
+func StringEqual(t *testing.T, expected, actual string) {
+	t.Helper()
+	if actual != expected {
+		t.Errorf("Result not as expected:\n%v", CharacterDiff(expected, actual))
+		t.FailNow()
+	}
+}
 
 func diff(a, b string) []diffmatchpatch.Diff {
 	dmp := diffmatchpatch.New()

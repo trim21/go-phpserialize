@@ -23,7 +23,7 @@ on:
       - "**.go.json"
 
 jobs:
-  test:
+  "go-118":
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -34,8 +34,26 @@ jobs:
           go-version: "^1.18"
           cache: true
 
-      - run: go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out -count=1 ./...
+      - run: go test -count=1 -v ./...
+        working-directory: ./internal/test/go118
 
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go_version: ["^1.17","^1.18"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "${{ matrix.go_version }}"
+          cache: true
+
+      - run: go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out -count=1 ./...
 
       - uses: codecov/codecov-action@v3
         with:

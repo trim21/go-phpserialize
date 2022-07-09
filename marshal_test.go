@@ -9,6 +9,8 @@ import (
 	"github.com/trim21/go-phpserialize"
 )
 
+type any = interface{}
+
 func init() {
 	color.NoColor = false // force color
 }
@@ -56,10 +58,6 @@ type MapOnly struct {
 }
 
 type NestedMap = map[int]map[uint]string
-
-type Generic[T any] struct {
-	Value T
-}
 
 var testCase = []struct {
 	Name     string
@@ -161,30 +159,6 @@ var testCase = []struct {
 		Name:     "map[type]any(struct)",
 		Data:     map[int]any{1: User{}},
 		Expected: `a:1:{i:1;a:2:{s:2:"id";i:0;s:4:"name";s:0:"";}}`,
-	},
-
-	{
-		Name:     "generic[int]",
-		Data:     Generic[int]{1},
-		Expected: `a:1:{s:5:"Value";i:1;}`,
-	},
-
-	{
-		Name:     "generic[struct]",
-		Data:     Generic[User]{User{}},
-		Expected: `a:1:{s:5:"Value";a:2:{s:2:"id";i:0;s:4:"name";s:0:"";}}`,
-	},
-
-	{
-		Name:     "generic[map]",
-		Data:     Generic[map[string]int]{map[string]int{"one": 1}},
-		Expected: `a:1:{s:5:"Value";a:1:{s:3:"one";i:1;}}`,
-	},
-
-	{
-		Name:     "generic[slice]",
-		Data:     Generic[[]string]{[]string{"hello", "world"}},
-		Expected: `a:1:{s:5:"Value";a:2:{i:0;s:5:"hello";i:1;s:5:"world";}}`,
 	},
 
 	{
@@ -476,7 +450,6 @@ func TestMarshal_interface_with_method(t *testing.T) {
 	t.Parallel()
 
 	var data M = mImpl{}
-
 	actual, err := phpserialize.Marshal(Contianer{Value: data})
 	require.NoError(t, err)
 	expected := `a:1:{s:5:"value";a:0:{}}`

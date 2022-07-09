@@ -4,6 +4,11 @@ PHP `serialize()` and `unserialize()` for Go.
 
 Support All go type including `map`, `slice`, `strcut`, and simple type like `int`, `uint` ...etc.
 
+supported go version:
+
+- 1.17
+- 1.18 (tested with generic)
+
 ## Use case:
 
 You serialize all data into php array only. Decoding from php serialized array or class are both supported.
