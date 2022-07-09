@@ -17,6 +17,13 @@ func compileConstString(s string) (encoder, error) {
 	}, nil
 }
 
+func compileConstStringNoError(s string) func(*Ctx) {
+	var encodedStr = "s:" + strconv.Itoa(len(s)) + ":" + strconv.Quote(s) + ";"
+	return func(ctx *Ctx) {
+		ctx.b = append(ctx.b, encodedStr...)
+	}
+}
+
 func encodeStringVariable(ctx *Ctx, p uintptr) error {
 	s := (*reflect.StringHeader)(unsafe.Pointer(p))
 	sVal := *(*string)(unsafe.Pointer(p))

@@ -43,13 +43,3 @@ func mapIterValue(it *hiter) unsafe.Pointer
 func (h *hiter) initialized() bool {
 	return h.t != nil
 }
-
-// A mapIter is an iterator for ranging over a map.
-// See ValueUnsafeAddress.MapRange.
-type mapIter struct {
-	Iter hiter
-}
-
-func (iter *mapIter) reset() {
-	iter.Iter = hiter{}
-}

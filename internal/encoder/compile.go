@@ -4,46 +4,13 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 const DefaultStructTag = "php"
 
-var (
-	typeToEncoderMap sync.Map
-	ctxPool          = sync.Pool{
-		New: func() any {
-			return &Ctx{
-				b:        make([]byte, 0, 1024),
-				KeepRefs: make([]unsafe.Pointer, 0, 8),
-			}
-		},
-	}
-)
-
-type Ctx struct {
-	b        []byte
-	KeepRefs []unsafe.Pointer
-
-	// a buffer to encode float as string
-	floatBuffer []byte
-}
-
-func newCtx() *Ctx {
-	ctx := ctxPool.Get().(*Ctx)
-	ctx.b = ctx.b[:0]
-
-	return ctx
-}
-
-func freeCtx(ctx *Ctx) {
-	ctx.KeepRefs = ctx.KeepRefs[:0]
-	ctx.floatBuffer = ctx.floatBuffer[:0]
-
-	ctxPool.Put(ctx)
-}
+var typeToEncoderMap sync.Map
 
 type encoder func(ctx *Ctx, p uintptr) error
 

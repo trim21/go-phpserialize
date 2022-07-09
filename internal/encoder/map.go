@@ -2,7 +2,6 @@ package encoder
 
 import (
 	"reflect"
-	"sync"
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
@@ -84,21 +83,4 @@ func compileMap(rt *runtime.Type) (encoder, error) {
 		ctx.b = append(ctx.b, '}')
 		return nil
 	}, nil
-}
-
-var mapCtxPool = sync.Pool{
-	New: func() any {
-		return &mapIter{}
-	},
-}
-
-func newMapCtx() *mapIter {
-	ctx := mapCtxPool.Get().(*mapIter)
-	ctx.Iter = hiter{}
-
-	return ctx
-}
-
-func freeMapCtx(ctx *mapIter) {
-	mapCtxPool.Put(ctx)
 }
