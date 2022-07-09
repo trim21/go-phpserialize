@@ -93,7 +93,11 @@ var testCase = []struct {
 		Data:     MapOnly{Map: map[string]int64{"one": 1}},
 		Expected: `a:1:{s:3:"map";a:1:{s:3:"one";i:1;}}`,
 	},
-
+	{
+		Name:     "empty map",
+		Data:     map[int]string{},
+		Expected: "a:0:{}",
+	},
 	{
 		Name:     "nil map",
 		Data:     (map[string]string)(nil),
@@ -178,6 +182,18 @@ var testCase = []struct {
 		Data:     Generic[[]string]{[]string{"hello", "world"}},
 		Expected: `a:1:{s:5:"Value";a:2:{i:0;s:5:"hello";i:1;s:5:"world";}}`,
 	},
+
+	{
+		Name: "ignore struct field",
+		Data: struct {
+			V       int
+			Ignored string `php:"-"`
+		}{
+			V:       3,
+			Ignored: "vvv",
+		},
+		Expected: `a:1:{s:1:"V";i:3;}`,
+	},
 }
 
 func TestMarshal_concrete_types(t *testing.T) {
@@ -212,17 +228,6 @@ func TestMarshal_interface(t *testing.T) {
 			}
 		})
 	}
-}
-
-// some special case like `empty map`, can't be compared by json unmarshal
-func TestMarshal_special(t *testing.T) {
-	t.Parallel()
-	t.Run("empty map", func(t *testing.T) {
-		t.Parallel()
-		b, err := phpserialize.Marshal(map[int]string{})
-		require.NoError(t, err)
-		require.Equal(t, []byte("a:0:{}"), b, string(b))
-	})
 }
 
 func TestMarshal_int_as_string(t *testing.T) {
@@ -340,23 +345,6 @@ func TestMarshal_float64_as_string(t *testing.T) {
 		v, err := phpserialize.Marshal(Container{F: -3.14})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
-		require.Equal(t, expected, string(v))
-	})
-}
-
-func TestMarshal_struct_ignore(t *testing.T) {
-	type Ignore struct {
-		V       int
-		Ignored string `php:"-"`
-	}
-
-	t.Run("ignore", func(t *testing.T) {
-		v, err := phpserialize.Marshal(Ignore{
-			V:       3,
-			Ignored: "vvv",
-		})
-		require.NoError(t, err)
-		expected := `a:1:{s:1:"V";i:3;}`
 		require.Equal(t, expected, string(v))
 	})
 }
