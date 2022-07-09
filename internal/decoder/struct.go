@@ -384,7 +384,7 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 		if err := validateNull(buf, cursor); err != nil {
 			return 0, err
 		}
-		cursor += 4
+		cursor += 2
 		return cursor, nil
 	case 'a':
 		cursor++
