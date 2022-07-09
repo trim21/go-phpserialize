@@ -69,6 +69,12 @@ func skipLengthWithBothColon(buf []byte, cursor int64) (int64, error) {
 	return cursor, nil
 }
 
+func skipClassName(buf []byte, cursor int64) (int64, error) {
+	// O:8:"stdClass":1:{s:1:"a";s:1:"q";}
+	end, err := skipString(buf, cursor)
+	return end - 2, err
+}
+
 func skipString(buf []byte, cursor int64) (int64, error) {
 	cursor++
 	sLen, end, err := readLength(buf, cursor)
@@ -115,9 +121,12 @@ func skipArray(buf []byte, cursor, depth int64) (int64, error) {
 	}
 }
 
+func skipClass() {}
+
 func skipValue(buf []byte, cursor, depth int64) (int64, error) {
 
 	switch buf[cursor] {
+
 	case 'a':
 		return skipArray(buf, cursor+1, depth+1)
 	case 's':

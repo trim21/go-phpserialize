@@ -6,9 +6,7 @@ Support All go type including `map`, `slice`, `strcut`, and simple type like `in
 
 ## Use case:
 
-You serialize all data into php array only, and decoding php serialized array only
-
-decoding php object (or class) is not supported yet, working on it.
+You serialize all data into php array only. Decoding from php serialized array or class are both supported.
 
 ### Advantage:
 

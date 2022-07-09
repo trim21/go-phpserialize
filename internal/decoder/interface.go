@@ -10,15 +10,16 @@ import (
 )
 
 type interfaceDecoder struct {
-	typ           *runtime.Type
-	structName    string
-	fieldName     string
-	sliceDecoder  *sliceDecoder
-	mapDecoder    *mapDecoder
-	floatDecoder  *floatDecoder
-	stringDecoder *stringDecoder
-	intDecode     *intDecoder
-	mapKeyDecoder *mapKeyDecoder
+	typ              *runtime.Type
+	structName       string
+	fieldName        string
+	sliceDecoder     *sliceDecoder
+	mapArrayDecoder  *mapDecoder
+	mapClassDecoder  *mapDecoder
+	floatDecoder     *floatDecoder
+	stringDecoder    *stringDecoder
+	intDecode        *intDecoder
+	mapAnyKeyDecoder *mapKeyDecoder
 }
 
 func newEmptyInterfaceDecoder(structName, fieldName string) *interfaceDecoder {
@@ -31,7 +32,7 @@ func newEmptyInterfaceDecoder(structName, fieldName string) *interfaceDecoder {
 		stringDecoder: newStringDecoder(structName, fieldName),
 	}
 
-	ifaceDecoder.mapKeyDecoder = newInterfaceMapKeyDecoder(
+	ifaceDecoder.mapAnyKeyDecoder = newInterfaceMapKeyDecoder(
 		newIntDecoder(interfaceIntType, structName, fieldName, func(p unsafe.Pointer, v int64) { *(*int64)(p) = v }),
 		ifaceDecoder.stringDecoder)
 
@@ -42,10 +43,20 @@ func newEmptyInterfaceDecoder(structName, fieldName string) *interfaceDecoder {
 		structName, fieldName,
 	)
 
-	ifaceDecoder.mapDecoder = newMapDecoder(
+	ifaceDecoder.mapClassDecoder = newMapDecoder(
+		interfaceClassMapType,
+		stringType,
+		ifaceDecoder.stringDecoder,
+		interfaceClassMapType.Elem(),
+		ifaceDecoder,
+		structName,
+		fieldName,
+	)
+
+	ifaceDecoder.mapArrayDecoder = newMapDecoder(
 		interfaceMapType,
 		emptyInterfaceType,
-		ifaceDecoder.mapKeyDecoder,
+		ifaceDecoder.mapAnyKeyDecoder,
 		interfaceMapType.Elem(),
 		ifaceDecoder,
 		structName,
@@ -67,26 +78,29 @@ func newInterfaceDecoder(typ *runtime.Type, structName, fieldName string) *inter
 			emptyInterfaceType.Size(),
 			structName, fieldName,
 		),
-		mapDecoder: newMapDecoder(
+		mapArrayDecoder: newMapDecoder(
 			interfaceMapType,
 			emptyInterfaceType,
-			emptyIfaceDecoder.mapKeyDecoder,
+			emptyIfaceDecoder.mapAnyKeyDecoder,
 			interfaceMapType.Elem(),
 			emptyIfaceDecoder,
 			structName,
 			fieldName,
 		),
-		floatDecoder:  emptyIfaceDecoder.floatDecoder,
-		stringDecoder: stringDecoder,
-		intDecode:     emptyIfaceDecoder.intDecode,
-		mapKeyDecoder: emptyIfaceDecoder.mapKeyDecoder,
+		floatDecoder:     emptyIfaceDecoder.floatDecoder,
+		stringDecoder:    stringDecoder,
+		intDecode:        emptyIfaceDecoder.intDecode,
+		mapClassDecoder:  emptyIfaceDecoder.mapClassDecoder,
+		mapAnyKeyDecoder: emptyIfaceDecoder.mapAnyKeyDecoder,
 	}
 }
 
 var (
-	emptyInterfaceType = runtime.Type2RType(reflect.TypeOf((*any)(nil)).Elem())
-	interfaceMapType   = runtime.Type2RType(reflect.TypeOf((*map[any]any)(nil)).Elem())
-	interfaceIntType   = runtime.Type2RType(reflect.TypeOf((*int64)(nil))).Elem()
+	stringType            = runtime.Type2RType(reflect.TypeOf((*string)(nil)).Elem())
+	emptyInterfaceType    = runtime.Type2RType(reflect.TypeOf((*any)(nil)).Elem())
+	interfaceMapType      = runtime.Type2RType(reflect.TypeOf((*map[any]any)(nil)).Elem())
+	interfaceClassMapType = runtime.Type2RType(reflect.TypeOf((*map[string]any)(nil)).Elem())
+	interfaceIntType      = runtime.Type2RType(reflect.TypeOf((*int64)(nil))).Elem()
 )
 
 func decodePHPUnmarshaler(buf []byte, cursor, depth int64, unmarshaler Unmarshaler, p unsafe.Pointer) (int64, error) {
@@ -172,10 +186,19 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p un
 func (d *interfaceDecoder) decodeEmptyInterface(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
 	switch buf[cursor] {
+	case 'O':
+		var v map[string]any
+		ptr := unsafe.Pointer(&v)
+		cursor, err := d.mapClassDecoder.Decode(ctx, cursor, depth, ptr)
+		if err != nil {
+			return 0, err
+		}
+		**(**any)(unsafe.Pointer(&p)) = v
+		return cursor, nil
 	case 'a':
 		var v map[any]any
 		ptr := unsafe.Pointer(&v)
-		cursor, err := d.mapDecoder.Decode(ctx, cursor, depth, ptr)
+		cursor, err := d.mapArrayDecoder.Decode(ctx, cursor, depth, ptr)
 		if err != nil {
 			return 0, err
 		}

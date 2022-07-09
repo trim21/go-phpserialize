@@ -36,6 +36,30 @@ func TestUnmarshal_struct_string(t *testing.T) {
 	})
 }
 
+func TestUnmarshal_stdClass(t *testing.T) {
+	raw := `O:8:"stdClass":1:{s:1:"a";s:13:"a str value q";}`
+
+	t.Run("struct", func(t *testing.T) {
+		var v struct {
+			A string `php:"a"`
+		}
+
+		require.NoError(t, phpserialize.Unmarshal([]byte(raw), &v))
+
+		require.Equal(t, "a str value q", v.A)
+	})
+
+	t.Run("any", func(t *testing.T) {
+		var v any
+		require.NoError(t, phpserialize.Unmarshal([]byte(raw), &v))
+
+		m, ok := v.(map[string]any)
+		require.True(t, ok, "type cast fail")
+
+		require.Equal(t, "a str value q", m["a"])
+	})
+}
+
 func TestUnmarshal_struct_bytes(t *testing.T) {
 	t.Parallel()
 

@@ -386,6 +386,14 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 		}
 		cursor += 2
 		return cursor, nil
+	case 'O':
+		// O:8:"stdClass":1:{s:1:"a";s:1:"q";}
+		end, err := skipClassName(buf, cursor)
+		if err != nil {
+			return cursor, err
+		}
+		cursor = end
+		fallthrough
 	case 'a':
 		cursor++
 		if buf[cursor] != ':' {
