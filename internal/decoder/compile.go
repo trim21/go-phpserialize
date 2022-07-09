@@ -356,7 +356,7 @@ func compileStruct(typ *runtime.Type, structName, fieldName string, structTypeTo
 				var fieldSetErr error
 				if isUnexportedField {
 					fieldSetErr = fmt.Errorf(
-						"json: cannot set embedded pointer to unexported struct: %v",
+						"php: cannot set embedded pointer to unexported struct: %v",
 						field.Type.Elem(),
 					)
 				}
