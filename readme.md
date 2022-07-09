@@ -22,6 +22,7 @@ heavy usage of `unsafe`.
 
 1. No `omitempty` support (yet).
 2. `Marshaling` Anonymous Struct field (embedding struct) working like named field, `Unmarshal` works fine.
+3. if you want to marshal struct with interface, only `any` (`interface` without any methods) is supported.
 
 example:
 
