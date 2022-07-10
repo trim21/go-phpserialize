@@ -13,12 +13,14 @@ func BenchmarkMarshal_type(b *testing.B) {
 	for _, data := range testCase {
 		data := data
 		b.Run(data.Name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				_, err := phpserialize.Marshal(data.Data)
-				if err != nil {
-					b.FailNow()
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					_, err := phpserialize.Marshal(data.Data)
+					if err != nil {
+						b.FailNow()
+					}
 				}
-			}
+			})
 		})
 	}
 }
@@ -27,24 +29,28 @@ func BenchmarkMarshal_field_as_string(b *testing.B) {
 	data := struct {
 		F int `php:",string"`
 	}{}
-	for i := 0; i < b.N; i++ {
-		_, err := phpserialize.Marshal(data)
-		if err != nil {
-			b.FailNow()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err := phpserialize.Marshal(data)
+			if err != nil {
+				b.FailNow()
+			}
 		}
-	}
+	})
 }
 
 func BenchmarkMarshal_ifce(b *testing.B) {
 	for _, data := range testCase {
 		data := data
 		b.Run(data.Name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				_, err := phpserialize.Marshal(data)
-				if err != nil {
-					b.FailNow()
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					_, err := phpserialize.Marshal(data)
+					if err != nil {
+						b.FailNow()
+					}
 				}
-			}
+			})
 		})
 	}
 }
@@ -245,12 +251,14 @@ func BenchmarkMarshal_large_struct_10(b *testing.B) {
 		Field9 bool
 	}
 
-	for i := 0; i < b.N; i++ {
-		_, err := phpserialize.Marshal(v)
-		if err != nil {
-			b.FailNow()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err := phpserialize.Marshal(v)
+			if err != nil {
+				b.FailNow()
+			}
 		}
-	}
+	})
 }
 
 func BenchmarkMarshal_large_struct_50(b *testing.B) {
