@@ -2,11 +2,13 @@ package phpserialize_test
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/fatih/color"
 	"github.com/stretchr/testify/require"
 	"github.com/trim21/go-phpserialize"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type any = interface{}
@@ -173,6 +175,14 @@ var testCase = []struct {
 		Expected: `a:1:{s:1:"V";i:3;}`,
 	},
 	{
+		Name: "private field",
+		Data: struct {
+			b bool
+			D int
+		}{D: 10},
+		Expected: `a:1:{s:1:"D";i:10;}`,
+	},
+	{
 		Name: "omitempty",
 		Data: struct {
 			V string `php:",omitempty"`
@@ -180,13 +190,25 @@ var testCase = []struct {
 		}{D: "d"},
 		Expected: `a:1:{s:1:"D";s:1:"d";}`,
 	},
+	{
+		Name: "omitempty ptr",
+		Data: struct {
+			V *string `php:",omitempty"`
+			D *string `php:",omitempty"`
+		}{
+			D: new(string),
+		},
+		Expected: `a:1:{s:1:"D";s:0:"";}`,
+	},
 }
 
 func TestMarshal_concrete_types(t *testing.T) {
-	t.Parallel()
 	for _, data := range testCase {
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
+			if data.Name == "omitempty ptr" {
+				fmt.Println(data.Name, runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(data).Field(0).Type)))
+			}
 			actual, err := phpserialize.Marshal(data.Data)
 			require.NoError(t, err)
 
@@ -196,11 +218,9 @@ func TestMarshal_concrete_types(t *testing.T) {
 }
 
 func TestMarshal_interface(t *testing.T) {
-	t.Parallel()
 	for _, data := range testCase {
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
-			t.Parallel()
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 
@@ -360,8 +380,6 @@ func TestMarshal_float64_as_string_reflect(t *testing.T) {
 }
 
 func TestMarshal_ptr(t *testing.T) {
-	t.Parallel()
-
 	t.Run("*string", func(t *testing.T) {
 		type Data struct {
 			Value *string `php:"value"`
@@ -405,8 +423,6 @@ func TestMarshal_ptr(t *testing.T) {
 }
 
 func TestMarshal_map(t *testing.T) {
-	t.Parallel()
-
 	t.Run("direct", func(t *testing.T) {
 		// map in struct is a direct ptr
 		type MapOnly struct {
@@ -455,8 +471,6 @@ func (m mImpl) Bool() bool {
 }
 
 func TestMarshal_interface_with_method(t *testing.T) {
-	t.Parallel()
-
 	var data M = mImpl{}
 	actual, err := phpserialize.Marshal(Container{Value: data})
 	require.NoError(t, err)

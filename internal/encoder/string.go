@@ -1,17 +1,35 @@
 package encoder
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"unsafe"
 )
 
-// encode string "result" to `s:6:"result";`
+// EncodeStringPtr encode string "result" to `s:6:"result";`
 // encode UTF-8 string "叛逆的鲁鲁修" `s:18:"叛逆的鲁鲁修";`
 // str length is underling bytes length, not len(str)
-func encodeStringVariable(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+func EncodeStringPtr(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 	s := *(**reflect.StringHeader)(unsafe.Pointer(&p))
+	fmt.Println("string header", s)
+	// fmt.Println(s)
+	// return nil, nil
 	sVal := **(**string)(unsafe.Pointer(&p))
+	b = append(b, 's', ':')
+	b = strconv.AppendInt(b, int64(s.Len), 10)
+	b = append(b, ':', '"')
+	b = append(b, sVal...)
+
+	return append(b, '"', ';'), nil
+}
+
+func EncodeString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+	s := *(**reflect.StringHeader)(unsafe.Pointer(p))
+	fmt.Println("string header", s)
+	// fmt.Println(s)
+	// return nil, nil
+	sVal := **(**string)(unsafe.Pointer(p))
 	b = append(b, 's', ':')
 	b = strconv.AppendInt(b, int64(s.Len), 10)
 	b = append(b, ':', '"')

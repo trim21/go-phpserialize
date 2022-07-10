@@ -8,7 +8,7 @@ import (
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func ptrOfPtr(p uintptr) uintptr {
+func PtrOfPtr(p uintptr) uintptr {
 	return uintptr(**(**unsafe.Pointer)(unsafe.Pointer(&p)))
 }
 

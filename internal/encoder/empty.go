@@ -8,13 +8,13 @@ import (
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-type isEmpty func(ctx *Ctx, p uintptr) (isEmpty bool, err error)
+type emptyFunc func(ctx *Ctx, p uintptr) (isEmpty bool, err error)
 
 func notIgnore(ctx *Ctx, p uintptr) (isEmpty bool, err error) {
 	return false, nil
 }
 
-func compileEmptyer(rt *runtime.Type) (isEmpty, error) {
+func compileEmptyer(rt *runtime.Type) (emptyFunc, error) {
 	switch rt.Kind() {
 	case reflect.Bool:
 		return func(ctx *Ctx, p uintptr) (bool, error) {
@@ -105,8 +105,17 @@ func compileEmptyer(rt *runtime.Type) (isEmpty, error) {
 			return p == 0, nil
 		}, nil
 	case reflect.Ptr:
+		switch rt.Elem().Kind() {
+		case reflect.Map, reflect.Slice, reflect.Interface, reflect.Ptr, reflect.String:
+			return func(ctx *Ctx, p uintptr) (bool, error) {
+				p = PtrOfPtr(p)
+				return p == 0, nil
+			}, nil
+		}
+
 		return func(ctx *Ctx, p uintptr) (bool, error) {
-			return p == 0, nil
+			s := **(**uintptr)(unsafe.Pointer(&p))
+			return s == 0, nil
 		}, nil
 	}
 

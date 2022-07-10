@@ -35,7 +35,10 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 	case reflect.Float64:
 		return encodeFloat64, nil
 	case reflect.String:
-		return encodeStringVariable, nil
+		// if runtime.IfaceIndir(rt.Elem()) {
+		return EncodeStringPtr, nil
+		// }
+		// return EncodeString, nil
 	}
 
 	enc, err := compile(rt.Elem())
@@ -44,6 +47,6 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 	}
 
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		return enc(ctx, b, ptrOfPtr(p))
+		return enc(ctx, b, PtrOfPtr(p))
 	}, nil
 }

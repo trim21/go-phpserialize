@@ -34,7 +34,7 @@ func compile(rt *runtime.Type) (encoder, error) {
 	case reflect.Int:
 		return encodeInt, nil
 	case reflect.String:
-		return encodeStringVariable, nil
+		return EncodeStringPtr, nil
 	case reflect.Uint8:
 		return encodeUint8, nil
 	case reflect.Uint16:
@@ -67,7 +67,7 @@ func compile(rt *runtime.Type) (encoder, error) {
 func compileMapKey(typ *runtime.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.String:
-		return encodeStringVariable, nil
+		return EncodeStringPtr, nil
 
 	case reflect.Int8:
 		return encodeInt8, nil
@@ -101,7 +101,7 @@ func compileAsString(rt *runtime.Type) (encoder, error) {
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 		return compileIntAsString(rt)
 	case reflect.String:
-		return encodeStringVariable, nil
+		return EncodeStringPtr, nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 		return compileUintAsString(rt)
 	case reflect.Float32, reflect.Float64:

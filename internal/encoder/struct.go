@@ -1,6 +1,7 @@
 package encoder
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
@@ -25,13 +26,14 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 		return compileStructNoOmitEmpty(rt, fieldConfigs)
 	}
 
-	indirect := runtime.IfaceIndir(rt)
 	var encoders []structFieldEncoder
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
+		indirect := runtime.IfaceIndir(runtime.Type2RType(field.Type))
+		fmt.Println(field.Name, indirect)
 		offset := field.Offset
 		cfg := fieldConfigs[i]
-		if cfg.Key == "-" {
+		if cfg.Key == "-" || !cfg.Field.IsExported() {
 			continue
 		}
 
@@ -55,15 +57,22 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 				return nil, err
 			}
 
-			if indirect && field.Type.Kind() == reflect.Map {
+			if indirect && (field.Type.Kind() == reflect.Map) {
 				wrappedEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 					b = filedNameEncoder(ctx, b)
-					return fieldEncoder(ctx, b, ptrOfPtr(p+offset))
+					return fieldEncoder(ctx, b, PtrOfPtr(p+offset))
 				}
 			} else {
-				wrappedEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-					b = filedNameEncoder(ctx, b)
-					return fieldEncoder(ctx, b, p+offset)
+				if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.String {
+					wrappedEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+						b = filedNameEncoder(ctx, b)
+						return fieldEncoder(ctx, b, PtrOfPtr(p+offset))
+					}
+				} else {
+					wrappedEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+						b = filedNameEncoder(ctx, b)
+						return fieldEncoder(ctx, b, p+offset)
+					}
 				}
 			}
 		}
@@ -113,7 +122,7 @@ func compileStructNoOmitEmpty(rt *runtime.Type, fieldConfigs []*runtime.StructTa
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
 		cfg := fieldConfigs[i]
-		if cfg.Key == "-" {
+		if cfg.Key == "-" || !cfg.Field.IsExported() {
 			continue
 		}
 
@@ -144,7 +153,7 @@ func compileStructNoOmitEmpty(rt *runtime.Type, fieldConfigs []*runtime.StructTa
 		if indirect && field.Type.Kind() == reflect.Map {
 			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 				b = filedNameEncoder(ctx, b)
-				return fieldValueEncoder(ctx, b, ptrOfPtr(p+offset))
+				return fieldValueEncoder(ctx, b, PtrOfPtr(p+offset))
 			})
 		} else {
 			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
@@ -173,7 +182,7 @@ func structEncoderNoOmitEmpty(encoders []encoder, fieldCount int64) encoder {
 	}
 }
 
-func fieldEncoderWithEmpty(enc encoder, offset uintptr, empty isEmpty) structFieldEncoder {
+func fieldEncoderWithEmpty(enc encoder, offset uintptr, empty emptyFunc) structFieldEncoder {
 	return func(ctx *Ctx, sc *structCtx, structBuffer []byte, p uintptr) ([]byte, error) {
 		shouldIgnore, err := empty(ctx, p+offset)
 		if err != nil {
