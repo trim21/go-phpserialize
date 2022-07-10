@@ -3,13 +3,10 @@ package encoder
 import (
 	"fmt"
 	"reflect"
-	"sync"
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
-
-var typeToEncoderMap sync.Map
 
 type encoder func(ctx *Ctx, b []byte, p uintptr) ([]byte, error)
 

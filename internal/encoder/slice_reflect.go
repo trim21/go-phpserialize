@@ -52,18 +52,12 @@ func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, erro
 }
 
 func reflectConcreteSlice(ctx *Ctx, b []byte, rt *runtime.Type, p uintptr) ([]byte, error) {
-	var typeID = uintptr(unsafe.Pointer(rt))
-
-	p = unpackIface(p)
-
-	if enc, ok := typeToEncoderMap.Load(typeID); ok {
-		return enc.(encoder)(ctx, b, p)
-	}
-
 	enc, err := compileWithCache(rt)
 	if err != nil {
-		return b, err
+		return nil, err
 	}
+
+	p = unpackIface(p)
 
 	return enc(ctx, b, p)
 }

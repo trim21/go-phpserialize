@@ -95,18 +95,9 @@ func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, k
 	var err error
 	var valueType = rt.Elem()
 
-	valueTypeID := uintptr(unsafe.Pointer(runtime.Type2RType(valueType)))
-
-	enc, ok := typeToEncoderMap.Load(valueTypeID)
-	if !ok {
-		valueEncoder, err = compile(runtime.Type2RType(valueType))
-		if err != nil {
-			return b, err
-		}
-
-		typeToEncoderMap.Store(valueTypeID, valueEncoder)
-	} else {
-		valueEncoder = enc.(encoder)
+	valueEncoder, err = compileWithCache(runtime.Type2RType(valueType))
+	if err != nil {
+		return nil, err
 	}
 
 	if rt.Elem().Kind() == reflect.Map {
