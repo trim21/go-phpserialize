@@ -6,18 +6,18 @@ import (
 )
 
 func encodeInt8(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := *(*int8)(unsafe.Pointer(p))
+	value := **(**int8)(unsafe.Pointer(&p))
 	return appendIntBytes(b, int64(value)), nil
 }
 
 func encodeInt16(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := *(*int16)(unsafe.Pointer(p))
+	value := **(**int16)(unsafe.Pointer(&p))
 	return appendIntBytes(b, int64(value)), nil
 
 }
 
 func encodeInt32(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := *(*int32)(unsafe.Pointer(p))
+	value := **(**int32)(unsafe.Pointer(&p))
 	return appendIntBytes(b, int64(value)), nil
 
 }
@@ -28,7 +28,7 @@ func encodeInt64(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 }
 
 func encodeInt(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := *(*int)(unsafe.Pointer(p))
+	value := **(**int)(unsafe.Pointer(&p))
 	return appendIntBytes(b, int64(value)), nil
 }
 

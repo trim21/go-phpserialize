@@ -9,8 +9,6 @@ import (
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-const DefaultStructTag = "php"
-
 var typeToEncoderMap sync.Map
 
 type encoder func(ctx *Ctx, b []byte, p uintptr) ([]byte, error)
@@ -116,35 +114,4 @@ func compileAsString(rt *runtime.Type) (encoder, error) {
 	return nil, fmt.Errorf(
 		"failed to build encoder for struct field (as string), unsupported type %s (kind %s)",
 		rt.String(), rt.Kind())
-}
-
-func compileWithCache(rt *runtime.Type) (encoder, error) {
-	typeID := uintptr(unsafe.Pointer(rt))
-	if enc, ok := typeToEncoderMap.Load(typeID); ok {
-		return enc.(encoder), nil
-	}
-
-	encoder, err := compile(rt)
-	if err != nil {
-		return nil, err
-	}
-
-	typeToEncoderMap.Store(typeID, encoder)
-
-	return encoder, nil
-}
-
-func compileTypeIDWithCache(typeID uintptr) (encoder, error) {
-	if enc, ok := typeToEncoderMap.Load(typeID); ok {
-		return enc.(encoder), nil
-	}
-
-	encoder, err := compileTypeID(typeID)
-	if err != nil {
-		return nil, err
-	}
-
-	typeToEncoderMap.Store(typeID, encoder)
-
-	return encoder, nil
 }

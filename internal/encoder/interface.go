@@ -14,7 +14,7 @@ func compileInterface(rt *runtime.Type) (encoder, error) {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		v := *(*any)(unsafe.Pointer(&emptyInterface{
 			typ: rt,
-			ptr: unsafe.Pointer(p),
+			ptr: *(*unsafe.Pointer)(unsafe.Pointer(&p)),
 		}))
 
 		return reflectInterfaceValue(ctx, b, reflect.ValueOf(v), p)

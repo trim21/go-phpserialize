@@ -10,8 +10,8 @@ import (
 // encode UTF-8 string "叛逆的鲁鲁修" `s:18:"叛逆的鲁鲁修";`
 // str length is underling bytes length, not len(str)
 func encodeStringVariable(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	s := (*reflect.StringHeader)(unsafe.Pointer(p))
-	sVal := *(*string)(unsafe.Pointer(p))
+	s := *(**reflect.StringHeader)(unsafe.Pointer(&p))
+	sVal := **(**string)(unsafe.Pointer(&p))
 	b = append(b, 's', ':')
 	b = strconv.AppendInt(b, int64(s.Len), 10)
 	b = append(b, ':', '"')

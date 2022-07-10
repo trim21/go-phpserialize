@@ -5,7 +5,7 @@ import (
 )
 
 func encodeBool(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := *(*bool)(unsafe.Pointer(p))
+	value := **(**bool)(unsafe.Pointer(&p))
 
 	return appendBool(b, value), nil
 }

@@ -27,31 +27,31 @@ func compileIntAsString(typ *runtime.Type) (encoder, error) {
 }
 
 func encodeInt8AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := *(*int8)(unsafe.Pointer(p))
+	value := **(**int8)(unsafe.Pointer(&p))
 	return appendIntAsString(b, int64(value))
 
 }
 
 func encodeInt16AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := *(*int16)(unsafe.Pointer(p))
+	value := **(**int16)(unsafe.Pointer(&p))
 	return appendIntAsString(b, int64(value))
 
 }
 
 func encodeInt32AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := *(*int32)(unsafe.Pointer(p))
+	value := **(**int32)(unsafe.Pointer(&p))
 	return appendIntAsString(b, int64(value))
 
 }
 
 func encodeInt64AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := *(*int64)(unsafe.Pointer(p))
+	value := **(**int64)(unsafe.Pointer(&p))
 	return appendIntAsString(b, int64(value))
 
 }
 
 func encodeIntAsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := *(*int)(unsafe.Pointer(p))
+	value := **(**int)(unsafe.Pointer(&p))
 	return appendIntAsString(b, int64(value))
 }
 

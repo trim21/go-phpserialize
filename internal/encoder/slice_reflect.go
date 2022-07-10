@@ -8,7 +8,7 @@ import (
 )
 
 func unpackIface(p uintptr) uintptr {
-	return uintptr((*(*emptyInterface)(unsafe.Pointer(p))).ptr)
+	return uintptr((**(**emptyInterface)(unsafe.Pointer(&p))).ptr)
 }
 
 func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, error) {
