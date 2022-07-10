@@ -2,6 +2,7 @@ package phpserialize_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/fatih/color"
@@ -388,6 +389,37 @@ func TestMarshal_ptr(t *testing.T) {
 		stringEqual(t, expected, string(actual))
 	})
 
+	t.Run("slice", func(t *testing.T) {
+
+		t.Run("omitempty", func(t *testing.T) {
+			type Data struct {
+				Value *[]string `php:"value,omitempty"`
+			}
+			var s = strings.Split("abcdefg", "")
+			require.Len(t, s, 7)
+			var data = Data{&s}
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";a:7:{i:0;s:1:"a";i:1;s:1:"b";i:2;s:1:"c";i:3;s:1:"d";i:4;s:1:"e";i:5;s:1:"f";i:6;s:1:"g";}}`
+			stringEqual(t, expected, string(actual))
+		})
+
+		t.Run("no omitempty", func(t *testing.T) {
+			type Data struct {
+				Value *[]string `php:"value"`
+			}
+			var s = strings.Split("abcdefg", "")
+			require.Len(t, s, 7)
+			var data = Data{&s}
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";a:7:{i:0;s:1:"a";i:1;s:1:"b";i:2;s:1:"c";i:3;s:1:"d";i:4;s:1:"e";i:5;s:1:"f";i:6;s:1:"g";}}`
+			stringEqual(t, expected, string(actual))
+		})
+	})
+
 	t.Run("*string omitempty", func(t *testing.T) {
 		type Data struct {
 			Value *string `php:"value,omitempty"`
@@ -403,13 +435,6 @@ func TestMarshal_ptr(t *testing.T) {
 			stringEqual(t, expected, string(actual))
 		})
 
-		t.Run("nil", func(t *testing.T) {
-			var data = Data{}
-			actual, err := phpserialize.Marshal(data)
-			require.NoError(t, err)
-			expected := `a:0:{}`
-			stringEqual(t, expected, string(actual))
-		})
 	})
 
 	t.Run("map", func(t *testing.T) {
@@ -431,12 +456,12 @@ func TestMarshal_ptr(t *testing.T) {
 				Value *map[int]int `php:"value,omitempty"`
 			}
 
-			var s = map[int]int{1: 2, 3: 4}
+			var s = map[int]int{1: 2}
 			var data = Data{&s}
 
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
-			expected := `a:1:{s:5:"value";a:2:{i:1;i:2;i:3;i:4;}}`
+			expected := `a:1:{s:5:"value";a:1:{i:1;i:2;}}`
 			stringEqual(t, expected, string(actual))
 		})
 	})

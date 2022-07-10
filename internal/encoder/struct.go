@@ -48,6 +48,15 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 				case reflect.String:
 					isEmpty = EmptyPtr
 					fieldEncoder = encodeString
+				case reflect.Slice:
+					isEmpty = EmptyPtr
+					enc, err := compileSlice(runtime.Type2RType(field.Type.Elem()))
+					if err != nil {
+						return nil, err
+					}
+					fieldEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+						return enc(ctx, b, p)
+					}
 				case reflect.Map:
 					isEmpty = EmptyPtr
 					enc, err := compileMap(runtime.Type2RType(field.Type.Elem()))
@@ -167,6 +176,11 @@ func compileStructNoOmitEmpty(rt *runtime.Type, fieldConfigs []*runtime.StructTa
 		if !indirect {
 			if field.Type.Kind() == reflect.Ptr {
 				switch field.Type.Elem().Kind() {
+				case reflect.Slice:
+					fieldValueEncoder, err = compileSlice(runtime.Type2RType(field.Type.Elem()))
+					if err != nil {
+						return nil, err
+					}
 				case reflect.Map, reflect.String:
 					fieldValueEncoder, err = compile(runtime.Type2RType(field.Type.Elem()))
 					if err != nil {
