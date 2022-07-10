@@ -425,3 +425,79 @@ func BenchmarkMarshal_large_struct_100(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkMarshal_int(b *testing.B) {
+	for i := 10; i <= 1000; i *= 10 {
+		i := i
+		b.Run(fmt.Sprintf("marshal int %d", i), func(b *testing.B) {
+			var s = make([]int, i)
+			for j := 0; j < i; j++ {
+				s[j] = j
+			}
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					if _, err := phpserialize.Marshal(s); err != nil {
+						b.Fatal(err)
+					}
+				}
+			})
+		})
+	}
+}
+
+func BenchmarkMarshal_uint(b *testing.B) {
+	for i := 10; i <= 1000; i *= 10 {
+		var s = make([]uint, i)
+		for j := 0; j < i; j++ {
+			s[j] = uint(j)
+		}
+		b.Run(fmt.Sprintf("marshal uint %d", i), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					if _, err := phpserialize.Marshal(s); err != nil {
+						b.Fatal(err.Error())
+					}
+				}
+			})
+		})
+	}
+}
+
+func BenchmarkMarshal_many_map_field(b *testing.B) {
+	var s = struct {
+		Map1 map[string]int `php:"map_1"`
+		Map2 map[int]string `php:"map_2"`
+		Map3 map[uint]int   `php:"map_3"`
+	}{
+		Map1: map[string]int{
+			"one":   1,
+			"two":   2,
+			"three": 3,
+		},
+		Map2: map[int]string{
+			1: "1111",
+			2: "2222",
+			3: "3333",
+			4: "4444",
+			5: "5555",
+			6: "6666",
+		},
+		Map3: map[uint]int{
+			1: 1111,
+			2: 2222,
+			3: 3333,
+			4: 4444,
+			5: 5555,
+			6: 6666,
+		},
+	}
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err := phpserialize.Marshal(s)
+			if err != nil {
+				b.FailNow()
+			}
+		}
+	})
+}

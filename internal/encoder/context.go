@@ -9,15 +9,12 @@ var ctxPool = sync.Pool{
 	New: func() any {
 		return &Ctx{
 			KeepRefs:    make([]unsafe.Pointer, 0, 8),
-			floatBuffer: make([]byte, 0, 10),
+			floatBuffer: make([]byte, 0, 20),
 		}
 	},
 }
 
 type Ctx struct {
-	// KeepRefs []unsafe.Pointer
-
-	// a buffer to encode float as string
 	floatBuffer []byte
 	KeepRefs    []unsafe.Pointer
 }

@@ -24,16 +24,18 @@ func Marshal(v any) ([]byte, error) {
 	buf := newBuffer()
 	defer freeBuffer(buf)
 
-	buf.b, err = enc(ctx, buf.b, ptr)
+	b, err := enc(ctx, buf.b, ptr)
 	if err != nil {
 		return nil, err
 	}
 
 	// allocate a new Ctx required length only
-	p := make([]byte, len(buf.b))
+	dst := make([]byte, len(b))
 
-	copy(p, buf.b)
-	return p, nil
+	copy(dst, b)
+	buf.b = b
+
+	return dst, nil
 }
 
 func MarshalNoEscape(v any) ([]byte, error) {

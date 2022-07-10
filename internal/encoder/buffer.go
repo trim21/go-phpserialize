@@ -18,8 +18,3 @@ func freeBuffer(buf *buffer) {
 	buf.b = buf.b[:0]
 	bufferPool.Put(buf)
 }
-
-func freeBufferBytes(buf *buffer, b []byte) {
-	buf.b = b[:0]
-	bufferPool.Put(buf)
-}
