@@ -172,6 +172,14 @@ var testCase = []struct {
 		},
 		Expected: `a:1:{s:1:"V";i:3;}`,
 	},
+	{
+		Name: "omitempty",
+		Data: struct {
+			V string `php:",omitempty"`
+			D string `php:",omitempty"`
+		}{D: "d"},
+		Expected: `a:1:{s:1:"D";s:1:"d";}`,
+	},
 }
 
 func TestMarshal_concrete_types(t *testing.T) {

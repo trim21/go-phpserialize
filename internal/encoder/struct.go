@@ -29,6 +29,7 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 	var encoders []structFieldEncoder
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
+		offset := field.Offset
 		cfg := fieldConfigs[i]
 		if cfg.Key == "-" {
 			continue
@@ -44,7 +45,6 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 				return nil, err
 			}
 
-			offset := field.Offset
 			wrappedEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 				b = filedNameEncoder(ctx, b)
 				return fieldEncoder(ctx, b, p+offset)
@@ -55,7 +55,6 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 				return nil, err
 			}
 
-			offset := field.Offset
 			if indirect && field.Type.Kind() == reflect.Map {
 				wrappedEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 					b = filedNameEncoder(ctx, b)
@@ -75,7 +74,7 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 			if err != nil {
 				return nil, err
 			}
-			encoders = append(encoders, fieldEncoderWithEmpty(wrappedEncoder, isEmpty))
+			encoders = append(encoders, fieldEncoderWithEmpty(wrappedEncoder, offset, isEmpty))
 		} else {
 			encoders = append(encoders, func(ctx *Ctx, sc *structCtx, structBuffer []byte, p uintptr) ([]byte, error) {
 				sc.writtenField++
@@ -174,9 +173,9 @@ func structEncoderNoOmitEmpty(encoders []encoder, fieldCount int64) encoder {
 	}
 }
 
-func fieldEncoderWithEmpty(enc encoder, empty isEmpty) structFieldEncoder {
+func fieldEncoderWithEmpty(enc encoder, offset uintptr, empty isEmpty) structFieldEncoder {
 	return func(ctx *Ctx, sc *structCtx, structBuffer []byte, p uintptr) ([]byte, error) {
-		shouldIgnore, err := empty(ctx, p)
+		shouldIgnore, err := empty(ctx, p+offset)
 		if err != nil {
 			return structBuffer, err
 		}
