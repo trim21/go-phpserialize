@@ -111,9 +111,13 @@ func compileEmptyFunc(rt *runtime.Type) (emptyFunc, error) {
 				p = **(**uintptr)(unsafe.Pointer(&p))
 				return p == 0, nil
 			}, nil
+		default:
+			return EmptyPtr, nil
 		}
 
+	case reflect.Array:
 		return EmptyPtr, nil
+
 	}
 
 	return nil, fmt.Errorf("failed to build encoder, unsupported type %s (kind %s) with tag `omitempty`", rt.String(), rt.Kind())
@@ -121,4 +125,8 @@ func compileEmptyFunc(rt *runtime.Type) (emptyFunc, error) {
 
 func EmptyPtr(ctx *Ctx, p uintptr) (bool, error) {
 	return p == 0, nil
+}
+
+func AlwaysHasValue(_ *Ctx, _ uintptr) (bool, error) {
+	return true, nil
 }

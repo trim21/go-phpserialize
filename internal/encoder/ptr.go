@@ -36,6 +36,7 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 		return encodeFloat64, nil
 	case reflect.String:
 		return EncodeStringPtr, nil
+
 	}
 
 	enc, err := compile(rt.Elem())

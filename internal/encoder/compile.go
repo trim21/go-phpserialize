@@ -51,6 +51,8 @@ func compile(rt *runtime.Type) (encoder, error) {
 		return encodeString, nil
 	case reflect.Struct:
 		return compileStruct(rt)
+	case reflect.Array:
+		return compileArray(rt)
 	case reflect.Slice:
 		return compileSlice(rt)
 	case reflect.Map:

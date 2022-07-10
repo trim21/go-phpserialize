@@ -389,8 +389,36 @@ func TestMarshal_ptr(t *testing.T) {
 		stringEqual(t, expected, string(actual))
 	})
 
-	t.Run("slice", func(t *testing.T) {
+	t.Run("array", func(t *testing.T) {
 
+		t.Run("omitempty", func(t *testing.T) {
+			type Data struct {
+				Value *[5]int `php:"value,omitempty"`
+			}
+			var s = [5]int{1, 6, 4, 7, 9}
+			var data = Data{&s}
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";a:5:{i:0;i:1;i:1;i:6;i:2;i:4;i:3;i:7;i:4;i:9;}}`
+			stringEqual(t, expected, string(actual))
+		})
+
+		t.Run("no omitempty", func(t *testing.T) {
+			type Data struct {
+				Value *[5]int `php:"value"`
+			}
+			var s = [5]int{1, 6, 4, 7, 9}
+			var data = Data{&s}
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";a:5:{i:0;i:1;i:1;i:6;i:2;i:4;i:3;i:7;i:4;i:9;}}`
+			stringEqual(t, expected, string(actual))
+		})
+	})
+
+	t.Run("slice", func(t *testing.T) {
 		t.Run("omitempty", func(t *testing.T) {
 			type Data struct {
 				Value *[]string `php:"value,omitempty"`
