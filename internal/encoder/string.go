@@ -1,33 +1,43 @@
 package encoder
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"unsafe"
 )
 
-// EncodeStringPtr encode string "result" to `s:6:"result";`
+// EncodeString encode string "result" to `s:6:"result";`
 // encode UTF-8 string "叛逆的鲁鲁修" `s:18:"叛逆的鲁鲁修";`
 // str length is underling bytes length, not len(str)
-func EncodeStringPtr(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	s := *(**reflect.StringHeader)(unsafe.Pointer(&p))
+// a unsafe.Pointer(&s) is actual a pointer to reflect.StringHeader
+func EncodeString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+	fmt.Println("EncodeString: start")
+	sh := **(**reflect.StringHeader)(unsafe.Pointer(&p))
+	fmt.Println("EncodeString:", sh)
 	sVal := **(**string)(unsafe.Pointer(&p))
 	b = append(b, 's', ':')
-	b = strconv.AppendInt(b, int64(s.Len), 10)
+	b = strconv.AppendInt(b, int64(sh.Len), 10)
 	b = append(b, ':', '"')
 	b = append(b, sVal...)
 
 	return append(b, '"', ';'), nil
 }
 
-func EncodeString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	s := *(**reflect.StringHeader)(unsafe.Pointer(p))
-	sVal := **(**string)(unsafe.Pointer(p))
+func EncodeStringPtr(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+	sh1 := **(**reflect.StringHeader)(unsafe.Pointer(&p))
+	fmt.Println("EncodeStringPtr:", sh1)
+
+	sh := ***(***reflect.StringHeader)(unsafe.Pointer(&p))
+	fmt.Println("EncodeStringPtr:", sh)
+	sVal := ***(***string)(unsafe.Pointer(&p))
+
 	b = append(b, 's', ':')
-	b = strconv.AppendInt(b, int64(s.Len), 10)
+	b = strconv.AppendInt(b, int64(sh.Len), 10)
 	b = append(b, ':', '"')
 	b = append(b, sVal...)
 
+	fmt.Println("EncodeStringPtr: ok")
 	return append(b, '"', ';'), nil
 }
 

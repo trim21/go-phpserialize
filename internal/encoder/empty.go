@@ -14,7 +14,7 @@ func notIgnore(ctx *Ctx, p uintptr) (isEmpty bool, err error) {
 	return false, nil
 }
 
-func compileEmptyer(rt *runtime.Type) (emptyFunc, error) {
+func compileEmptyFunc(rt *runtime.Type) (emptyFunc, error) {
 	switch rt.Kind() {
 	case reflect.Bool:
 		return func(ctx *Ctx, p uintptr) (bool, error) {
@@ -106,18 +106,19 @@ func compileEmptyer(rt *runtime.Type) (emptyFunc, error) {
 		}, nil
 	case reflect.Ptr:
 		switch rt.Elem().Kind() {
-		case reflect.Map, reflect.Slice, reflect.Interface, reflect.Ptr, reflect.String:
+		case reflect.Map, reflect.Slice, reflect.String:
 			return func(ctx *Ctx, p uintptr) (bool, error) {
-				p = PtrOfPtr(p)
+				p = **(**uintptr)(unsafe.Pointer(&p))
 				return p == 0, nil
 			}, nil
 		}
 
-		return func(ctx *Ctx, p uintptr) (bool, error) {
-			s := **(**uintptr)(unsafe.Pointer(&p))
-			return s == 0, nil
-		}, nil
+		return EmptyPtr, nil
 	}
 
 	return nil, fmt.Errorf("failed to build encoder, unsupported type %s (kind %s) with tag `omitempty`", rt.String(), rt.Kind())
+}
+
+func EmptyPtr(ctx *Ctx, p uintptr) (bool, error) {
+	return p == 0, nil
 }

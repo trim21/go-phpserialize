@@ -9,7 +9,7 @@ import (
 
 // fast array for map reflect
 var mapKeyEncoder = [25]encoder{
-	reflect.String: EncodeStringPtr,
+	reflect.String: EncodeString,
 	reflect.Int:    encodeInt,
 	reflect.Int8:   encodeInt8,
 	reflect.Int16:  encodeInt16,
@@ -112,7 +112,7 @@ func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, k
 	if rt.Elem().Kind() == reflect.Map {
 		originValueEncoder := valueEncoder
 		valueEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-			return originValueEncoder(ctx, b, PtrOfPtr(p))
+			return originValueEncoder(ctx, b, PtrDeRef(p))
 		}
 	}
 

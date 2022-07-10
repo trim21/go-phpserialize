@@ -388,6 +388,30 @@ func TestMarshal_ptr(t *testing.T) {
 		stringEqual(t, expected, string(actual))
 	})
 
+	t.Run("*string omitempty", func(t *testing.T) {
+		type Data struct {
+			Value *string `php:"value,omitempty"`
+		}
+
+		t.Run("not_nil", func(t *testing.T) {
+			var s = "abcdefg"
+			var data = Data{&s}
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";s:7:"abcdefg";}`
+			stringEqual(t, expected, string(actual))
+		})
+
+		t.Run("nil", func(t *testing.T) {
+			var data = Data{}
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:0:{}`
+			stringEqual(t, expected, string(actual))
+		})
+	})
+
 	t.Run("*int", func(t *testing.T) {
 		type Data struct {
 			Value *int `php:"value"`
