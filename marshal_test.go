@@ -412,7 +412,36 @@ func TestMarshal_ptr(t *testing.T) {
 		})
 	})
 
-	t.Run("*int", func(t *testing.T) {
+	t.Run("map", func(t *testing.T) {
+		t.Run("nil", func(t *testing.T) {
+			type Data struct {
+				Value *map[int]int `php:"value"`
+			}
+
+			var data = Data{}
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";N;}`
+			stringEqual(t, expected, string(actual))
+		})
+
+		t.Run("omitempty", func(t *testing.T) {
+			type Data struct {
+				Value *map[int]int `php:"value,omitempty"`
+			}
+
+			var s = map[int]int{1: 2, 3: 4}
+			var data = Data{&s}
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";a:2:{i:1;i:2;i:3;i:4;}}`
+			stringEqual(t, expected, string(actual))
+		})
+	})
+
+	t.Run("int", func(t *testing.T) {
 		type Data struct {
 			Value *int `php:"value"`
 		}

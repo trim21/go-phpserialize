@@ -69,7 +69,7 @@ LOOP:
 	case reflect.Float64:
 		return encodeFloat64(ctx, b, pp)
 	case reflect.String:
-		return EncodeString(ctx, b, pp)
+		return encodeString(ctx, b, pp)
 	}
 
 	// if rv.Type().Kind() == reflect.Slice {

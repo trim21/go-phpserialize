@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/bits"
+	"runtime"
 	"sort"
 	"strings"
 	"unicode"
@@ -234,7 +235,7 @@ func decodeKeyByBitmapUint8(d *structDecoder, buf []byte, cursor int64) (int64, 
 				return 0, nil, errors.ErrSyntax(fmt.Sprintf("unexpected chat (%c) before str length", c), cursor)
 			}
 
-			fmt.Println(sLen)
+			runtime.KeepAlive(sLen)
 			cursor++
 			c = char(b, cursor)
 			switch c {
@@ -392,7 +393,7 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 		if err != nil {
 			return cursor, err
 		}
-		cursor = end 
+		cursor = end
 		fallthrough
 	case 'a':
 		cursor++

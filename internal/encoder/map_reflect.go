@@ -9,7 +9,7 @@ import (
 
 // fast array for map reflect
 var mapKeyEncoder = [25]encoder{
-	reflect.String: EncodeString,
+	reflect.String: encodeString,
 	reflect.Int:    encodeInt,
 	reflect.Int8:   encodeInt8,
 	reflect.Int16:  encodeInt16,
