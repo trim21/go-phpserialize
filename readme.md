@@ -138,7 +138,9 @@ you will see
 }
 ```
 
-`any` type will be decoded to `map[any]any`, where key maybe `int64` or `string`, and value can be anything.
+`any` type will be decoded to `map[any]any` or `map[string]any`, depends on raw input is class or array,
+
+map `any` key maybe `int64` or `string`.
 
 Heavily inspired by https://github.com/goccy/go-json
 
