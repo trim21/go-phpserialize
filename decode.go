@@ -39,31 +39,6 @@ func unmarshal(data []byte, v any) error {
 	return validateEndBuf(src, cursor)
 }
 
-func unmarshalNoEscape(data []byte, v any) error {
-	src := make([]byte, len(data)+1) // append nul byte to the end
-	copy(src, data)
-
-	header := (*emptyInterface)(unsafe.Pointer(&v))
-
-	if err := validateType(header.typ, uintptr(header.ptr)); err != nil {
-		return err
-	}
-	dec, err := decoder.CompileToGetDecoder(header.typ)
-	if err != nil {
-		return err
-	}
-
-	ctx := decoder.TakeRuntimeContext()
-	ctx.Buf = src
-	cursor, err := dec.Decode(ctx, 0, 0, noescape(header.ptr))
-	if err != nil {
-		decoder.ReleaseRuntimeContext(ctx)
-		return err
-	}
-	decoder.ReleaseRuntimeContext(ctx)
-	return validateEndBuf(src, cursor)
-}
-
 func validateEndBuf(src []byte, cursor int64) error {
 	if int64(len(src)) == cursor {
 		return nil
@@ -73,13 +48,6 @@ func validateEndBuf(src []byte, cursor int64) error {
 		fmt.Sprintf("invalid character '%c' after top-level value", src[cursor]),
 		cursor+1,
 	)
-}
-
-//nolint:staticcheck
-//go:nosplit
-func noescape(p unsafe.Pointer) unsafe.Pointer {
-	x := uintptr(p)
-	return unsafe.Pointer(x ^ 0)
 }
 
 func validateType(typ *runtime.Type, p uintptr) error {

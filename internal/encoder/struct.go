@@ -160,9 +160,6 @@ func compileStructNoOmitEmpty(rt *runtime.Type, fieldConfigs []*runtime.StructTa
 
 func structEncoderNoOmitEmpty(encoders []encoder, fieldCount int64) encoder {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		sc := newStructCtx()
-		defer freeStructCtx(sc)
-
 		b = appendArrayBeginBytes(b, fieldCount)
 
 		var err error

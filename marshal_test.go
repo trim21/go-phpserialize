@@ -15,7 +15,7 @@ func init() {
 	color.NoColor = false // force color
 }
 
-type Contianer struct {
+type Container struct {
 	Value any `php:"value"`
 }
 
@@ -450,7 +450,7 @@ func TestMarshal_interface_with_method(t *testing.T) {
 	t.Parallel()
 
 	var data M = mImpl{}
-	actual, err := phpserialize.Marshal(Contianer{Value: data})
+	actual, err := phpserialize.Marshal(Container{Value: data})
 	require.NoError(t, err)
 	expected := `a:1:{s:5:"value";a:0:{}}`
 	stringEqual(t, expected, string(actual))

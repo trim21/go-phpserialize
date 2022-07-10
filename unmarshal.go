@@ -7,7 +7,3 @@ type Unmarshaler interface {
 func Unmarshal(data []byte, v any) error {
 	return unmarshal(data, v)
 }
-
-func UnmarshalNoEscape(data []byte, v any) error {
-	return unmarshalNoEscape(data, v)
-}

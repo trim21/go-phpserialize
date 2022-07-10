@@ -11,10 +11,12 @@ var bufferPool = sync.Pool{New: func() any {
 }}
 
 func newBuffer() *buffer {
-	return bufferPool.Get().(*buffer)
+	buf := bufferPool.Get().(*buffer)
+	buf.b = buf.b[:0]
+
+	return buf
 }
 
 func freeBuffer(buf *buffer) {
-	buf.b = buf.b[:0]
 	bufferPool.Put(buf)
 }
