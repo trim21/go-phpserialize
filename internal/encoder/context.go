@@ -3,6 +3,8 @@ package encoder
 import (
 	"sync"
 	"unsafe"
+
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 var ctxPool = sync.Pool{
@@ -38,11 +40,7 @@ func freeCtx(ctx *Ctx) {
 // A mapIter is an iterator for ranging over a map.
 // See ValueUnsafeAddress.MapRange.
 type mapIter struct {
-	Iter hiter
-}
-
-func (iter *mapIter) reset() {
-	iter.Iter = hiter{}
+	Iter runtime.HashIter
 }
 
 var mapCtxPool = sync.Pool{
@@ -53,12 +51,11 @@ var mapCtxPool = sync.Pool{
 
 func newMapCtx() *mapIter {
 	ctx := mapCtxPool.Get().(*mapIter)
-	ctx.Iter = hiter{}
-
 	return ctx
 }
 
 func freeMapCtx(ctx *mapIter) {
+	ctx.Iter = runtime.HashIter{}
 	mapCtxPool.Put(ctx)
 }
 

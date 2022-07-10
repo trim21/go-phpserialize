@@ -20,13 +20,3 @@ type emptyInterface struct {
 	typ *runtime.Type  // value type
 	ptr unsafe.Pointer // value address
 }
-
-// will be used to support interface with methods
-type nonEmptyInterface struct {
-	itab *struct {
-		ityp *runtime.Type // static interface type
-		typ  *runtime.Type // dynamic concrete type
-		// unused fields...
-	}
-	ptr unsafe.Pointer
-}

@@ -45,24 +45,12 @@ func canUseAssignFaststrType(key *runtime.Type, value *runtime.Type) bool {
 	return key.Kind() == reflect.String
 }
 
-//go:linkname makemap reflect.makemap
-func makemap(*runtime.Type, int) unsafe.Pointer
-
-//nolint:golint
-//go:linkname mapassign_faststr runtime.mapassign_faststr
-//go:noescape
-func mapassign_faststr(t *runtime.Type, m unsafe.Pointer, s string) unsafe.Pointer
-
-//go:linkname mapassign reflect.mapassign
-//go:noescape
-func mapassign(t *runtime.Type, m unsafe.Pointer, k, v unsafe.Pointer)
-
 func (d *mapDecoder) mapassign(t *runtime.Type, m, k, v unsafe.Pointer) {
 	if d.canUseAssignFaststrType {
-		mapV := mapassign_faststr(t, m, *(*string)(k))
+		mapV := runtime.MapAssignFastStr(t, m, *(*string)(k))
 		typedmemmove(d.valueType, mapV, v)
 	} else {
-		mapassign(t, m, k, v)
+		runtime.MapAssign(t, m, k, v)
 	}
 }
 
@@ -112,7 +100,7 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 
 	mapValue := *(*unsafe.Pointer)(p)
 	if mapValue == nil {
-		mapValue = makemap(d.mapType, int(l))
+		mapValue = runtime.MakeMap(d.mapType, int(l))
 	}
 
 	cursor++

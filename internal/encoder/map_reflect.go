@@ -61,23 +61,19 @@ func reflectMap(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 		return b, err
 	}
 
-	mapIterInit(runtime.Type2RType(rt), unsafe.Pointer(rv.Pointer()), &mr.Iter)
+	runtime.MapIterInit(runtime.Type2RType(rt), unsafe.Pointer(rv.Pointer()), &mr.Iter)
 	for i := 0; i < mapLen; i++ {
-		b, err = keyEncoder(ctx, b, uintptr(mapIterKey(&mr.Iter)))
+		b, err = keyEncoder(ctx, b, runtime.MapIterKey(&mr.Iter))
 		if err != nil {
 			return b, err
 		}
 
-		iterElem := mapIterValue(&mr.Iter)
-
-		// value := *(*reflect.Value)(unsafe.Pointer(&rValue{m.typ, uintptr(iterElem), ro(m.flag) | flag(vtype)}))
-
-		b, err = valueEncoder(ctx, b, uintptr(iterElem))
+		b, err = valueEncoder(ctx, b, runtime.MapIterValue(&mr.Iter))
 		if err != nil {
 			return b, err
 		}
 
-		mapIterNext(&mr.Iter)
+		runtime.MapIterNext(&mr.Iter)
 	}
 
 	b = append(b, '}')
@@ -125,19 +121,19 @@ func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, k
 	var mr = newMapCtx()
 	defer freeMapCtx(mr)
 
-	mapIterInit(runtime.Type2RType(rt), unsafe.Pointer(rv.Pointer()), &mr.Iter)
+	runtime.MapIterInit(runtime.Type2RType(rt), unsafe.Pointer(rv.Pointer()), &mr.Iter)
 	for i := 0; i < mapLen; i++ {
-		b, err = keyEncoder(ctx, b, uintptr(mapIterKey(&mr.Iter)))
+		b, err = keyEncoder(ctx, b, runtime.MapIterKey(&mr.Iter))
 		if err != nil {
 			return b, err
 		}
 
-		value := uintptr(mapIterValue(&mr.Iter))
-		b, err = valueEncoder(ctx, b, value)
+		b, err = valueEncoder(ctx, b, runtime.MapIterValue(&mr.Iter))
 		if err != nil {
 			return b, err
 		}
-		mapIterNext(&mr.Iter)
+
+		runtime.MapIterNext(&mr.Iter)
 	}
 
 	return append(b, '}'), nil
