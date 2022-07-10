@@ -1,7 +1,6 @@
 package encoder
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 	"unsafe"
@@ -12,9 +11,6 @@ import (
 // str length is underling bytes length, not len(str)
 func EncodeStringPtr(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 	s := *(**reflect.StringHeader)(unsafe.Pointer(&p))
-	fmt.Println("string header", s)
-	// fmt.Println(s)
-	// return nil, nil
 	sVal := **(**string)(unsafe.Pointer(&p))
 	b = append(b, 's', ':')
 	b = strconv.AppendInt(b, int64(s.Len), 10)
@@ -26,9 +22,6 @@ func EncodeStringPtr(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 
 func EncodeString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 	s := *(**reflect.StringHeader)(unsafe.Pointer(p))
-	fmt.Println("string header", s)
-	// fmt.Println(s)
-	// return nil, nil
 	sVal := **(**string)(unsafe.Pointer(p))
 	b = append(b, 's', ':')
 	b = strconv.AppendInt(b, int64(s.Len), 10)

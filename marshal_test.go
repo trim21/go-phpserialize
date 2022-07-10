@@ -2,13 +2,11 @@ package phpserialize_test
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/fatih/color"
 	"github.com/stretchr/testify/require"
 	"github.com/trim21/go-phpserialize"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type any = interface{}
@@ -206,9 +204,6 @@ func TestMarshal_concrete_types(t *testing.T) {
 	for _, data := range testCase {
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
-			if data.Name == "omitempty ptr" {
-				fmt.Println(data.Name, runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(data).Field(0).Type)))
-			}
 			actual, err := phpserialize.Marshal(data.Data)
 			require.NoError(t, err)
 

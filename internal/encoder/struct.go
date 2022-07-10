@@ -1,7 +1,6 @@
 package encoder
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
@@ -30,7 +29,6 @@ func compileStruct(rt *runtime.Type) (encoder, error) {
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
 		indirect := runtime.IfaceIndir(runtime.Type2RType(field.Type))
-		fmt.Println(field.Name, indirect)
 		offset := field.Offset
 		cfg := fieldConfigs[i]
 		if cfg.Key == "-" || !cfg.Field.IsExported() {
