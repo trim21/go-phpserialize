@@ -22,7 +22,7 @@ type wrappedStringDecoder struct {
 	isPtrType     bool
 }
 
-func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldName string) (*wrappedStringDecoder, error) {
+func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldName string) (Decoder, error) {
 	var innerDec stringWrappedDecoder
 	switch v := dec.(type) {
 	case *boolDecoder:
@@ -33,6 +33,9 @@ func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldNa
 		innerDec = newStringUintDecoder(structName, fieldName, v)
 	case *intDecoder:
 		innerDec = newStringIntDecoder(structName, fieldName, v)
+	case *ptrDecoder:
+		err := v.wrapString()
+		return dec, err
 	default:
 		return nil, &errors.UnsupportedTypeError{Type: runtime.RType2Type(typ)}
 	}
@@ -133,5 +136,11 @@ type stringIntDecoder struct {
 
 func (d *stringIntDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error {
 	_, err := d.intDecoder.processBytes(bytes, topCursor, p)
+	return err
+}
+
+func (d *ptrDecoder) wrapString() error {
+	var err error
+	d.dec, err = newWrappedStringDecoder(d.typ, d.dec, d.structName, d.fieldName)
 	return err
 }
