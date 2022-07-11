@@ -13,6 +13,12 @@ Support All go type including `map`, `slice`, `strcut`, and simple type like `in
 
 You serialize all data into php array only. Decoding from php serialized array or class are both supported.
 
+## Install
+
+```console
+go get github.com/trim21/go-phpserialize
+```
+
 ### Advantage:
 
 Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
