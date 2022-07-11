@@ -509,4 +509,14 @@ func TestUnmarshal_ptr_string(t *testing.T) {
 		require.NoError(t, err)
 		require.Nil(t, c.F)
 	})
+
+	t.Run("nested", func(t *testing.T) {
+		var c struct {
+			F **string `php:"f"`
+		}
+
+		raw := `a:1:{s:1:"f";s:10:"0147852369";}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.Error(t, err)
+	})
 }

@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"reflect"
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
@@ -13,7 +14,15 @@ type ptrDecoder struct {
 	fieldName  string
 }
 
-func newPtrDecoder(dec Decoder, typ *runtime.Type, structName, fieldName string) *ptrDecoder {
+func newPtrDecoder(dec Decoder, typ *runtime.Type, structName, fieldName string) Decoder {
+	if typ.Kind() == reflect.Ptr {
+		return &invalidDecoder{
+			typ:        runtime.PtrTo(typ),
+			kind:       reflect.Ptr,
+			structName: structName,
+			fieldName:  fieldName,
+		}
+	}
 	return &ptrDecoder{
 		dec:        dec,
 		typ:        typ,
