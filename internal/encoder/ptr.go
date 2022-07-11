@@ -9,17 +9,17 @@ import (
 func compilePtr(rt *runtime.Type) (encoder, error) {
 	switch rt.Elem().Kind() {
 	case reflect.Bool:
-		return compile(rt.Elem())
+		return encodeBool, nil
 	case reflect.Uint8:
-		return compile(rt.Elem())
+		return encodeUint8, nil
 	case reflect.Uint16:
-		return compile(rt.Elem())
+		return encodeUint16, nil
 	case reflect.Uint32:
-		return compile(rt.Elem())
+		return encodeUint32, nil
 	case reflect.Uint64:
-		return compile(rt.Elem())
+		return encodeUint64, nil
 	case reflect.Uint:
-		return compile(rt.Elem())
+		return encodeUint, nil
 	case reflect.Int8:
 		return encodeInt8, nil
 	case reflect.Int16:
@@ -36,7 +36,8 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 		return encodeFloat64, nil
 	case reflect.String:
 		return EncodeStringPtr, nil
-
+	case reflect.Interface:
+		return compileInterface(rt.Elem())
 	}
 
 	enc, err := compile(rt.Elem())

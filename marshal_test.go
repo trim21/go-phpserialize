@@ -226,6 +226,18 @@ func TestMarshal_interface(t *testing.T) {
 	}
 }
 
+func TestMarshal_interface_ptr(t *testing.T) {
+	for _, data := range testCase {
+		data := data
+		t.Run(data.Name, func(t *testing.T) {
+			actual, err := phpserialize.Marshal(&data.Data)
+			require.NoError(t, err)
+
+			stringEqual(t, data.Expected, string(actual))
+		})
+	}
+}
+
 func TestMarshal_int_as_string(t *testing.T) {
 	type Container struct {
 		I int `php:"i,string"`
