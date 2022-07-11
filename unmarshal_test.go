@@ -7,6 +7,22 @@ import (
 	"github.com/trim21/go-phpserialize"
 )
 
+func TestUnmarshal_as_string(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ptr", func(t *testing.T) {
+		type Container struct {
+			V *int `php:",omitempty,string"`
+		}
+
+		var c Container
+		raw := `a:1:{s:1:"V";s:1:"1";}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, 1, *c.V)
+	})
+}
+
 func TestUnmarshal_struct_string(t *testing.T) {
 	t.Parallel()
 
