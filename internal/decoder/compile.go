@@ -171,7 +171,7 @@ func compilePtr(typ *runtime.Type, structName, fieldName string, structTypeToDec
 	if err != nil {
 		return nil, err
 	}
-	return newPtrDecoder(dec, typ.Elem(), structName, fieldName), nil
+	return newPtrDecoder(dec, typ.Elem(), structName, fieldName)
 }
 
 func compileInt(typ *runtime.Type, structName, fieldName string) (Decoder, error) {

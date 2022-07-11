@@ -515,7 +515,7 @@ func TestUnmarshal_ptr_string(t *testing.T) {
 			F **string `php:"f"`
 		}
 
-		raw := `a:1:{s:1:"f";s:10:"0147852369";}`
+		raw := `a:0:{}`
 		err := phpserialize.Unmarshal([]byte(raw), &c)
 		require.Error(t, err)
 	})
