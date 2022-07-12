@@ -1,5 +1,8 @@
 # go-phpserialize
 
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/trim21/go-phpserialize?style=flat-square)
+[![Go Reference](https://pkg.go.dev/badge/github.com/trim21/go-phpserialize#section-readme.svg)](https://pkg.go.dev/github.com/trim21/go-phpserialize#section-readme)
+
 PHP `serialize()` and `unserialize()` for Go.
 
 Support All go type including `map`, `slice`, `strcut`, and simple type like `int`, `uint` ...etc.
