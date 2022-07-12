@@ -30,10 +30,6 @@ Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 
 heavy usage of `unsafe`.
 
-#### Limitation:
-
-`Marshaling` Anonymous Struct field (embedding struct) working like named field, `Unmarshal` works fine.
-
 ## Usage
 
 See [examples](./example_test.go)

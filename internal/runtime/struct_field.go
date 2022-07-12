@@ -37,6 +37,10 @@ type StructTag struct {
 	Field       reflect.StructField
 }
 
+func (s StructTag) ShouldEncode() {
+
+}
+
 type StructTags []*StructTag
 
 func (t StructTags) ExistsKey(key string) bool {

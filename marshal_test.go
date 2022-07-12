@@ -598,3 +598,23 @@ func stringEqual(t *testing.T, expected, actual string) {
 		t.FailNow()
 	}
 }
+
+func TestMarshal_anonymous_field(t *testing.T) {
+	type N struct {
+		A int
+		B int
+	}
+
+	type M struct {
+		N
+		C int
+	}
+
+	actual, err := phpserialize.Marshal(M{N: N{
+		A: 3,
+		B: 2,
+	}, C: 1})
+	require.NoError(t, err)
+
+	stringEqual(t, `a:4:{s:1:"A";i:3;s:1:"B";i:2;s:1:"C";i:1;}`, string(actual))
+}

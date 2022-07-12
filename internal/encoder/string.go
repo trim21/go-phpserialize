@@ -39,3 +39,12 @@ func compileConstStringNoError(s string) func(*Ctx, []byte) []byte {
 		return append(b, finalStr...)
 	}
 }
+
+func appendPhpStringVariable(ctx *Ctx, b []byte, s string) []byte {
+	b = append(b, 's', ':')
+	b = strconv.AppendInt(b, int64(len(s)), 10)
+	b = append(b, ':', '"')
+	b = append(b, s...)
+
+	return append(b, '"', ';')
+}

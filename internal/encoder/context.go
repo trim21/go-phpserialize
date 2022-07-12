@@ -12,13 +12,13 @@ var ctxPool = sync.Pool{
 		return &Ctx{
 			Buf:         make([]byte, 0, 1024),
 			KeepRefs:    make([]unsafe.Pointer, 0, 8),
-			floatBuffer: make([]byte, 0, 20),
+			smallBuffer: make([]byte, 0, 20),
 		}
 	},
 }
 
 type Ctx struct {
-	floatBuffer []byte
+	smallBuffer []byte // a small buffer to encode float and time.Time as string
 	KeepRefs    []unsafe.Pointer
 	Buf         []byte
 }
@@ -26,7 +26,7 @@ type Ctx struct {
 func newCtx() *Ctx {
 	ctx := ctxPool.Get().(*Ctx)
 	ctx.KeepRefs = ctx.KeepRefs[:0]
-	ctx.floatBuffer = ctx.floatBuffer[:0]
+	ctx.smallBuffer = ctx.smallBuffer[:0]
 
 	return ctx
 }
@@ -57,25 +57,4 @@ func newMapCtx() *mapIter {
 func freeMapCtx(ctx *mapIter) {
 	ctx.Iter = runtime.HashIter{}
 	mapCtxPool.Put(ctx)
-}
-
-type structCtx struct {
-	b            []byte
-	writtenField int64
-}
-
-var structCtxPool = sync.Pool{New: func() any {
-	return &structCtx{
-		b: make([]byte, 0, 512),
-	}
-}}
-
-func newStructCtx() *structCtx {
-	return structCtxPool.Get().(*structCtx)
-}
-
-func freeStructCtx(ctx *structCtx) {
-	ctx.b = ctx.b[:]
-	ctx.writtenField = 0
-	structCtxPool.Put(ctx)
 }

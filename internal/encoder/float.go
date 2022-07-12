@@ -67,12 +67,12 @@ func compileFloatAsString(typ *runtime.Type) (encoder, error) {
 
 func encodeFloat32AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 	value := **(**float32)(unsafe.Pointer(&p))
-	return appendFloat32AsString(ctx.floatBuffer[:0], b, value), nil
+	return appendFloat32AsString(ctx.smallBuffer[:0], b, value), nil
 }
 
 func encodeFloat64AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 	f64 := **(**float64)(unsafe.Pointer(&p))
-	return appendFloat64AsString(ctx.floatBuffer[:0], b, f64), nil
+	return appendFloat64AsString(ctx.smallBuffer[:0], b, f64), nil
 }
 
 func appendFloat32AsString(buf []byte, b []byte, f32 float32) []byte {
