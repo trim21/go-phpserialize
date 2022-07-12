@@ -38,6 +38,8 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 		return EncodeStringPtr, nil
 	case reflect.Interface:
 		return compileInterface(rt.Elem())
+	case reflect.Struct:
+		return compile(rt.Elem())
 	}
 
 	enc, err := compile(rt.Elem())

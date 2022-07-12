@@ -105,19 +105,12 @@ func compileEmptyFunc(rt *runtime.Type) (emptyFunc, error) {
 			return p == 0, nil
 		}, nil
 	case reflect.Ptr:
-		switch rt.Elem().Kind() {
-		case reflect.Map, reflect.Slice, reflect.String:
-			return func(ctx *Ctx, p uintptr) (bool, error) {
-				p = **(**uintptr)(unsafe.Pointer(&p))
-				return p == 0, nil
-			}, nil
-		default:
-			return EmptyPtr, nil
-		}
-
+		return func(ctx *Ctx, p uintptr) (bool, error) {
+			p = **(**uintptr)(unsafe.Pointer(&p))
+			return p == 0, nil
+		}, nil
 	case reflect.Array:
 		return EmptyPtr, nil
-
 	}
 
 	return nil, fmt.Errorf("failed to build encoder, unsupported type %s (kind %s) with tag `omitempty`", rt.String(), rt.Kind())
