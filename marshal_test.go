@@ -263,6 +263,17 @@ func TestMarshal_int_as_string(t *testing.T) {
 		expected := `a:1:{s:1:"i";s:1:"0";}`
 		stringEqual(t, expected, string(actual))
 	})
+
+	t.Run("ptr", func(t *testing.T) {
+		data := struct {
+			I *int `php:"i,string"`
+		}{I: func(i int) *int { return &i }(0)}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"i";s:1:"0";}`
+		stringEqual(t, expected, string(actual))
+	})
 }
 
 func TestMarshal_uint_as_string(t *testing.T) {
