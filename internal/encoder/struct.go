@@ -244,7 +244,7 @@ func compileStructFieldsEncodersNoOmit(rt *runtime.Type, baseOffset uintptr) (fi
 				return 0, nil, err
 			}
 
-			fieldCount += count
+			fieldCount += count - 1 // remove current field
 			encoders = append(encoders, enc...)
 
 			continue
