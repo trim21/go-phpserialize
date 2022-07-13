@@ -5,7 +5,10 @@
 
 PHP `serialize()` and `unserialize()` for Go.
 
-Support All go type including `map`, `slice`, `strcut`, and simple type like `int`, `uint` ...etc.
+Support All go type including `map`, `slice`, `strcut`, `array`, and simple type like `int`, `uint` ...etc.
+
+Some type from standard library like `time.Time`, `net.IP` are not supported.
+If you have and thought about how to support these types, please create an issue.
 
 ## supported and tested go version
 
