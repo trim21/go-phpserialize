@@ -55,3 +55,11 @@ func deRefEncoder(enc encoder) encoder {
 		return enc(ctx, b, PtrDeRef(p))
 	}
 }
+
+func compilePtrAsString(rt *runtime.Type) (encoder, error) {
+	inner, err := compileAsString(rt.Elem())
+	if err != nil {
+		return nil, err
+	}
+	return deRefEncoder(inner), nil
+}

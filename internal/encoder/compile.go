@@ -107,7 +107,8 @@ func compileAsString(rt *runtime.Type) (encoder, error) {
 		return compileFloatAsString(rt)
 	case reflect.Interface:
 		return compileInterfaceAsString(rt)
-
+	case reflect.Ptr:
+		return compilePtrAsString(rt)
 	}
 
 	return nil, fmt.Errorf(
