@@ -83,30 +83,18 @@ func compileStructNoOmitEmptyFastPath(rt *runtime.Type) (encoder, error) {
 			if field.ptr {
 				if field.indirect {
 					fp = PtrDeRef(fp)
+				}
+
+				if fp == 0 {
+					b = appendNull(b)
+					continue
+				}
+
+				for i := 0; i < field.ptrDepth; i++ {
+					fp = PtrDeRef(fp)
 					if fp == 0 {
 						b = appendNull(b)
-						continue
-					}
-
-					for i := 0; i < field.ptrDepth; i++ {
-						fp = PtrDeRef(fp)
-						if fp == 0 {
-							b = appendNull(b)
-							continue FIELD
-						}
-					}
-				} else {
-					if fp == 0 {
-						b = appendNull(b)
-						continue
-					}
-
-					for i := 0; i < field.ptrDepth; i++ {
-						fp = PtrDeRef(fp)
-						if fp == 0 {
-							b = appendNull(b)
-							continue FIELD
-						}
+						continue FIELD
 					}
 				}
 			}
@@ -142,6 +130,21 @@ func compileStructBufferSlowPath(rt *runtime.Type) (encoder, error) {
 			if field.ptr {
 				if field.indirect {
 					fp = PtrDeRef(fp)
+				}
+
+				if fp == 0 {
+					if field.zero != nil {
+						continue FIELD
+					}
+
+					structBuffer = appendPhpStringVariable(ctx, structBuffer, field.fieldName)
+					writtenField++
+					structBuffer = appendNull(structBuffer)
+					continue
+				}
+
+				for i := 0; i < field.ptrDepth; i++ {
+					fp = PtrDeRef(fp)
 					if fp == 0 {
 						if field.zero != nil {
 							continue FIELD
@@ -151,39 +154,6 @@ func compileStructBufferSlowPath(rt *runtime.Type) (encoder, error) {
 						structBuffer = appendNull(structBuffer)
 						writtenField++
 						continue FIELD
-					}
-
-					for i := 0; i < field.ptrDepth; i++ {
-						fp = PtrDeRef(fp)
-						if fp == 0 {
-							if field.zero != nil {
-								continue FIELD
-							}
-
-							structBuffer = appendPhpStringVariable(ctx, structBuffer, field.fieldName)
-							structBuffer = appendNull(structBuffer)
-							writtenField++
-							continue FIELD
-						}
-					}
-				} else {
-					if fp == 0 {
-						b = appendNull(b)
-						continue
-					}
-
-					for i := 0; i < field.ptrDepth; i++ {
-						fp = PtrDeRef(fp)
-						if fp == 0 {
-							if field.zero != nil {
-								continue FIELD
-							}
-
-							structBuffer = appendPhpStringVariable(ctx, structBuffer, field.fieldName)
-							structBuffer = appendNull(structBuffer)
-							writtenField++
-							continue FIELD
-						}
 					}
 				}
 			}
