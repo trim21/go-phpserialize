@@ -9,7 +9,10 @@ import (
 )
 
 type structEncoder struct {
-	offset    uintptr
+	offset uintptr
+	// a direct value handler, like `encodeInt`
+	// struct encoder should de-ref pointers and pass real address to encoder.
+	// address of map, slice, array may still be 0, bug theirs encoder will handle that at null.
 	encode    encoder
 	fieldName string // field fieldName
 	zero      emptyFunc
@@ -74,8 +77,8 @@ func compileStructNoOmitEmptyFastPath(rt *runtime.Type) (encoder, error) {
 	FIELD:
 		for _, field := range fields {
 			b = appendPhpStringVariable(ctx, b, field.fieldName)
-			fp := field.offset + p
 
+			fp := field.offset + p
 			if field.ptr {
 				if field.indirect {
 					fp = PtrDeRef(fp)
