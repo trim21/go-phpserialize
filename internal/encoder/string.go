@@ -11,7 +11,7 @@ import (
 // str length is underling bytes length, not len(str)
 // a unsafe.Pointer(&s) is actual a pointer to reflect.StringHeader
 func encodeString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	sh := **(**reflect.StringHeader)(unsafe.Pointer(&p))
+	sh := *(**reflect.StringHeader)(unsafe.Pointer(&p))
 	sVal := **(**string)(unsafe.Pointer(&p))
 	b = append(b, 's', ':')
 	b = strconv.AppendInt(b, int64(sh.Len), 10)
@@ -22,7 +22,7 @@ func encodeString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 }
 
 func EncodeStringPtr(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	sh := ***(***reflect.StringHeader)(unsafe.Pointer(&p))
+	sh := **(***reflect.StringHeader)(unsafe.Pointer(&p))
 	sVal := ***(***string)(unsafe.Pointer(&p))
 
 	b = append(b, 's', ':')

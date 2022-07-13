@@ -59,23 +59,6 @@ func newSliceDecoder(dec Decoder, elemType *runtime.Type, size uintptr, structNa
 	}
 }
 
-func (d *sliceDecoder) newSlice(src *sliceHeader, length int) *sliceHeader {
-	slice := d.arrayPool.Get().(*sliceHeader)
-	if src.len > 0 {
-		// copy original elem
-		if slice.cap < src.cap || src.cap < length {
-			data := newArray(d.elemType, length)
-			slice = &sliceHeader{data: data, len: src.len, cap: length}
-		} else {
-			slice.len = src.len
-		}
-		copySlice(d.elemType, *slice, *src)
-	} else {
-		slice.len = 0
-	}
-	return slice
-}
-
 func (d *sliceDecoder) releaseSlice(p *sliceHeader) {
 	d.arrayPool.Put(p)
 }
