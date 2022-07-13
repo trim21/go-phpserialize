@@ -27,7 +27,7 @@ LOOP:
 		switch rv.Kind() {
 		case reflect.Ptr, reflect.Interface:
 			if rv.IsNil() || rv.IsZero() {
-				return appendNilBytes(b), nil
+				return appendNull(b), nil
 			}
 			rv = rv.Elem()
 		default:
@@ -101,7 +101,7 @@ LOOP:
 		switch rv.Kind() {
 		case reflect.Ptr, reflect.Interface:
 			if rv.IsNil() || rv.IsZero() {
-				return appendNilBytes(b), nil
+				return appendNull(b), nil
 			}
 			rv = rv.Elem()
 		default:

@@ -28,10 +28,10 @@ func compileArray(rt *runtime.Type) (encoder, error) {
 	return func(ctx *Ctx, b []byte, dataPtr uintptr) ([]byte, error) {
 		// no data ptr, nil slice
 		if dataPtr == 0 {
-			return appendNilBytes(b), nil
+			return appendNull(b), nil
 		}
 
-		b = appendArrayBeginBytes(b, i64)
+		b = appendArrayBegin(b, i64)
 		var err error // create a new error value, so shadow compiler's error
 		for i := 0; i < length; i++ {
 			b = appendIntBytes(b, int64(i))

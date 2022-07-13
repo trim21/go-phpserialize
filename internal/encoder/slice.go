@@ -27,17 +27,17 @@ func compileSlice(rt *runtime.Type) (encoder, error) {
 	}
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		if p == 0 {
-			return appendNilBytes(b), nil
+			return appendNull(b), nil
 		}
 		dataPtr := **(**uintptr)(unsafe.Pointer(&p))
 		// no data ptr, nil slice
 		if dataPtr == 0 {
-			return appendNilBytes(b), nil
+			return appendNull(b), nil
 		}
 
 		length := *(*int)(unsafe.Add(ptrToUnsafePtr(p), lenOffset))
 
-		b = appendArrayBeginBytes(b, int64(length))
+		b = appendArrayBegin(b, int64(length))
 		var err error // create a new error value, so shadow compiler's error
 		for i := 0; i < length; i++ {
 			b = appendIntBytes(b, int64(i))

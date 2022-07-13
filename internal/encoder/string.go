@@ -23,7 +23,7 @@ func encodeString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 
 func EncodeStringPtr(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 	if p == 0 {
-		return appendNilBytes(b), nil
+		return appendNull(b), nil
 	}
 
 	sh := **(***reflect.StringHeader)(unsafe.Pointer(&p))

@@ -45,17 +45,17 @@ func compileMap(rt *runtime.Type) (encoder, error) {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		if p == 0 {
 			// nil
-			return appendNilBytes(b), nil
+			return appendNull(b), nil
 		}
 
 		ptr := ptrToUnsafePtr(p)
 
 		mapLen := runtime.MapLen(ptr)
 		if mapLen == 0 {
-			return appendEmptyArrayBytes(b), nil
+			return appendEmptyArray(b), nil
 		}
 
-		b = appendArrayBeginBytes(b, int64(mapLen))
+		b = appendArrayBegin(b, int64(mapLen))
 
 		var mapCtx = newMapCtx()
 		defer freeMapCtx(mapCtx)

@@ -62,7 +62,7 @@ func compilePtr(rt *runtime.Type, indirect bool) (encoder, error) {
 func deRefNilEncoder(enc encoder) encoder {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		if p == 0 {
-			return appendNilBytes(b), nil
+			return appendNull(b), nil
 		}
 		p = PtrDeRef(p)
 		return enc(ctx, b, p)
@@ -72,7 +72,7 @@ func deRefNilEncoder(enc encoder) encoder {
 func wrapNilEncoder(enc encoder) encoder {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		if p == 0 {
-			return appendNilBytes(b), nil
+			return appendNull(b), nil
 		}
 		return enc(ctx, b, p)
 	}

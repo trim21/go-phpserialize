@@ -35,7 +35,7 @@ func reflectMap(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 	}
 
 	if rv.IsNil() {
-		return appendNilBytes(b), nil
+		return appendNull(b), nil
 	}
 
 	// iter keys and values
@@ -49,7 +49,7 @@ func reflectMap(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 		return appendEmptyArray(b), nil
 	}
 
-	b = appendArrayBeginBytes(b, int64(mapLen))
+	b = appendArrayBegin(b, int64(mapLen))
 
 	keyEncoder := mapKeyEncoder[keyType.Kind()]
 
@@ -87,7 +87,7 @@ func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, k
 		return appendEmptyArray(b), nil
 	}
 
-	b = appendArrayBeginBytes(b, int64(mapLen))
+	b = appendArrayBegin(b, int64(mapLen))
 
 	// map has a different reflect.Value{}.flag.
 	// map's address may be direct or indirect address

@@ -56,7 +56,7 @@ func encodeIntAsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 }
 
 func appendIntAsString(b []byte, v int64) ([]byte, error) {
-	b = appendStringHeadBytes(b, iterativeDigitsCount(v))
+	b = appendStringHead(b, iterativeDigitsCount(v))
 	b = append(b, '"')
 	b = strconv.AppendInt(b, v, 10)
 	return append(b, '"', ';'), nil

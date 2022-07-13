@@ -88,7 +88,7 @@ func appendFloat32AsString(buf []byte, b []byte, f32 float32) []byte {
 	}
 
 	buf = strconv.AppendFloat(buf, f64, format, -1, 32)
-	b = appendStringHeadBytes(b, int64(len(buf)))
+	b = appendStringHead(b, int64(len(buf)))
 	b = append(b, '"')
 	b = append(b, buf...)
 	b = append(b, '"', ';')
@@ -107,7 +107,7 @@ func appendFloat64AsString(buf []byte, b []byte, f64 float64) []byte {
 	}
 
 	buf = strconv.AppendFloat(buf, f64, format, -1, 64)
-	b = appendStringHeadBytes(b, int64(len(buf)))
+	b = appendStringHead(b, int64(len(buf)))
 	b = append(b, '"')
 	b = append(b, buf...)
 	b = append(b, '"', ';')

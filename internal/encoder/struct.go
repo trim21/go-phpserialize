@@ -87,7 +87,7 @@ func compileStructBufferSlowPath(rt *runtime.Type) (encoder, error) {
 			writtenField++
 		}
 
-		b = appendArrayBeginBytes(b, writtenField)
+		b = appendArrayBegin(b, writtenField)
 		b = append(b, structBuffer...)
 		buf.b = structBuffer
 
@@ -214,7 +214,7 @@ func compileStructNoOmitEmptyFastPath(rt *runtime.Type) (encoder, error) {
 
 	var fieldCount int64 = int64(len(fields))
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		b = appendArrayBeginBytes(b, fieldCount)
+		b = appendArrayBegin(b, fieldCount)
 
 		var err error
 		for _, field := range fields {

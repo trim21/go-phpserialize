@@ -106,6 +106,62 @@ var testCase = []struct {
 		Data:     (map[string]string)(nil),
 		Expected: `N;`,
 	},
+	{
+		Name: "uint as string",
+		Data: struct {
+			Value uint `php:"value,string"`
+		}{
+			Value: uint(957123587),
+		},
+		Expected: `a:1:{s:5:"value";s:9:"957123587";}`,
+	},
+	{
+		Name: "uint as string 0",
+		Data: struct {
+			Value uint `php:"value,string"`
+		}{
+			Value: uint(0),
+		},
+		Expected: `a:1:{s:5:"value";s:1:"0";}`,
+	},
+
+	{
+		Name: "int as string positive",
+		Data: struct {
+			Value int `php:"value,string"`
+		}{
+			Value: int(957123587),
+		},
+		Expected: `a:1:{s:5:"value";s:9:"957123587";}`,
+	},
+	{
+		Name: "int as string 0",
+		Data: struct {
+			Value int `php:"value,string"`
+		}{
+			Value: int(0),
+		},
+		Expected: `a:1:{s:5:"value";s:1:"0";}`,
+	},
+
+	{
+		Name: "int as string positive",
+		Data: struct {
+			Value int `php:"value,string"`
+		}{
+			Value: int(957123587),
+		},
+		Expected: `a:1:{s:5:"value";s:9:"957123587";}`,
+	},
+	{
+		Name: "int as string negative",
+		Data: struct {
+			Value int `php:"value,string"`
+		}{
+			Value: int(-957123587),
+		},
+		Expected: `a:1:{s:5:"value";s:10:"-957123587";}`,
+	},
 
 	{
 		Name: "nested struct not anonymous",

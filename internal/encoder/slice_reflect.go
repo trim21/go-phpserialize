@@ -23,7 +23,7 @@ func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, erro
 	// no data ptr, nil slice
 	// even empty slice has a non-zero data ptr
 	if shPtr == 0 {
-		return appendNilBytes(b), nil
+		return appendNull(b), nil
 	}
 
 	el := runtime.Type2RType(rt.Elem())
@@ -38,7 +38,7 @@ func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, erro
 
 	dataPtr := uintptr(sh.Data)
 
-	b = appendArrayBeginBytes(b, int64(sh.Len))
+	b = appendArrayBegin(b, int64(sh.Len))
 
 	for i := 0; i < sh.Len; i++ {
 		b = appendIntBytes(b, int64(i))
