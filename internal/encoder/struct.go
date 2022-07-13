@@ -144,6 +144,18 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 				}
 				fieldEncoder = enc
 			case reflect.Struct:
+				if indirect {
+					isEmpty = func(ctx *Ctx, p uintptr) (isEmpty bool, err error) {
+						if p == 0 {
+							return true, nil
+						}
+						p = PtrDeRef(p)
+						return p == 0, nil
+					}
+				} else {
+					isEmpty = EmptyPtr
+				}
+
 				enc, err := compilePtr(runtime.Type2RType(field.Type), false)
 				if err != nil {
 					return nil, err
@@ -153,6 +165,22 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 					fieldEncoder = onlyDeReferEncoder(enc)
 				} else {
 					fieldEncoder = enc
+				}
+			default:
+				if indirect {
+					isEmpty = func(ctx *Ctx, p uintptr) (isEmpty bool, err error) {
+						if p == 0 {
+							return true, nil
+						}
+						p = PtrDeRef(p)
+						return p == 0, nil
+					}
+				} else {
+					isEmpty = EmptyPtr
+				}
+				fieldEncoder, err = compilePtr(runtime.Type2RType(field.Type), indirect)
+				if err != nil {
+					return nil, err
 				}
 			}
 		}

@@ -23,15 +23,19 @@ on:
       - "**.go.json"
 
 jobs:
-  "go-118":
+  "go118":
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go_version: ["~1.18"]
     steps:
       - uses: actions/checkout@v3
 
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: "^1.18"
+          go-version: "${{ matrix.go_version }}"
           cache: true
 
       - run: go test -count=1 -v ./...
@@ -42,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go_version: ["^1.17","^1.18"]
+        go_version: ["~1.17", "~1.18"]
 
     steps:
       - uses: actions/checkout@v3

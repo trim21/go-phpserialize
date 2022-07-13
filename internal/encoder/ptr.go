@@ -8,33 +8,38 @@ import (
 
 // MUST call `compilePtr` directly when compile encoder for struct field.
 func compilePtr(rt *runtime.Type, indirect bool) (encoder, error) {
+	var ptrWrapper = wrapNilEncoder
+	if indirect {
+		ptrWrapper = deRefValueEncoder
+	}
+
 	switch rt.Elem().Kind() {
 	case reflect.Bool:
-		return wrapNilEncoder(encodeBool), nil
+		return ptrWrapper(encodeBool), nil
 	case reflect.Uint8:
-		return wrapNilEncoder(encodeUint8), nil
+		return ptrWrapper(encodeUint8), nil
 	case reflect.Uint16:
-		return wrapNilEncoder(encodeUint16), nil
+		return ptrWrapper(encodeUint16), nil
 	case reflect.Uint32:
-		return wrapNilEncoder(encodeUint32), nil
+		return ptrWrapper(encodeUint32), nil
 	case reflect.Uint64:
-		return wrapNilEncoder(encodeUint64), nil
+		return ptrWrapper(encodeUint64), nil
 	case reflect.Uint:
-		return wrapNilEncoder(encodeUint), nil
+		return ptrWrapper(encodeUint), nil
 	case reflect.Int8:
-		return wrapNilEncoder(encodeInt8), nil
+		return ptrWrapper(encodeInt8), nil
 	case reflect.Int16:
-		return wrapNilEncoder(encodeInt16), nil
+		return ptrWrapper(encodeInt16), nil
 	case reflect.Int32:
-		return wrapNilEncoder(encodeInt32), nil
+		return ptrWrapper(encodeInt32), nil
 	case reflect.Int64:
-		return wrapNilEncoder(encodeInt64), nil
+		return ptrWrapper(encodeInt64), nil
 	case reflect.Int:
-		return wrapNilEncoder(encodeInt), nil
+		return ptrWrapper(encodeInt), nil
 	case reflect.Float32:
-		return wrapNilEncoder(encodeFloat32), nil
+		return ptrWrapper(encodeFloat32), nil
 	case reflect.Float64:
-		return wrapNilEncoder(encodeFloat64), nil
+		return ptrWrapper(encodeFloat64), nil
 	case reflect.String:
 		if indirect {
 			return EncodeStringPtr, nil
@@ -59,12 +64,25 @@ func compilePtr(rt *runtime.Type, indirect bool) (encoder, error) {
 	return deRefNilEncoder(enc), nil
 }
 
+func deRefValueEncoder(enc encoder) encoder {
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+		p = PtrDeRef(p)
+		if p == 0 {
+			return appendNull(b), nil
+		}
+		return enc(ctx, b, p)
+	}
+}
+
 func deRefNilEncoder(enc encoder) encoder {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		if p == 0 {
 			return appendNull(b), nil
 		}
 		p = PtrDeRef(p)
+		if p == 0 {
+			return appendNull(b), nil
+		}
 		return enc(ctx, b, p)
 	}
 }
