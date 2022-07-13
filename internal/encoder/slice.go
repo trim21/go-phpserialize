@@ -26,6 +26,9 @@ func compileSlice(rt *runtime.Type) (encoder, error) {
 		}
 	}
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+		if p == 0 {
+			return appendNilBytes(b), nil
+		}
 		dataPtr := **(**uintptr)(unsafe.Pointer(&p))
 		// no data ptr, nil slice
 		if dataPtr == 0 {
