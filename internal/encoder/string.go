@@ -22,6 +22,10 @@ func encodeString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 }
 
 func EncodeStringPtr(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+	if p == 0 {
+		return appendNilBytes(b), nil
+	}
+
 	sh := **(***reflect.StringHeader)(unsafe.Pointer(&p))
 	sVal := ***(***string)(unsafe.Pointer(&p))
 

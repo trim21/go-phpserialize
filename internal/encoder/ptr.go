@@ -36,7 +36,10 @@ func compilePtr(rt *runtime.Type, indirect bool) (encoder, error) {
 	case reflect.Float64:
 		return wrapNilEncoder(encodeFloat64), nil
 	case reflect.String:
-		return wrapNilEncoder(EncodeStringPtr), nil
+		if indirect {
+			return EncodeStringPtr, nil
+		}
+		return encodeString, nil
 	case reflect.Interface:
 		return compileInterface(rt.Elem())
 	case reflect.Struct:

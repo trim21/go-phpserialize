@@ -125,31 +125,35 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 					return nil, err
 				}
 				fieldEncoder = deRefNilEncoder(enc)
-			}
-
-			if !indirect {
-				switch field.Type.Elem().Kind() {
-				case reflect.Array, reflect.Slice, reflect.String:
-					isEmpty = EmptyPtr
-					enc, err := compile(runtime.Type2RType(field.Type.Elem()))
-					if err != nil {
-						return nil, err
+			case reflect.String, reflect.Array, reflect.Slice:
+				if indirect {
+					isEmpty = func(ctx *Ctx, p uintptr) (isEmpty bool, err error) {
+						if p == 0 {
+							return true, nil
+						}
+						p = PtrDeRef(p)
+						return p == 0, nil
 					}
+				} else {
+					isEmpty = EmptyPtr
+				}
+
+				enc, err := compilePtr(runtime.Type2RType(field.Type), indirect)
+				if err != nil {
+					return nil, err
+				}
+				fieldEncoder = enc
+			case reflect.Struct:
+				enc, err := compilePtr(runtime.Type2RType(field.Type), false)
+				if err != nil {
+					return nil, err
+				}
+
+				if indirect {
+					fieldEncoder = onlyDeReferEncoder(enc)
+				} else {
 					fieldEncoder = enc
 				}
-			}
-		}
-
-		if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
-			enc, err := compilePtr(runtime.Type2RType(field.Type), false)
-			if err != nil {
-				return nil, err
-			}
-
-			if indirect {
-				fieldEncoder = onlyDeReferEncoder(enc)
-			} else {
-				fieldEncoder = enc
 			}
 		}
 
