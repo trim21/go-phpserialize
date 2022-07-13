@@ -9,7 +9,7 @@ import (
 
 func compileTime(rt *runtime.Type) (encoder, error) {
 	if rt != timeType {
-		panic("err")
+		panic("try to compile type encoder for non-`time.Time` type")
 	}
 
 	return encodeTime, nil

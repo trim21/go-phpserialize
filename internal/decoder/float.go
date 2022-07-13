@@ -17,38 +17,6 @@ func newFloatDecoder(structName, fieldName string, op func(unsafe.Pointer, float
 	return &floatDecoder{op: op, structName: structName, fieldName: fieldName}
 }
 
-var (
-	floatTable = [256]bool{
-		'0': true,
-		'1': true,
-		'2': true,
-		'3': true,
-		'4': true,
-		'5': true,
-		'6': true,
-		'7': true,
-		'8': true,
-		'9': true,
-		'.': true,
-		'e': true,
-		'E': true,
-		'+': true,
-		'-': true,
-	}
-
-	validEndNumberChar = [256]bool{
-		nul:  true,
-		' ':  true,
-		'\t': true,
-		'\r': true,
-		'\n': true,
-		',':  true,
-		':':  true,
-		'}':  true,
-		']':  true,
-	}
-)
-
 func (d *floatDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
 	switch buf[cursor] {
 	case 'N':

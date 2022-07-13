@@ -3,21 +3,21 @@ package runtime
 import "unsafe"
 
 type HashIter struct {
-	key         unsafe.Pointer
-	elem        unsafe.Pointer
-	t           unsafe.Pointer
-	h           unsafe.Pointer
-	buckets     unsafe.Pointer
-	bptr        unsafe.Pointer
-	overflow    unsafe.Pointer
-	oldoverflow unsafe.Pointer
-	startBucket uintptr
-	offset      uint8
-	wrapped     bool
-	B           uint8
-	i           uint8
-	bucket      uintptr
-	checkBucket uintptr
+	_ unsafe.Pointer // key
+	_ unsafe.Pointer // elem
+	_ unsafe.Pointer // t
+	_ unsafe.Pointer // h
+	_ unsafe.Pointer // buckets
+	_ unsafe.Pointer // bptr
+	_ unsafe.Pointer // overflow
+	_ unsafe.Pointer // oldoverflow
+	_ uintptr        // startBucket
+	_ uint8          // offset
+	_ bool           // wrapped
+	_ uint8          // B
+	_ uint8          // i
+	_ uintptr        // bucket
+	_ uintptr        // checkBucket
 }
 
 // new

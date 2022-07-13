@@ -174,41 +174,6 @@ func skipValue(buf []byte, cursor, depth int64) (int64, error) {
 
 }
 
-func validateTrue(buf []byte, cursor int64) error {
-	if cursor+3 >= int64(len(buf)) {
-		return errors.ErrUnexpectedEnd("true", cursor)
-	}
-	if buf[cursor+1] != 'r' {
-		return errors.ErrInvalidCharacter(buf[cursor+1], "true", cursor)
-	}
-	if buf[cursor+2] != 'u' {
-		return errors.ErrInvalidCharacter(buf[cursor+2], "true", cursor)
-	}
-	if buf[cursor+3] != 'e' {
-		return errors.ErrInvalidCharacter(buf[cursor+3], "true", cursor)
-	}
-	return nil
-}
-
-func validateFalse(buf []byte, cursor int64) error {
-	if cursor+4 >= int64(len(buf)) {
-		return errors.ErrUnexpectedEnd("false", cursor)
-	}
-	if buf[cursor+1] != 'a' {
-		return errors.ErrInvalidCharacter(buf[cursor+1], "false", cursor)
-	}
-	if buf[cursor+2] != 'l' {
-		return errors.ErrInvalidCharacter(buf[cursor+2], "false", cursor)
-	}
-	if buf[cursor+3] != 's' {
-		return errors.ErrInvalidCharacter(buf[cursor+3], "false", cursor)
-	}
-	if buf[cursor+4] != 'e' {
-		return errors.ErrInvalidCharacter(buf[cursor+4], "false", cursor)
-	}
-	return nil
-}
-
 // caller should check `a:0` , this function check  `0:{};`
 func validateEmptyArray(buf []byte, cursor int64) error {
 	if cursor+4 >= int64(len(buf)) {
@@ -268,7 +233,6 @@ func readString(buf []byte, cursor int64) ([]byte, int64, error) {
 
 	start := end + 1
 	end = end + sLen + 1
-	cursor = end + 2
 
 	if buf[end] != '"' {
 		return nil, end, errors.ErrExpected(`string quoted '"'`, end)

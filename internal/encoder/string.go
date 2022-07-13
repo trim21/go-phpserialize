@@ -33,13 +33,6 @@ func EncodeStringPtr(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 	return append(b, '"', ';'), nil
 }
 
-func compileConstStringNoError(s string) func(*Ctx, []byte) []byte {
-	var finalStr = "s:" + strconv.Itoa(len(s)) + `:"` + s + `";`
-	return func(ctx *Ctx, b []byte) []byte {
-		return append(b, finalStr...)
-	}
-}
-
 func appendPhpStringVariable(ctx *Ctx, b []byte, s string) []byte {
 	b = append(b, 's', ':')
 	b = strconv.AppendInt(b, int64(len(s)), 10)

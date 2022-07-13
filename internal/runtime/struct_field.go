@@ -37,8 +37,11 @@ type StructTag struct {
 	Field       reflect.StructField
 }
 
-func (s StructTag) ShouldEncode() {
-
+func (s StructTag) Name() string {
+	if s.Key != "" {
+		return s.Key
+	}
+	return s.Field.Name
 }
 
 type StructTags []*StructTag

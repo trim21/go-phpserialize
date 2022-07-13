@@ -10,16 +10,12 @@ import (
 
 type emptyFunc func(ctx *Ctx, p uintptr) (isEmpty bool, err error)
 
-func notIgnore(ctx *Ctx, p uintptr) (isEmpty bool, err error) {
-	return false, nil
-}
-
 func compileEmptyFunc(rt *runtime.Type) (emptyFunc, error) {
 	switch rt.Kind() {
 	case reflect.Bool:
 		return func(ctx *Ctx, p uintptr) (bool, error) {
 			value := **(**bool)(unsafe.Pointer(&p))
-			return value == false, nil
+			return !value, nil
 		}, nil
 	case reflect.Int8:
 		return func(ctx *Ctx, p uintptr) (bool, error) {
