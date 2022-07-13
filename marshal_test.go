@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/trim21/go-phpserialize"
 	"github.com/trim21/go-phpserialize/internal/runtime"
+	"github.com/volatiletech/null/v9"
 )
 
 type any = interface{}
@@ -68,8 +69,19 @@ var testCase = []struct {
 	Expected string `php:"-" json:"-"`
 }{
 	{Name: "bool true", Data: true, Expected: "b:1;"},
+	{
+		Name:     "*bool true",
+		Data:     null.BoolFrom(true).Ptr(),
+		Expected: "b:1;",
+	},
 	{Name: "bool false", Data: false, Expected: "b:0;"},
+	{Name: "*bool false", Data: new(bool), Expected: "b:0;"},
 	{Name: "int8", Data: int8(7), Expected: "i:7;"},
+	{
+		Name:     "*int8",
+		Data:     null.Uint8From(7).Ptr(),
+		Expected: "i:7;",
+	},
 	{Name: "int16", Data: int16(7), Expected: "i:7;"},
 	{Name: "int32", Data: int32(7), Expected: "i:7;"},
 	{Name: "int64", Data: int64(7), Expected: "i:7;"},
@@ -248,7 +260,7 @@ var testCase = []struct {
 		Expected: `a:1:{s:1:"D";s:1:"d";}`,
 	},
 	{
-		Name: "omitempty ptr",
+		Name: "omitempty-ptr",
 		Data: struct {
 			V *string `php:",omitempty"`
 			D *string `php:",omitempty"`
@@ -322,10 +334,12 @@ func TestMarshal_int_as_string(t *testing.T) {
 		stringEqual(t, expected, string(actual))
 	})
 
-	t.Run("ptr", func(t *testing.T) {
+	t.Run("ptr direct", func(t *testing.T) {
 		data := struct {
 			I *int `php:"i,string"`
-		}{I: func(i int) *int { return &i }(0)}
+		}{
+			I: null.IntFrom(0).Ptr(),
+		}
 
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
@@ -333,15 +347,31 @@ func TestMarshal_int_as_string(t *testing.T) {
 		stringEqual(t, expected, string(actual))
 	})
 
-	t.Run("indirect ptr", func(t *testing.T) {
+	t.Run("int indirect", func(t *testing.T) {
 		data := struct {
 			II *int `php:"ii,string,omitempty"`
 			I  *int `php:"i,string"`
-		}{I: func(i int) *int { return &i }(0)}
+		}{
+			I: null.IntFrom(0).Ptr(),
+		}
 
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:1:"0";}`
+		stringEqual(t, expected, string(actual))
+	})
+
+	t.Run("int indirect", func(t *testing.T) {
+		data := struct {
+			II *int `php:"ii,string"`
+			I  *int `php:"i,string"`
+		}{
+			I: null.IntFrom(0).Ptr(),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:2:{s:2:"ii";N;s:1:"i";s:1:"0";}`
 		stringEqual(t, expected, string(actual))
 	})
 }

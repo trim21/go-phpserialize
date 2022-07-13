@@ -57,7 +57,7 @@ func compile(rt *runtime.Type) (encoder, error) {
 	case reflect.Interface:
 		return compileInterface(rt)
 	case reflect.Ptr:
-		return compilePtr(rt, false)
+		return compilePtr(rt)
 	}
 
 	return nil, fmt.Errorf("failed to build encoder, unsupported type %s (kind %s)", rt.String(), rt.Kind())
@@ -107,8 +107,6 @@ func compileAsString(rt *runtime.Type) (encoder, error) {
 		return compileFloatAsString(rt)
 	case reflect.Interface:
 		return compileInterfaceAsString(rt)
-	case reflect.Ptr:
-		return compilePtrAsString(rt)
 	}
 
 	return nil, fmt.Errorf(

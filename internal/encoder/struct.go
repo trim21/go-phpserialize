@@ -13,6 +13,9 @@ type structEncoder struct {
 	encode    encoder
 	fieldName string // field fieldName
 	zero      emptyFunc
+	indirect  bool
+	ptr       bool
+	ptrDepth  int
 }
 
 var timeType = runtime.Type2RType(reflect.TypeOf((*time.Time)(nil)).Elem())
@@ -55,6 +58,65 @@ func hasOmitEmptyField(rt reflect.Type) (bool, error) {
 	return false, nil
 }
 
+// struct don't have `omitempty` tag, fast path
+func compileStructNoOmitEmptyFastPath(rt *runtime.Type) (encoder, error) {
+	fields, err := compileStructFieldsEncoders(rt, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	var fieldCount int64 = int64(len(fields))
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+		b = appendArrayBegin(b, fieldCount)
+
+		var err error
+
+	FIELD:
+		for _, field := range fields {
+			b = appendPhpStringVariable(ctx, b, field.fieldName)
+			fp := field.offset + p
+
+			if field.ptr {
+				if field.indirect {
+					fp = PtrDeRef(fp)
+					if fp == 0 {
+						b = appendNull(b)
+						continue
+					}
+
+					for i := 0; i < field.ptrDepth; i++ {
+						fp = PtrDeRef(fp)
+						if fp == 0 {
+							b = appendNull(b)
+							continue FIELD
+						}
+					}
+				} else {
+					if fp == 0 {
+						b = appendNull(b)
+						continue
+					}
+
+					for i := 0; i < field.ptrDepth; i++ {
+						fp = PtrDeRef(fp)
+						if fp == 0 {
+							b = appendNull(b)
+							continue FIELD
+						}
+					}
+				}
+			}
+
+			b, err = field.encode(ctx, b, fp)
+			if err != nil {
+				return b, err
+			}
+		}
+
+		return append(b, '}'), nil
+	}, nil
+}
+
 func compileStructBufferSlowPath(rt *runtime.Type) (encoder, error) {
 	encoders, err := compileStructFieldsEncoders(rt, 0)
 	if err != nil {
@@ -66,10 +128,64 @@ func compileStructBufferSlowPath(rt *runtime.Type) (encoder, error) {
 		defer freeBuffer(buf)
 		structBuffer := buf.b
 
+		var err error
 		var writtenField int64
-		for _, enc := range encoders {
-			if enc.zero != nil {
-				empty, err := enc.zero(ctx, p+enc.offset)
+
+	FIELD:
+		for _, field := range encoders {
+			fp := field.offset + p
+
+			if field.ptr {
+				if field.indirect {
+					fp = PtrDeRef(fp)
+					if fp == 0 {
+						if field.zero != nil {
+							continue FIELD
+						}
+
+						structBuffer = appendPhpStringVariable(ctx, structBuffer, field.fieldName)
+						structBuffer = appendNull(structBuffer)
+						writtenField++
+						continue FIELD
+					}
+
+					for i := 0; i < field.ptrDepth; i++ {
+						fp = PtrDeRef(fp)
+						if fp == 0 {
+							if field.zero != nil {
+								continue FIELD
+							}
+
+							structBuffer = appendPhpStringVariable(ctx, structBuffer, field.fieldName)
+							structBuffer = appendNull(structBuffer)
+							writtenField++
+							continue FIELD
+						}
+					}
+				} else {
+					if fp == 0 {
+						b = appendNull(b)
+						continue
+					}
+
+					for i := 0; i < field.ptrDepth; i++ {
+						fp = PtrDeRef(fp)
+						if fp == 0 {
+							if field.zero != nil {
+								continue FIELD
+							}
+
+							structBuffer = appendPhpStringVariable(ctx, structBuffer, field.fieldName)
+							structBuffer = appendNull(structBuffer)
+							writtenField++
+							continue FIELD
+						}
+					}
+				}
+			}
+
+			if field.zero != nil {
+				empty, err := field.zero(ctx, fp)
 				if err != nil {
 					return nil, err
 				}
@@ -78,8 +194,8 @@ func compileStructBufferSlowPath(rt *runtime.Type) (encoder, error) {
 				}
 			}
 
-			structBuffer = appendPhpStringVariable(ctx, structBuffer, enc.fieldName)
-			structBuffer, err = enc.encode(ctx, structBuffer, p+enc.offset)
+			structBuffer = appendPhpStringVariable(ctx, structBuffer, field.fieldName)
+			structBuffer, err = field.encode(ctx, structBuffer, fp)
 			if err != nil {
 				return b, err
 			}
@@ -106,79 +222,24 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 		}
 		offset := field.Offset + baseOffset
 
+		var ptrDepth = 0
+
 		var isEmpty emptyFunc
 		var fieldEncoder encoder
 		var err error
 
 		if field.Type.Kind() == reflect.Ptr {
+			isEmpty = EmptyPtr
+
 			switch field.Type.Elem().Kind() {
+			case reflect.Ptr:
+				return nil, fmt.Errorf("encoding nested ptr is not supported %s", field.Type.String())
+
 			case reflect.Map:
-				isEmpty = func(ctx *Ctx, p uintptr) (isEmpty bool, err error) {
-					if p == 0 {
-						return true, nil
-					}
-					p = PtrDeRef(p)
-					return p == 0, nil
-				}
-				enc, err := compilePtr(runtime.Type2RType(field.Type), indirect)
-				if err != nil {
-					return nil, err
-				}
-				fieldEncoder = deRefNilEncoder(enc)
-			case reflect.String, reflect.Array, reflect.Slice:
-				if indirect {
-					isEmpty = func(ctx *Ctx, p uintptr) (isEmpty bool, err error) {
-						if p == 0 {
-							return true, nil
-						}
-						p = PtrDeRef(p)
-						return p == 0, nil
-					}
-				} else {
-					isEmpty = EmptyPtr
-				}
-
-				enc, err := compilePtr(runtime.Type2RType(field.Type), indirect)
-				if err != nil {
-					return nil, err
-				}
-				fieldEncoder = enc
-			case reflect.Struct:
-				if indirect {
-					isEmpty = func(ctx *Ctx, p uintptr) (isEmpty bool, err error) {
-						if p == 0 {
-							return true, nil
-						}
-						p = PtrDeRef(p)
-						return p == 0, nil
-					}
-				} else {
-					isEmpty = EmptyPtr
-				}
-
-				enc, err := compilePtr(runtime.Type2RType(field.Type), false)
-				if err != nil {
-					return nil, err
-				}
-
-				if indirect {
-					fieldEncoder = onlyDeReferEncoder(enc)
-				} else {
-					fieldEncoder = enc
-				}
+				ptrDepth++
+				fallthrough
 			default:
-				if indirect {
-					isEmpty = func(ctx *Ctx, p uintptr) (isEmpty bool, err error) {
-						if p == 0 {
-							return true, nil
-						}
-						p = PtrDeRef(p)
-						return p == 0, nil
-					}
-				} else {
-					isEmpty = EmptyPtr
-				}
-				fieldEncoder, err = compilePtr(runtime.Type2RType(field.Type), indirect)
+				fieldEncoder, err = compile(runtime.Type2RType(field.Type.Elem()))
 				if err != nil {
 					return nil, err
 				}
@@ -203,9 +264,21 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 		}
 
 		if cfg.IsString {
-			fieldEncoder, err = compileAsString(runtime.Type2RType(field.Type))
-			if err != nil {
-				return nil, err
+			if field.Type.Kind() == reflect.Ptr {
+				enc, err := compileAsString(runtime.Type2RType(field.Type.Elem()))
+				if err != nil {
+					return nil, err
+				}
+
+				fieldEncoder = enc
+				if !indirect {
+					ptrDepth++
+				}
+			} else {
+				fieldEncoder, err = compileAsString(runtime.Type2RType(field.Type))
+				if err != nil {
+					return nil, err
+				}
 			}
 		} else {
 			if indirect && (field.Type.Kind() == reflect.Map) {
@@ -213,12 +286,10 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 			}
 		}
 
-		if cfg.IsOmitEmpty {
-			if isEmpty == nil {
-				isEmpty, err = compileEmptyFunc(runtime.Type2RType(field.Type))
-				if err != nil {
-					return nil, err
-				}
+		if cfg.IsOmitEmpty && isEmpty == nil {
+			isEmpty, err = compileEmptyFunc(runtime.Type2RType(field.Type))
+			if err != nil {
+				return nil, err
 			}
 		}
 
@@ -227,33 +298,11 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 			encode:    fieldEncoder,
 			fieldName: cfg.Name(),
 			zero:      isEmpty,
+			indirect:  indirect,
+			ptrDepth:  ptrDepth,
+			ptr:       field.Type.Kind() == reflect.Ptr,
 		})
 	}
 
 	return encoders, nil
-}
-
-// struct don't have `omitempty` tag, fast path
-func compileStructNoOmitEmptyFastPath(rt *runtime.Type) (encoder, error) {
-	fields, err := compileStructFieldsEncoders(rt, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	var fieldCount int64 = int64(len(fields))
-	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		b = appendArrayBegin(b, fieldCount)
-
-		var err error
-		for _, field := range fields {
-			b = appendPhpStringVariable(ctx, b, field.fieldName)
-
-			b, err = field.encode(ctx, b, field.offset+p)
-			if err != nil {
-				return b, err
-			}
-		}
-
-		return append(b, '}'), nil
-	}, nil
 }
