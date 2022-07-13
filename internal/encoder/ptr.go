@@ -74,28 +74,3 @@ func wrapNilEncoder(enc encoder) encoder {
 		return enc(ctx, b, p)
 	}
 }
-
-func compilePtrAsString(rt *runtime.Type) (encoder, error) {
-	var err error
-	var inner encoder
-	switch rt.Elem().Kind() {
-	case reflect.Int:
-		return encodeIntAsString, nil
-	default:
-		inner, err = compileAsString(rt.Elem())
-		if err != nil {
-			return nil, err
-		}
-	}
-	return deRefNilEncoder(inner), nil
-}
-
-func onlyDeReferEncoder(enc encoder) encoder {
-	if enc == nil {
-		return nil
-	}
-
-	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		return enc(ctx, b, PtrDeRef(p))
-	}
-}

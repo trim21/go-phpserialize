@@ -96,12 +96,12 @@ var testCase = []struct {
 	{Name: "string", Data: `qwer"qwer`, Expected: `s:9:"qwer"qwer";`},
 	{Name: "simple slice", Data: []int{1, 4, 6, 2, 3}, Expected: `a:5:{i:0;i:1;i:1;i:4;i:2;i:6;i:3;i:2;i:4;i:3;}`},
 	{
-		Name:     "struct slice",
+		Name:     "struct-slice",
 		Data:     []Item{{V: 6}, {V: 5}, {4}, {3}, {2}},
 		Expected: `a:5:{i:0;a:1:{s:1:"v";i:6;}i:1;a:1:{s:1:"v";i:5;}i:2;a:1:{s:1:"v";i:4;}i:3;a:1:{s:1:"v";i:3;}i:4;a:1:{s:1:"v";i:2;}}`,
 	},
 	{
-		Name:     "struct with map ptr",
+		Name:     "struct-with-map-indirect",
 		Data:     MapPtr{Users: []Item{}, Map: map[string]int64{"one": 1}},
 		Expected: `a:2:{s:5:"users";a:0:{}s:3:"map";a:1:{s:3:"one";i:1;}}`,
 	},

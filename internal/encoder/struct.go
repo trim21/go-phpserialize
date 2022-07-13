@@ -79,6 +79,7 @@ func compileStructNoOmitEmptyFastPath(rt *runtime.Type) (encoder, error) {
 			b = appendPhpStringVariable(ctx, b, field.fieldName)
 
 			fp := field.offset + p
+
 			if field.ptr {
 				if field.indirect {
 					fp = PtrDeRef(fp)
@@ -231,6 +232,8 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 		var fieldEncoder encoder
 		var err error
 
+		var isPtrField = field.Type.Kind() == reflect.Ptr
+
 		if field.Type.Kind() == reflect.Ptr {
 			isEmpty = EmptyPtr
 
@@ -268,24 +271,19 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 
 		if cfg.IsString {
 			if field.Type.Kind() == reflect.Ptr {
-				enc, err := compileAsString(runtime.Type2RType(field.Type.Elem()))
-				if err != nil {
-					return nil, err
-				}
-
-				fieldEncoder = enc
+				fieldEncoder, err = compileAsString(runtime.Type2RType(field.Type.Elem()))
 				if !indirect {
 					ptrDepth++
 				}
 			} else {
 				fieldEncoder, err = compileAsString(runtime.Type2RType(field.Type))
-				if err != nil {
-					return nil, err
-				}
+			}
+			if err != nil {
+				return nil, err
 			}
 		} else {
 			if indirect && (field.Type.Kind() == reflect.Map) {
-				fieldEncoder = deRefNilEncoder(fieldEncoder)
+				isPtrField = true
 			}
 		}
 
@@ -303,7 +301,7 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 			zero:      isEmpty,
 			indirect:  indirect,
 			ptrDepth:  ptrDepth,
-			ptr:       field.Type.Kind() == reflect.Ptr,
+			ptr:       isPtrField,
 		})
 	}
 
