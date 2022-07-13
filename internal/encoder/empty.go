@@ -44,7 +44,7 @@ func compileEmptyFunc(rt *runtime.Type) (emptyFunc, error) {
 		}, nil
 	case reflect.String:
 		return func(ctx *Ctx, p uintptr) (bool, error) {
-			s := (*reflect.StringHeader)(unsafe.Pointer(p))
+			s := *(**reflect.StringHeader)(unsafe.Pointer(&p))
 			return s.Len == 0, nil
 		}, nil
 	case reflect.Uint8:
