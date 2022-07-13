@@ -2,12 +2,14 @@ package phpserialize_test
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/fatih/color"
 	"github.com/stretchr/testify/require"
 	"github.com/trim21/go-phpserialize"
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type any = interface{}
@@ -467,6 +469,58 @@ func TestMarshal_float64_as_string_reflect(t *testing.T) {
 }
 
 func TestMarshal_ptr(t *testing.T) {
+	t.Run("int-indirect-no-omit", func(t *testing.T) {
+		type Indirect struct {
+			A *int `php:"a"`
+			B *int `php:"b"`
+		}
+
+		var i int = 50
+
+		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Indirect{})))
+		require.True(t, indirect, "struct should be indirect")
+
+		actual, err := phpserialize.Marshal(Indirect{B: &i})
+		require.NoError(t, err)
+		expected := `a:2:{s:1:"a";N;s:1:"b";i:50;}`
+		stringEqual(t, expected, string(actual))
+	})
+
+	t.Run("int-indirect-omitempty", func(t *testing.T) {
+		type Indirect struct {
+			A *int `php:"a"`
+			B *int `php:"b,omitempty"`
+		}
+
+		var i int = 50
+
+		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Indirect{})))
+		require.True(t, indirect, "struct should be indirect")
+
+		actual, err := phpserialize.Marshal(Indirect{A: &i})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"a";i:50;}`
+		stringEqual(t, expected, string(actual))
+	})
+
+	t.Run("int-direct", func(t *testing.T) {
+		type Direct struct {
+			Value *int `php:"value"`
+		}
+
+		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Direct{})))
+		require.False(t, indirect, "struct should be indirect")
+
+		var i int = 50
+
+		t.Run("encode", func(t *testing.T) {
+			actual, err := phpserialize.Marshal(Direct{Value: &i})
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";i:50;}`
+			stringEqual(t, expected, string(actual))
+		})
+	})
+
 	t.Run("nil", func(t *testing.T) {
 		type Data struct {
 			Value *int `php:"value"`
