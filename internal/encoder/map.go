@@ -28,6 +28,7 @@ func compileMap(rt *runtime.Type) (encoder, error) {
 	var valueEncoder encoder
 
 	// need special take care
+	// fmt.Println(runtime.IfaceIndir(rt), runtime.IfaceIndir(valueType), rt.String())
 	if valueType.Kind() == reflect.Map {
 		enc, err := compileMap(valueType)
 		if err != nil {
@@ -58,8 +59,6 @@ func compileMap(rt *runtime.Type) (encoder, error) {
 
 		var mapCtx = newMapCtx()
 		defer freeMapCtx(mapCtx)
-
-		// ctx.KeepRefs = append(ctx.KeepRefs, unsafe.Pointer(mapCtx))
 
 		runtime.MapIterInit(rt, ptr, &mapCtx.Iter)
 		var err error // create a new error value, so shadow compiler's error

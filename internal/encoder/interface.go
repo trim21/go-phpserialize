@@ -72,20 +72,6 @@ LOOP:
 		return encodeString(ctx, b, pp)
 	}
 
-	// if rv.Type().Kind() == reflect.Slice {
-	// 	fmt.Println(orv.Type())
-	// 	fmt.Println(orv.Elem().Type())
-	// 	fmt.Println(v.typ.String())
-	// 	value = *(*any)(unsafe.Pointer(&emptyInterface{typ: v.typ, ptr: unsafe.Pointer(p)}))
-	// fmt.Println("php", uintptr(unsafe.Pointer(&v.typ)), rt, rt.Elem())
-	//
-	// fmt.Println("slice element", rv.Type().Elem())
-	// fmt.Println(runtime.IfaceIndir(runtime.Type2RType(rv.Type().Elem())))
-	// }
-
-	// v = *(*emptyInterface)(unsafe.Pointer(&value))
-	// pp = uintptr(v.ptr)
-
 	switch rv.Kind() {
 	case reflect.Slice:
 		return reflectSlice(ctx, b, rv, p)

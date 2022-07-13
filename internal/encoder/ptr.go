@@ -42,20 +42,15 @@ func compilePtr(rt *runtime.Type, indirect bool) (encoder, error) {
 	case reflect.Struct:
 		enc, err := compileStruct(rt.Elem())
 		return wrapNilEncoder(enc), err
-	case reflect.Map:
-		enc, err := compileMap(rt.Elem())
-		if err != nil {
-			return nil, err
-		}
-		if indirect {
-			return deRefNilEncoder(enc), nil
-		}
-		return enc, nil
 	}
 
 	enc, err := compile(rt.Elem())
 	if err != nil {
 		return nil, err
+	}
+
+	if !indirect {
+		return enc, nil
 	}
 
 	return deRefNilEncoder(enc), nil
@@ -67,9 +62,6 @@ func deRefNilEncoder(enc encoder) encoder {
 			return appendNilBytes(b), nil
 		}
 		p = PtrDeRef(p)
-		if p == 0 {
-			return appendNilBytes(b), nil
-		}
 		return enc(ctx, b, p)
 	}
 }

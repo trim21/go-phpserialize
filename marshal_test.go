@@ -566,6 +566,21 @@ func TestMarshal_ptr(t *testing.T) {
 			stringEqual(t, expected, string(actual))
 		})
 
+		t.Run("encode", func(t *testing.T) {
+			type Data struct {
+				Value *map[int]int `php:"value"`
+			}
+
+			var s = map[int]int{1: 2}
+
+			var data = Data{&s}
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";a:1:{i:1;i:2;}}`
+			stringEqual(t, expected, string(actual))
+		})
+
 		t.Run("omitempty", func(t *testing.T) {
 			type Data struct {
 				Value *map[int]int `php:"value,omitempty"`
