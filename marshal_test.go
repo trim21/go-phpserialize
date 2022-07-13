@@ -411,6 +411,18 @@ func TestMarshal_float64_as_string_reflect(t *testing.T) {
 }
 
 func TestMarshal_ptr(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		type Data struct {
+			Value *int `php:"value"`
+		}
+		var data = Data{}
+
+		actual, err := phpserialize.Marshal(data)
+		require.NoError(t, err)
+		expected := `a:1:{s:5:"value";N;}`
+		stringEqual(t, expected, string(actual))
+	})
+
 	t.Run("*string", func(t *testing.T) {
 		type Data struct {
 			Value *string `php:"value"`

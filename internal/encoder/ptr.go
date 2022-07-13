@@ -9,33 +9,33 @@ import (
 func compilePtr(rt *runtime.Type) (encoder, error) {
 	switch rt.Elem().Kind() {
 	case reflect.Bool:
-		return encodeBool, nil
+		return wrapNilEncoder(encodeBool), nil
 	case reflect.Uint8:
-		return encodeUint8, nil
+		return wrapNilEncoder(encodeUint8), nil
 	case reflect.Uint16:
-		return encodeUint16, nil
+		return wrapNilEncoder(encodeUint16), nil
 	case reflect.Uint32:
-		return encodeUint32, nil
+		return wrapNilEncoder(encodeUint32), nil
 	case reflect.Uint64:
-		return encodeUint64, nil
+		return wrapNilEncoder(encodeUint64), nil
 	case reflect.Uint:
-		return encodeUint, nil
+		return wrapNilEncoder(encodeUint), nil
 	case reflect.Int8:
-		return encodeInt8, nil
+		return wrapNilEncoder(encodeInt8), nil
 	case reflect.Int16:
-		return encodeInt16, nil
+		return wrapNilEncoder(encodeInt16), nil
 	case reflect.Int32:
-		return encodeInt32, nil
+		return wrapNilEncoder(encodeInt32), nil
 	case reflect.Int64:
-		return encodeInt64, nil
+		return wrapNilEncoder(encodeInt64), nil
 	case reflect.Int:
-		return encodeInt, nil
+		return wrapNilEncoder(encodeInt), nil
 	case reflect.Float32:
-		return encodeFloat32, nil
+		return wrapNilEncoder(encodeFloat32), nil
 	case reflect.Float64:
-		return encodeFloat64, nil
+		return wrapNilEncoder(encodeFloat64), nil
 	case reflect.String:
-		return EncodeStringPtr, nil
+		return wrapNilEncoder(EncodeStringPtr), nil
 	case reflect.Interface:
 		return compileInterface(rt.Elem())
 	case reflect.Struct:
@@ -52,7 +52,20 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 
 func deRefEncoder(enc encoder) encoder {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		return enc(ctx, b, PtrDeRef(p))
+		p = PtrDeRef(p)
+		if p == 0 {
+			return appendNilBytes(b), nil
+		}
+		return enc(ctx, b, p)
+	}
+}
+
+func wrapNilEncoder(enc encoder) encoder {
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+		if p == 0 {
+			return appendNilBytes(b), nil
+		}
+		return enc(ctx, b, p)
 	}
 }
 
