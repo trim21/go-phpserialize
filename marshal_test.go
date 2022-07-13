@@ -450,31 +450,63 @@ func TestMarshal_ptr(t *testing.T) {
 		stringEqual(t, expected, string(actual))
 	})
 
-	t.Run("struct indirect", func(t *testing.T) {
-		type Data struct {
-			B     *bool `php:"b"`
-			Value *User `php:"value"`
+	t.Run("struct", func(t *testing.T) {
+		t.Run("indirect", func(t *testing.T) {
+			type Data struct {
+				B     *bool `php:"b"`
+				Value *User `php:"value"`
+			}
+
+			var b = true
+			var data = Data{B: &b}
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:2:{s:1:"b";b:1;s:5:"value";N;}`
+			stringEqual(t, expected, string(actual))
+		})
+
+		u := User{
+			ID:   4,
+			Name: "one",
 		}
 
-		var b = true
-		var data = Data{B: &b}
+		t.Run("direct", func(t *testing.T) {
+			type Data struct {
+				Value *User `php:"value"`
+			}
+			var data = Data{}
 
-		actual, err := phpserialize.Marshal(data)
-		require.NoError(t, err)
-		expected := `a:2:{s:1:"b";b:1;s:5:"value";N;}`
-		stringEqual(t, expected, string(actual))
-	})
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";N;}`
+			stringEqual(t, expected, string(actual))
+		})
 
-	t.Run("struct direct", func(t *testing.T) {
-		type Data struct {
-			Value *User `php:"value"`
-		}
-		var data = Data{}
+		t.Run("encode direct", func(t *testing.T) {
+			type Data struct {
+				Value *User `php:"value"`
+			}
+			var data = Data{Value: &u}
 
-		actual, err := phpserialize.Marshal(data)
-		require.NoError(t, err)
-		expected := `a:1:{s:5:"value";N;}`
-		stringEqual(t, expected, string(actual))
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:1:{s:5:"value";a:2:{s:2:"id";i:4;s:4:"name";s:3:"one";}}`
+			stringEqual(t, expected, string(actual))
+		})
+
+		t.Run("encode indirect", func(t *testing.T) {
+			type Data struct {
+				B     *bool `php:"b"`
+				Value *User `php:"value"`
+			}
+			var data = Data{Value: &u}
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `a:2:{s:1:"b";b:0;s:5:"value";a:2:{s:2:"id";i:4;s:4:"name";s:3:"one";}}`
+			stringEqual(t, expected, string(actual))
+		})
 	})
 
 	t.Run("array", func(t *testing.T) {
