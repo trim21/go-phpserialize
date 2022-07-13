@@ -1,6 +1,7 @@
 package encoder
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
@@ -14,6 +15,9 @@ func compilePtr(rt *runtime.Type, indirect bool) (encoder, error) {
 	}
 
 	switch rt.Elem().Kind() {
+	case reflect.Ptr:
+		return nil, fmt.Errorf("encoding nested ptr is not supported *%s", rt.Elem().String())
+
 	case reflect.Bool:
 		return ptrWrapper(encodeBool), nil
 	case reflect.Uint8:

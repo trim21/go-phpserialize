@@ -820,6 +820,19 @@ func TestMarshal_ptr(t *testing.T) {
 		stringEqual(t, expected, string(actual))
 	})
 
+	t.Run("nested", func(t *testing.T) {
+		type Container struct {
+			Value ***uint `php:"value"`
+		}
+
+		var v uint = 8
+		var p = &v
+		var a = &p
+
+		_, err := phpserialize.Marshal(Container{Value: &a})
+		require.Error(t, err)
+	})
+
 	t.Run("recursive", func(t *testing.T) {
 		type Container struct {
 			Value any `php:"value"`
