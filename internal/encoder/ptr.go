@@ -6,7 +6,8 @@ import (
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func compilePtr(rt *runtime.Type) (encoder, error) {
+// MUST call `compilePtr` directly when compile encoder for struct field.
+func compilePtr(rt *runtime.Type, indirect bool) (encoder, error) {
 	switch rt.Elem().Kind() {
 	case reflect.Bool:
 		return wrapNilEncoder(encodeBool), nil
@@ -39,7 +40,17 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 	case reflect.Interface:
 		return compileInterface(rt.Elem())
 	case reflect.Struct:
-		return compile(rt.Elem())
+		enc, err := compileStruct(rt.Elem())
+		return wrapNilEncoder(enc), err
+	case reflect.Map:
+		enc, err := compileMap(rt.Elem())
+		if err != nil {
+			return nil, err
+		}
+		if indirect {
+			return deRefNilEncoder(enc), nil
+		}
+		return enc, nil
 	}
 
 	enc, err := compile(rt.Elem())
@@ -47,11 +58,14 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 		return nil, err
 	}
 
-	return deRefEncoder(enc), nil
+	return deRefNilEncoder(enc), nil
 }
 
-func deRefEncoder(enc encoder) encoder {
+func deRefNilEncoder(enc encoder) encoder {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+		if p == 0 {
+			return appendNilBytes(b), nil
+		}
 		p = PtrDeRef(p)
 		if p == 0 {
 			return appendNilBytes(b), nil
@@ -74,5 +88,15 @@ func compilePtrAsString(rt *runtime.Type) (encoder, error) {
 	if err != nil {
 		return nil, err
 	}
-	return deRefEncoder(inner), nil
+	return deRefNilEncoder(inner), nil
+}
+
+func onlyDeReferEncoder(enc encoder) encoder {
+	if enc == nil {
+		return nil
+	}
+
+	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+		return enc(ctx, b, PtrDeRef(p))
+	}
 }

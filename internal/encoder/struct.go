@@ -56,7 +56,7 @@ func hasOmitEmptyField(rt reflect.Type) (bool, error) {
 }
 
 func compileStructBufferSlowPath(rt *runtime.Type) (encoder, error) {
-	encoders, err := compileStructFieldsEncodersOmitEmpty(rt, 0)
+	encoders, err := compileStructFieldsEncoders(rt, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func compileStructBufferSlowPath(rt *runtime.Type) (encoder, error) {
 	}, nil
 }
 
-func compileStructFieldsEncodersOmitEmpty(rt *runtime.Type, baseOffset uintptr) (encoders []structEncoder, err error) {
+func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders []structEncoder, err error) {
 	indirect := runtime.IfaceIndir(rt)
 
 	for i := 0; i < rt.NumField(); i++ {
@@ -111,6 +111,7 @@ func compileStructFieldsEncodersOmitEmpty(rt *runtime.Type, baseOffset uintptr) 
 		var err error
 
 		if !indirect && field.Type.Kind() == reflect.Ptr {
+			// direct ptr
 			switch field.Type.Elem().Kind() {
 			case reflect.Array, reflect.Slice, reflect.String:
 				isEmpty = EmptyPtr
@@ -121,17 +122,29 @@ func compileStructFieldsEncodersOmitEmpty(rt *runtime.Type, baseOffset uintptr) 
 				fieldEncoder = enc
 			case reflect.Map:
 				isEmpty = EmptyPtr
-				enc, err := compileMap(runtime.Type2RType(field.Type.Elem()))
+				fieldEncoder, err = compilePtr(runtime.Type2RType(field.Type), indirect)
 				if err != nil {
 					return nil, err
 				}
-				fieldEncoder = deRefEncoder(enc)
+			}
+		}
+
+		if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
+			enc, err := compilePtr(runtime.Type2RType(field.Type), false)
+			if err != nil {
+				return nil, err
+			}
+
+			if indirect {
+				fieldEncoder = onlyDeReferEncoder(enc)
+			} else {
+				fieldEncoder = enc
 			}
 		}
 
 		if fieldEncoder == nil {
 			if field.Type.Kind() == reflect.Struct && field.Anonymous {
-				enc, err := compileStructFieldsEncodersOmitEmpty(runtime.Type2RType(field.Type), offset)
+				enc, err := compileStructFieldsEncoders(runtime.Type2RType(field.Type), offset)
 				if err != nil {
 					return nil, err
 				}
@@ -153,7 +166,7 @@ func compileStructFieldsEncodersOmitEmpty(rt *runtime.Type, baseOffset uintptr) 
 			}
 		} else {
 			if indirect && (field.Type.Kind() == reflect.Map) {
-				fieldEncoder = deRefEncoder(fieldEncoder)
+				fieldEncoder = deRefNilEncoder(fieldEncoder)
 			}
 		}
 
@@ -179,17 +192,20 @@ func compileStructFieldsEncodersOmitEmpty(rt *runtime.Type, baseOffset uintptr) 
 
 // struct don't have `omitempty` tag, fast path
 func compileStructNoOmitEmptyFastPath(rt *runtime.Type) (encoder, error) {
-	fieldCount, encoders, err := compileStructFieldsEncodersNoOmit(rt, 0)
+	fields, err := compileStructFieldsEncoders(rt, 0)
 	if err != nil {
 		return nil, err
 	}
 
+	var fieldCount int64 = int64(len(fields))
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		b = appendArrayBeginBytes(b, fieldCount)
 
 		var err error
-		for _, enc := range encoders {
-			b, err = enc(ctx, b, p)
+		for _, field := range fields {
+			b = appendPhpStringVariable(ctx, b, field.fieldName)
+
+			b, err = field.encode(ctx, b, field.offset+p)
 			if err != nil {
 				return b, err
 			}
@@ -199,89 +215,103 @@ func compileStructNoOmitEmptyFastPath(rt *runtime.Type) (encoder, error) {
 	}, nil
 }
 
-func compileStructFieldsEncodersNoOmit(rt *runtime.Type, baseOffset uintptr) (fieldCount int64, encoders []encoder, err error) {
-	indirect := runtime.IfaceIndir(rt)
-
-	for i := 0; i < rt.NumField(); i++ {
-		field := rt.Field(i)
-		cfg := runtime.StructTagFromField(field)
-		if cfg.Key == "-" || !field.IsExported() {
-			continue
-		}
-
-		fieldCount++
-		key := cfg.Name()
-
-		if cfg.IsString {
-			fieldValueEncoder, err := compileAsString(runtime.Type2RType(field.Type))
-			if err != nil {
-				return 0, nil, err
-			}
-
-			offset := field.Offset
-			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-				b = appendPhpStringVariable(ctx, b, key)
-				return fieldValueEncoder(ctx, b, p+offset+baseOffset)
-			})
-			continue
-		}
-
-		if field.Anonymous && field.Type.Kind() == reflect.Struct {
-			count, enc, err := compileStructFieldsEncodersNoOmit(runtime.Type2RType(field.Type), baseOffset+field.Offset)
-			if err != nil {
-				return 0, nil, err
-			}
-
-			fieldCount += count - 1 // remove current field
-			encoders = append(encoders, enc...)
-
-			continue
-		}
-
-		var fieldValueEncoder encoder
-		var err error
-
-		if !indirect && field.Type.Kind() == reflect.Ptr {
-			switch field.Type.Elem().Kind() {
-			case reflect.Array:
-				fieldValueEncoder, err = compileArray(runtime.Type2RType(field.Type.Elem()))
-				if err != nil {
-					return 0, nil, err
-				}
-			case reflect.Slice:
-				fieldValueEncoder, err = compileSlice(runtime.Type2RType(field.Type.Elem()))
-				if err != nil {
-					return 0, nil, err
-				}
-			case reflect.Map, reflect.String:
-				fieldValueEncoder, err = compile(runtime.Type2RType(field.Type.Elem()))
-				if err != nil {
-					return 0, nil, err
-				}
-			}
-		}
-
-		if fieldValueEncoder == nil {
-			fieldValueEncoder, err = compile(runtime.Type2RType(field.Type))
-			if err != nil {
-				return 0, nil, err
-			}
-		}
-
-		offset := field.Offset
-
-		if indirect && field.Type.Kind() == reflect.Map {
-			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-				b = appendPhpStringVariable(ctx, b, key)
-				return fieldValueEncoder(ctx, b, PtrDeRef(p+offset+baseOffset))
-			})
-		} else {
-			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-				b = appendPhpStringVariable(ctx, b, key)
-				return fieldValueEncoder(ctx, b, p+offset+baseOffset)
-			})
-		}
-	}
-
-	return
-}
+//
+// func compileStructFieldsEncodersNoOmit(rt *runtime.Type, baseOffset uintptr) (fieldCount int64, encoders []encoder, err error) {
+// 	indirect := runtime.IfaceIndir(rt)
+//
+// 	for i := 0; i < rt.NumField(); i++ {
+// 		field := rt.Field(i)
+// 		cfg := runtime.StructTagFromField(field)
+// 		if cfg.Key == "-" || !field.IsExported() {
+// 			continue
+// 		}
+//
+// 		fieldCount++
+// 		key := cfg.Name()
+//
+// 		if cfg.IsString {
+// 			fieldValueEncoder, err := compileAsString(runtime.Type2RType(field.Type))
+// 			if err != nil {
+// 				return 0, nil, err
+// 			}
+//
+// 			offset := field.Offset
+// 			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+// 				b = appendPhpStringVariable(ctx, b, key)
+// 				return fieldValueEncoder(ctx, b, p+offset+baseOffset)
+// 			})
+// 			continue
+// 		}
+//
+// 		if field.Anonymous && field.Type.Kind() == reflect.Struct {
+// 			count, enc, err := compileStructFieldsEncodersNoOmit(runtime.Type2RType(field.Type), baseOffset+field.Offset)
+// 			if err != nil {
+// 				return 0, nil, err
+// 			}
+//
+// 			fieldCount += count - 1 // remove current field
+// 			encoders = append(encoders, enc...)
+//
+// 			continue
+// 		}
+//
+// 		var fieldValueEncoder encoder
+// 		var err error
+//
+// 		if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
+// 			enc, err := compilePtr(runtime.Type2RType(field.Type), false)
+// 			if err != nil {
+// 				return 0, nil, err
+// 			}
+//
+// 			if indirect {
+// 				fieldValueEncoder = onlyDeReferEncoder(enc)
+// 			} else {
+// 				fieldValueEncoder = wrapNilEncoder(enc)
+// 			}
+// 		}
+//
+// 		if !indirect && field.Type.Kind() == reflect.Ptr {
+// 			switch field.Type.Elem().Kind() {
+// 			case reflect.Array:
+// 				fieldValueEncoder, err = compileArray(runtime.Type2RType(field.Type.Elem()))
+// 				if err != nil {
+// 					return 0, nil, err
+// 				}
+// 			case reflect.Slice:
+// 				fieldValueEncoder, err = compileSlice(runtime.Type2RType(field.Type.Elem()))
+// 				if err != nil {
+// 					return 0, nil, err
+// 				}
+// 			case reflect.Map, reflect.String:
+// 				fieldValueEncoder, err = compile(runtime.Type2RType(field.Type.Elem()))
+// 				if err != nil {
+// 					return 0, nil, err
+// 				}
+// 			}
+// 		}
+//
+// 		if fieldValueEncoder == nil {
+// 			fieldValueEncoder, err = compile(runtime.Type2RType(field.Type))
+// 			if err != nil {
+// 				return 0, nil, err
+// 			}
+// 		}
+//
+// 		offset := field.Offset
+//
+// 		if indirect && field.Type.Kind() == reflect.Map {
+// 			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+// 				b = appendPhpStringVariable(ctx, b, key)
+// 				return fieldValueEncoder(ctx, b, PtrDeRef(p+offset+baseOffset))
+// 			})
+// 		} else {
+// 			encoders = append(encoders, func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+// 				b = appendPhpStringVariable(ctx, b, key)
+// 				return fieldValueEncoder(ctx, b, p+offset+baseOffset)
+// 			})
+// 		}
+// 	}
+//
+// 	return
+// }

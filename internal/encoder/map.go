@@ -29,10 +29,11 @@ func compileMap(rt *runtime.Type) (encoder, error) {
 
 	// need special take care
 	if valueType.Kind() == reflect.Map {
-		valueEncoder, err = compile(runtime.PtrTo(valueType))
+		enc, err := compileMap(valueType)
 		if err != nil {
 			return nil, err
 		}
+		valueEncoder = deRefNilEncoder(enc)
 	} else {
 		valueEncoder, err = compile(valueType)
 		if err != nil {
