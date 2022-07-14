@@ -79,21 +79,33 @@ var testCase = []struct {
 	{Name: "int8", Data: int8(7), Expected: "i:7;"},
 	{
 		Name:     "*int8",
-		Data:     null.Uint8From(7).Ptr(),
-		Expected: "i:7;",
+		Data:     null.Int8From(-7).Ptr(),
+		Expected: "i:-7;",
 	},
 	{Name: "int16", Data: int16(7), Expected: "i:7;"},
+	{Name: "*int16", Data: null.Int16From(7).Ptr(), Expected: "i:7;"},
 	{Name: "int32", Data: int32(7), Expected: "i:7;"},
+	{Name: "*int32", Data: null.Int32From(9).Ptr(), Expected: "i:9;"},
 	{Name: "int64", Data: int64(7), Expected: "i:7;"},
+	{Name: "*int64", Data: null.Int64From(10).Ptr(), Expected: "i:10;"},
 	{Name: "int", Data: int(8), Expected: "i:8;"},
+	{Name: "*int", Data: null.IntFrom(11).Ptr(), Expected: "i:11;"},
 	{Name: "uint8", Data: uint8(7), Expected: "i:7;"},
+	{Name: "*uint8", Data: null.Uint8From(7).Ptr(), Expected: "i:7;"},
 	{Name: "uint16", Data: uint16(7), Expected: "i:7;"},
+	{Name: "*uint16", Data: null.Uint16From(7).Ptr(), Expected: "i:7;"},
 	{Name: "uint32", Data: uint32(7), Expected: "i:7;"},
+	{Name: "*uint32", Data: null.Uint32From(7).Ptr(), Expected: "i:7;"},
 	{Name: "uint64", Data: uint64(7777), Expected: "i:7777;"},
+	{Name: "*uint64", Data: null.Uint64From(7).Ptr(), Expected: "i:7;"},
 	{Name: "uint", Data: uint(9), Expected: "i:9;"},
+	{Name: "*uint", Data: null.UintFrom(787).Ptr(), Expected: "i:787;"},
 	{Name: "float32", Data: float32(3.14), Expected: "d:3.14;"},
+	{Name: "*float32", Data: null.Float32From(3.14).Ptr(), Expected: "d:3.14;"},
 	{Name: "float64", Data: float64(3.14), Expected: "d:3.14;"},
+	{Name: "*float64", Data: null.Float64From(3.54).Ptr(), Expected: "d:3.54;"},
 	{Name: "string", Data: `qwer"qwer`, Expected: `s:9:"qwer"qwer";`},
+	{Name: "*string", Data: null.StringFrom(`qwer"qwer`).Ptr(), Expected: `s:9:"qwer"qwer";`},
 	{Name: "simple slice", Data: []int{1, 4, 6, 2, 3}, Expected: `a:5:{i:0;i:1;i:1;i:4;i:2;i:6;i:3;i:2;i:4;i:3;}`},
 	{
 		Name:     "struct-slice",
@@ -591,6 +603,32 @@ func TestMarshal_ptr(t *testing.T) {
 	})
 
 	t.Run("struct", func(t *testing.T) {
+		t.Run("*struct", func(t *testing.T) {
+			type Data struct {
+				Value int    `php:"value"`
+				ID    uint32 `php:"id"`
+			}
+			var data = Data{}
+
+			actual, err := phpserialize.Marshal(&data)
+			require.NoError(t, err)
+			expected := `a:2:{s:5:"value";i:0;s:2:"id";i:0;}`
+			stringEqual(t, expected, string(actual))
+		})
+
+		t.Run("*struct-nil", func(t *testing.T) {
+			type Data struct {
+				Value int    `php:"value"`
+				ID    uint32 `php:"id"`
+			}
+			var data *Data
+
+			actual, err := phpserialize.Marshal(data)
+			require.NoError(t, err)
+			expected := `N;`
+			stringEqual(t, expected, string(actual))
+		})
+
 		t.Run("indirect", func(t *testing.T) {
 			type Data struct {
 				B     *int  `php:"b"`
@@ -760,20 +798,6 @@ func TestMarshal_ptr(t *testing.T) {
 			expected := `a:1:{s:5:"value";a:2:{i:0;s:1:"1";i:1;s:1:"2";}}`
 			stringEqual(t, expected, string(actual))
 		})
-
-		t.Run("omitempty", func(t *testing.T) {
-			type Data struct {
-				Value *map[int]int `php:"value,omitempty"`
-			}
-
-			var s = map[int]int{1: 2}
-			var data = Data{&s}
-
-			actual, err := phpserialize.Marshal(data)
-			require.NoError(t, err)
-			expected := `a:1:{s:5:"value";a:1:{i:1;i:2;}}`
-			stringEqual(t, expected, string(actual))
-		})
 	})
 
 	t.Run("*string omitempty", func(t *testing.T) {
@@ -793,6 +817,96 @@ func TestMarshal_ptr(t *testing.T) {
 
 	})
 
+	t.Run("struct-map", func(t *testing.T) {
+		t.Run("direct", func(t *testing.T) {
+			type Data struct {
+				Value *map[int]int `php:"value"`
+			}
+
+			t.Run("nil direct", func(t *testing.T) {
+				var data = Data{}
+				actual, err := phpserialize.Marshal(data)
+				require.NoError(t, err)
+				expected := `a:1:{s:5:"value";N;}`
+				stringEqual(t, expected, string(actual))
+			})
+
+			t.Run("encode", func(t *testing.T) {
+				var s = map[int]int{1: 2}
+
+				actual, err := phpserialize.Marshal(&s)
+				require.NoError(t, err)
+				expected := `a:1:{i:1;i:2;}`
+				stringEqual(t, expected, string(actual))
+			})
+
+			t.Run("omitempty encode", func(t *testing.T) {
+				type Data struct {
+					Value *map[int]int `php:"value,omitempty"`
+				}
+
+				var s = map[int]int{1: 2}
+				var data = Data{&s}
+
+				actual, err := phpserialize.Marshal(data)
+				require.NoError(t, err)
+				expected := `a:1:{s:5:"value";a:1:{i:1;i:2;}}`
+				stringEqual(t, expected, string(actual))
+			})
+
+			t.Run("omitempty nil", func(t *testing.T) {
+				type Data struct {
+					Value *map[int]int `php:"value,omitempty"`
+				}
+				var data = Data{}
+
+				actual, err := phpserialize.Marshal(data)
+				require.NoError(t, err)
+				expected := `a:0:{}`
+				stringEqual(t, expected, string(actual))
+			})
+		})
+
+		t.Run("indirect", func(t *testing.T) {
+			type Data struct {
+				Value *map[int]int `php:"value"`
+				Bool  *bool        `php:"b"`
+			}
+
+			t.Run("nil direct", func(t *testing.T) {
+				var data = Data{}
+				actual, err := phpserialize.Marshal(data)
+				require.NoError(t, err)
+				expected := `a:2:{s:5:"value";N;s:1:"b";N;}`
+				stringEqual(t, expected, string(actual))
+			})
+
+			t.Run("encode", func(t *testing.T) {
+				var s = map[int]int{1: 2}
+
+				actual, err := phpserialize.Marshal(&s)
+				require.NoError(t, err)
+				expected := `a:1:{i:1;i:2;}`
+				stringEqual(t, expected, string(actual))
+			})
+
+			t.Run("omitempty", func(t *testing.T) {
+				type Data struct {
+					Value *map[int]int `php:"value,omitempty"`
+					Bool  *bool        `php:"b"`
+				}
+
+				var s = map[int]int{1: 2}
+				var data = Data{Value: &s}
+
+				actual, err := phpserialize.Marshal(data)
+				require.NoError(t, err)
+				expected := `a:1:{s:5:"value";a:1:{i:1;i:2;}}`
+				stringEqual(t, expected, string(actual))
+			})
+		})
+	})
+
 	t.Run("map", func(t *testing.T) {
 		t.Run("nil", func(t *testing.T) {
 			type Data struct {
@@ -801,38 +915,18 @@ func TestMarshal_ptr(t *testing.T) {
 
 			var data = Data{}
 
-			actual, err := phpserialize.Marshal(data)
+			actual, err := phpserialize.Marshal(data.Value)
 			require.NoError(t, err)
-			expected := `a:1:{s:5:"value";N;}`
+			expected := `N;`
 			stringEqual(t, expected, string(actual))
 		})
 
 		t.Run("encode", func(t *testing.T) {
-			type Data struct {
-				Value *map[int]int `php:"value"`
-			}
-
 			var s = map[int]int{1: 2}
 
-			var data = Data{&s}
-
-			actual, err := phpserialize.Marshal(data)
+			actual, err := phpserialize.Marshal(&s)
 			require.NoError(t, err)
-			expected := `a:1:{s:5:"value";a:1:{i:1;i:2;}}`
-			stringEqual(t, expected, string(actual))
-		})
-
-		t.Run("omitempty", func(t *testing.T) {
-			type Data struct {
-				Value *map[int]int `php:"value,omitempty"`
-			}
-
-			var s = map[int]int{1: 2}
-			var data = Data{&s}
-
-			actual, err := phpserialize.Marshal(data)
-			require.NoError(t, err)
-			expected := `a:1:{s:5:"value";a:1:{i:1;i:2;}}`
+			expected := `a:1:{i:1;i:2;}`
 			stringEqual(t, expected, string(actual))
 		})
 	})

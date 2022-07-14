@@ -43,6 +43,9 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 		return encodeString, nil
 	case reflect.Interface:
 		return compileInterface(rt.Elem())
+	case reflect.Map:
+		enc, err := compileMap(rt.Elem())
+		return deRefNilEncoder(enc), err
 	case reflect.Struct:
 		enc, err := compileStruct(rt.Elem())
 		return wrapNilEncoder(enc), err
