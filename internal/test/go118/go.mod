@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/stretchr/testify v1.8.0
 	github.com/trim21/go-phpserialize v0.0.0
-	trim21.me/test v0.0.0
 )
 
 require (
@@ -20,5 +19,3 @@ require (
 )
 
 replace github.com/trim21/go-phpserialize v0.0.0 => ../../../
-
-replace trim21.me/test v0.0.0 => ../test/

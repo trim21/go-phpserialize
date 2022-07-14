@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trim21/go-phpserialize"
-	"trim21.me/test"
+	"github.com/trim21/go-phpserialize/test"
 )
 
 type Generic[T any] struct {
