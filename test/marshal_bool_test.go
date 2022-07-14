@@ -24,7 +24,7 @@ func TestMarshalBool_ptr_as_string(t *testing.T) {
 		}{
 			Value: null.BoolFrom(true).Ptr(),
 		}
-		expected := `a:1:{s:5:"value";s:5:"false";}`
+		expected := `a:1:{s:5:"value";s:4:"true";}`
 
 		MarshalExpected(t, data, expected)
 	})
@@ -50,7 +50,7 @@ func TestMarshalBool_ptr_as_string(t *testing.T) {
 			Value: null.BoolFrom(true).Ptr(),
 		}
 
-		expected := `a:2:{s:5:"value";s:5:"false";s:1:"B";N;}`
+		expected := `a:2:{s:5:"value";s:4:"true";s:1:"B";N;}`
 
 		MarshalExpected(t, data, expected)
 	})
