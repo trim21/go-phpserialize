@@ -3,6 +3,9 @@ package test_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	"github.com/trim21/go-phpserialize"
+	"github.com/trim21/go-phpserialize/test"
 	"github.com/volatiletech/null/v9"
 )
 
@@ -13,9 +16,11 @@ func TestMarshalBool_ptr_as_string(t *testing.T) {
 		}{
 			Value: null.BoolFrom(false).Ptr(),
 		}
-		expected := `a:1:{s:5:"value";s:5:"false";}`
 
-		MarshalExpected(t, data, expected)
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:5:"value";s:5:"false";}`
+		test.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("direct-true", func(t *testing.T) {
@@ -24,9 +29,11 @@ func TestMarshalBool_ptr_as_string(t *testing.T) {
 		}{
 			Value: null.BoolFrom(true).Ptr(),
 		}
-		expected := `a:1:{s:5:"value";s:4:"true";}`
 
-		MarshalExpected(t, data, expected)
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:5:"value";s:4:"true";}`
+		test.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("indirect-false", func(t *testing.T) {
@@ -37,9 +44,10 @@ func TestMarshalBool_ptr_as_string(t *testing.T) {
 			Value: null.BoolFrom(false).Ptr(),
 		}
 
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
 		expected := `a:2:{s:5:"value";s:5:"false";s:1:"B";N;}`
-
-		MarshalExpected(t, data, expected)
+		test.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("indirect-true", func(t *testing.T) {
@@ -50,8 +58,9 @@ func TestMarshalBool_ptr_as_string(t *testing.T) {
 			Value: null.BoolFrom(true).Ptr(),
 		}
 
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
 		expected := `a:2:{s:5:"value";s:4:"true";s:1:"B";N;}`
-
-		MarshalExpected(t, data, expected)
+		test.StringEqual(t, expected, string(actual))
 	})
 }
