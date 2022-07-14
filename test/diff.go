@@ -1,11 +1,16 @@
-package phpserialize_test
+package test
 
 import (
 	"bytes"
+	"testing"
 
 	"github.com/fatih/color"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
+
+func init() {
+	color.NoColor = false // force color
+}
 
 func diff(a, b string) []diffmatchpatch.Diff {
 	dmp := diffmatchpatch.New()
@@ -47,4 +52,12 @@ func diffsToString(diffs []diffmatchpatch.Diff) string {
 	}
 
 	return buff.String()
+}
+
+func StringEqual(t *testing.T, expected, actual string) {
+	t.Helper()
+	if actual != expected {
+		t.Errorf("Result not as expected:\n%v", CharacterDiff(expected, actual))
+		t.FailNow()
+	}
 }

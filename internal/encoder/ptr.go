@@ -48,7 +48,12 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 		return deRefNilEncoder(enc), err
 	case reflect.Struct:
 		enc, err := compileStruct(rt.Elem())
-		return wrapNilEncoder(enc), err
+		indirect := runtime.IfaceIndir(rt.Elem())
+		if indirect {
+			return wrapNilEncoder(enc), err
+		}
+
+		return deRefNilEncoder(enc), err
 	}
 
 	enc, err := compile(rt.Elem())

@@ -239,12 +239,20 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 			}
 		}
 
+		var enc encoder
 		if cfg.IsString {
 			if field.Type.Kind() == reflect.Ptr {
-				fieldEncoder, err = compileAsString(runtime.Type2RType(field.Type.Elem()))
-				if !indirect {
-					ptrDepth++
+				enc, err = compileAsString(runtime.Type2RType(field.Type.Elem()))
+				fieldEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+					// fmt.Println(p)
+					// fmt.Println(**(**bool)(unsafe.Pointer(&p)))
+					// fmt.Println(PtrDeRef(p))
+					// fmt.Println(PtrDeRef(PtrDeRef(p)))
+					return enc(ctx, b, p)
 				}
+				// if !indirect && field.Type.Elem().Kind() != reflect.Bool {
+				// 	ptrDepth++
+				// }
 			} else {
 				fieldEncoder, err = compileAsString(runtime.Type2RType(field.Type))
 			}
