@@ -79,7 +79,7 @@ func ErrExceededMaxDepth(c byte, cursor int64) *SyntaxError {
 
 func ErrUnexpectedEnd(msg string, cursor int64) *SyntaxError {
 	return &SyntaxError{
-		msg:    fmt.Sprintf("php: %s unexpected end of JSON input", msg),
+		msg:    fmt.Sprintf("php: %s unexpected end of input", msg),
 		Offset: cursor,
 	}
 }

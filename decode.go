@@ -16,14 +16,15 @@ type emptyInterface struct {
 }
 
 func unmarshal(data []byte, v any) error {
-	src := make([]byte, len(data)) // append nul byte to the end
-	copy(src, data)
-
 	header := (*emptyInterface)(unsafe.Pointer(&v))
 
 	if err := validateType(header.typ, uintptr(header.ptr)); err != nil {
 		return err
 	}
+
+	src := make([]byte, len(data)) // append nul byte to the end
+	copy(src, data)
+
 	dec, err := decoder.CompileToGetDecoder(header.typ)
 	if err != nil {
 		return err

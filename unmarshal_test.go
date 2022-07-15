@@ -540,3 +540,40 @@ func TestUnmarshal_anonymous_field(t *testing.T) {
 		B: 2,
 	}, C: 1}, v)
 }
+
+func TestUnmarshal_empty_input(t *testing.T) {
+	t.Run("slice", func(t *testing.T) {
+		var data []int
+		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+	})
+	t.Run("array", func(t *testing.T) {
+		var data [5]int
+		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+	})
+	t.Run("map", func(t *testing.T) {
+		var data map[uint]int
+		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+	})
+	t.Run("interface", func(t *testing.T) {
+		var data any
+		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+	})
+	t.Run("string", func(t *testing.T) {
+		var data string
+		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+	})
+	t.Run("int", func(t *testing.T) {
+		var data int
+		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+	})
+
+	t.Run("uint", func(t *testing.T) {
+		var data uint
+		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+	})
+
+	t.Run("bool", func(t *testing.T) {
+		var data bool
+		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+	})
+}
