@@ -40,7 +40,7 @@ See [examples](./example_test.go)
 
 ## Unmarshal
 
-`any` type will be decoded to `map[any]any` or `map[string]any`, depends on raw input is class or array,
+`any` type will be decoded to `map[any]any` or `map[string]any`, depends on raw input is `array` or `class`,
 
 map `any` key maybe `int64` or `string`.
 
