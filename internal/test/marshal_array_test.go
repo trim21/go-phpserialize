@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trim21/go-phpserialize"
-	"github.com/trim21/go-phpserialize/test"
+	"github.com/trim21/go-phpserialize/internal/test"
 )
 
 func TestMarshal_array_map(t *testing.T) {

@@ -23,24 +23,6 @@ on:
       - "**.go.json"
 
 jobs:
-  "go118":
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        go_version: ["~1.18"]
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: "${{ matrix.go_version }}"
-          cache: true
-
-      - run: go test -count=1 -v ./...
-        working-directory: ./internal/test/go118
-
   test:
     runs-on: ubuntu-latest
     strategy:

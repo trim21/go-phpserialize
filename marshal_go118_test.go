@@ -1,18 +1,25 @@
-package go118_test
+//go:build go1.18
+
+package phpserialize_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/trim21/go-phpserialize"
-	"github.com/trim21/go-phpserialize/test"
+	"github.com/trim21/go-phpserialize/internal/test"
 )
 
 type Generic[T any] struct {
 	Value T
 }
 
-var testCase = []test.Case{
+type Generic2[T any] struct {
+	B     bool // prevent direct
+	Value T
+}
+
+var go118TestCase = []test.Case{
 	{
 		Name:     "generic[int]",
 		Data:     Generic[int]{1},
@@ -35,11 +42,17 @@ var testCase = []test.Case{
 		Data:     Generic[[]string]{[]string{"hello", "world"}},
 		Expected: `a:1:{s:5:"Value";a:2:{i:0;s:5:"hello";i:1;s:5:"world";}}`,
 	},
+
+	{
+		Name:     "generic2[slice]",
+		Data:     Generic2[[]string]{Value: []string{"hello", "world"}},
+		Expected: `a:2:{s:1:"B";b:0;s:5:"Value";a:2:{i:0;s:5:"hello";i:1;s:5:"world";}}`,
+	},
 }
 
-func TestMarshal_concrete_types(t *testing.T) {
+func TestMarshal_go118_concrete_types(t *testing.T) {
 	t.Parallel()
-	for _, data := range testCase {
+	for _, data := range go118TestCase {
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
 			actual, err := phpserialize.Marshal(data.Data)
@@ -50,9 +63,9 @@ func TestMarshal_concrete_types(t *testing.T) {
 	}
 }
 
-func TestMarshal_interface(t *testing.T) {
+func TestMarshal_go118_interface(t *testing.T) {
 	t.Parallel()
-	for _, data := range testCase {
+	for _, data := range go118TestCase {
 		data := data
 		t.Run(data.Name, func(t *testing.T) {
 			t.Parallel()
