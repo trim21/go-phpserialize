@@ -10,10 +10,7 @@ import (
 
 func TestMarshal_array_map(t *testing.T) {
 	var data = [5]map[int]uint{
-		{
-			-3: 1,
-			4:  8,
-		},
+		{-3: 1},
 		nil,
 		{-1: 1},
 	}
