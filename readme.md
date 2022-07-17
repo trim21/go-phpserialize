@@ -2,7 +2,6 @@
 
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/trim21/go-phpserialize?style=flat-square)
 [![Go Reference](https://pkg.go.dev/badge/github.com/trim21/go-phpserialize#section-readme.svg)](https://pkg.go.dev/github.com/trim21/go-phpserialize#section-readme)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/trim21/go-phpserialize?style=flat-square)
 
 PHP `serialize()` and `unserialize()` for Go.
 
