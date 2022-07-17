@@ -17,7 +17,7 @@ func TestMarshal_array_map(t *testing.T) {
 
 	actual, err := phpserialize.Marshal(data)
 	require.NoError(t, err)
-	expected := `a:5:{i:0;a:2:{i:-3;i:1;i:4;i:8;}i:1;N;i:2;a:1:{i:-1;i:1;}i:3;N;i:4;N;}`
+	expected := `a:5:{i:0;a:1:{i:-3;i:1;}i:1;N;i:2;a:1:{i:-1;i:1;}i:3;N;i:4;N;}`
 	test.StringEqual(t, expected, string(actual))
 }
 
