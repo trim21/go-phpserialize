@@ -577,3 +577,21 @@ func TestUnmarshal_empty_input(t *testing.T) {
 		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
 	})
 }
+
+func TestUnmarshal_as_string_2(t *testing.T) {
+	type ID uint32
+	type Type uint8
+	type Item struct {
+		ID   ID   `php:"eid,string"`
+		Type Type `php:"type"`
+	}
+	type Collection = map[ID]Item
+
+	raw := `a:7:{i:1087180;a:2:{s:3:"eid";s:7:"1087180";s:4:"type";i:2;}i:1087181;a:2:{s:3:"eid";s:7:"1087181";s:4:"type";i:2;}i:1087182;a:2:{s:3:"eid";s:7:"1087182";s:4:"type";i:2;}i:1087183;a:2:{s:3:"eid";s:7:"1087183";s:4:"type";i:2;}i:1087184;a:2:{s:3:"eid";s:7:"1087184";s:4:"type";i:2;}i:1087185;a:2:{s:3:"eid";s:7:"1087185";s:4:"type";i:2;}i:1087186;a:2:{s:3:"eid";s:7:"1087186";s:4:"type";i:2;}}`
+
+	var data Collection
+
+	err := phpserialize.Unmarshal([]byte(raw), &data)
+	require.NoError(t, err)
+
+}

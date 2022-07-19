@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"fmt"
 	"reflect"
 	"unsafe"
 
@@ -56,6 +57,9 @@ func (d *mapDecoder) mapassign(t *runtime.Type, m, k, v unsafe.Pointer) {
 
 func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
+	fmt.Println("map decoder")
+	fmt.Println(d.keyDecoder)
+	fmt.Println(string(buf[cursor:]))
 	depth++
 	if depth > maxDecodeNestingDepth {
 		return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
@@ -85,7 +89,7 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 		// array case
 		cursor++
 	default:
-		return 0, errors.ErrExpected("{ character for map value", cursor)
+		return 0, errors.ErrUnexpectedStart("map", buf, cursor)
 	}
 
 	l, end, err := readLength(buf, cursor)

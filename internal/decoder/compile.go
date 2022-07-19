@@ -157,7 +157,7 @@ func compileMapKey(typ *runtime.Type, structName, fieldName string, structTypeTo
 		case *stringDecoder, *interfaceDecoder:
 			return dec, nil
 		case *boolDecoder, *intDecoder, *uintDecoder:
-			return newWrappedStringDecoder(typ, dec, structName, fieldName)
+			return dec, nil
 		case *ptrDecoder:
 			dec = t.dec
 		default:

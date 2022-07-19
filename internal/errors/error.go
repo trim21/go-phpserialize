@@ -40,11 +40,11 @@ type UnmarshalTypeError struct {
 
 func (e *UnmarshalTypeError) Error() string {
 	if e.Struct != "" || e.Field != "" {
-		return fmt.Sprintf("php: cannot unmarshal %s into Go struct field %s.%s of type %s",
-			e.Value, e.Struct, e.Field, e.Type,
+		return fmt.Sprintf("php: cannot unmarshal %s into Go struct field %s.%s of type %s (offset %d)",
+			e.Value, e.Struct, e.Field, e.Type, e.Offset,
 		)
 	}
-	return fmt.Sprintf("php: cannot unmarshal %s into Go value of type %s", e.Value, e.Type)
+	return fmt.Sprintf("php: cannot unmarshal %s into Go value of type %s (offset: %d)", e.Value, e.Type, e.Offset)
 }
 
 // An UnsupportedTypeError is returned by Marshal when attempting
@@ -73,6 +73,13 @@ func ErrSyntax(msg string, offset int64) *SyntaxError {
 func ErrExceededMaxDepth(c byte, cursor int64) *SyntaxError {
 	return &SyntaxError{
 		msg:    fmt.Sprintf(`invalid character "%c" exceeded max depth`, c),
+		Offset: cursor,
+	}
+}
+
+func ErrUnexpectedStart(typ string, buf []byte, cursor int64) *SyntaxError {
+	return &SyntaxError{
+		msg:    fmt.Sprintf("php: unexpected %c at beginneng of %s", buf[cursor], typ),
 		Offset: cursor,
 	}
 }
