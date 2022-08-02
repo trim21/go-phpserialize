@@ -14,6 +14,7 @@ If you have any thought about how to support these types, please create an issue
 
 - 1.17
 - 1.18 (go 1.18+ versions have extra generic type tests)
+- 1.19
 
 ## Use case:
 
