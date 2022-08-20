@@ -34,6 +34,8 @@ Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
 
 heavy usage of `unsafe`.
 
+recursive struct are not supported yet.
+
 ## Usage
 
 See [examples](./example_test.go)
