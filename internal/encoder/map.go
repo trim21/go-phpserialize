@@ -7,7 +7,7 @@ import (
 )
 
 // !!! not safe to use in reflect case !!!
-func compileMap(rt *runtime.Type) (encoder, error) {
+func compileMap(rt *runtime.Type, seen seenMap) (encoder, error) {
 	// for map[int]string, keyType is int, valueType is string
 	keyType := rt.Key()
 	valueType := rt.Elem()
@@ -30,13 +30,13 @@ func compileMap(rt *runtime.Type) (encoder, error) {
 	// need special take care
 	// fmt.Println(runtime.IfaceIndir(rt), runtime.IfaceIndir(valueType), rt.String())
 	if valueType.Kind() == reflect.Map {
-		enc, err := compileMap(valueType)
+		enc, err := compileMap(valueType, seen)
 		if err != nil {
 			return nil, err
 		}
 		valueEncoder = deRefNilEncoder(enc)
 	} else {
-		valueEncoder, err = compile(valueType)
+		valueEncoder, err = compile(valueType, seen)
 		if err != nil {
 			return nil, err
 		}

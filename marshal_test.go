@@ -1142,3 +1142,15 @@ func TestMarshal_anonymous_field_omitempty(t *testing.T) {
 
 	test.StringEqual(t, `a:3:{s:1:"A";i:3;s:1:"B";i:2;s:1:"C";i:1;}`, string(actual))
 }
+
+func TestRecursivePanic(t *testing.T) {
+	t.Parallel()
+
+	type O struct {
+		E []O
+	}
+
+	require.Panics(t, func() {
+		phpserialize.Marshal(O{})
+	})
+}

@@ -9,18 +9,18 @@ import (
 
 const lenOffset = unsafe.Offsetof(reflect.SliceHeader{}.Len)
 
-func compileSlice(rt *runtime.Type) (encoder, error) {
+func compileSlice(rt *runtime.Type, seen seenMap) (encoder, error) {
 	offset := rt.Elem().Size()
 	var enc encoder
 	var err error
 
 	if rt.Elem().Kind() == reflect.Map {
-		enc, err = compileWithCache(runtime.PtrTo(rt.Elem()))
+		enc, err = compile(runtime.PtrTo(rt.Elem()), seen)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		enc, err = compileWithCache(rt.Elem())
+		enc, err = compile(rt.Elem(), seen)
 		if err != nil {
 			return nil, err
 		}

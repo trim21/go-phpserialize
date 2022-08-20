@@ -23,17 +23,22 @@ type structEncoder struct {
 
 var timeType = runtime.Type2RType(reflect.TypeOf((*time.Time)(nil)).Elem())
 
-func compileStruct(rt *runtime.Type) (encoder, error) {
+func compileStruct(rt *runtime.Type, seen seenMap) (encoder, error) {
+	if seen[rt] {
+		panic("recursive struct is not supported yet: " + rt.String())
+	}
+	seen[rt] = true
+
 	hasOmitEmpty, err := hasOmitEmptyField(runtime.RType2Type(rt))
 	if err != nil {
 		return nil, err
 	}
 
 	if !hasOmitEmpty {
-		return compileStructNoOmitEmptyFastPath(rt)
+		return compileStructNoOmitEmptyFastPath(rt, seen)
 	}
 
-	return compileStructBufferSlowPath(rt)
+	return compileStructBufferSlowPath(rt, seen)
 }
 
 func hasOmitEmptyField(rt reflect.Type) (bool, error) {
@@ -62,8 +67,8 @@ func hasOmitEmptyField(rt reflect.Type) (bool, error) {
 }
 
 // struct don't have `omitempty` tag, fast path
-func compileStructNoOmitEmptyFastPath(rt *runtime.Type) (encoder, error) {
-	fields, err := compileStructFieldsEncoders(rt, 0)
+func compileStructNoOmitEmptyFastPath(rt *runtime.Type, seen seenMap) (encoder, error) {
+	fields, err := compileStructFieldsEncoders(rt, 0, seen)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +114,8 @@ func compileStructNoOmitEmptyFastPath(rt *runtime.Type) (encoder, error) {
 	}, nil
 }
 
-func compileStructBufferSlowPath(rt *runtime.Type) (encoder, error) {
-	encoders, err := compileStructFieldsEncoders(rt, 0)
+func compileStructBufferSlowPath(rt *runtime.Type, seen seenMap) (encoder, error) {
+	encoders, err := compileStructFieldsEncoders(rt, 0, seen)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +190,7 @@ func compileStructBufferSlowPath(rt *runtime.Type) (encoder, error) {
 	}, nil
 }
 
-func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders []structEncoder, err error) {
+func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr, seen seenMap) (encoders []structEncoder, err error) {
 	indirect := runtime.IfaceIndir(rt)
 
 	for i := 0; i < rt.NumField(); i++ {
@@ -215,7 +220,7 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 				ptrDepth++
 				fallthrough
 			default:
-				fieldEncoder, err = compile(runtime.Type2RType(field.Type.Elem()))
+				fieldEncoder, err = compile(runtime.Type2RType(field.Type.Elem()), seen)
 				if err != nil {
 					return nil, err
 				}
@@ -224,7 +229,7 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 
 		if fieldEncoder == nil {
 			if field.Type.Kind() == reflect.Struct && field.Anonymous {
-				enc, err := compileStructFieldsEncoders(runtime.Type2RType(field.Type), offset)
+				enc, err := compileStructFieldsEncoders(runtime.Type2RType(field.Type), offset, seen)
 				if err != nil {
 					return nil, err
 				}
@@ -233,7 +238,7 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr) (encoders
 				continue
 			}
 
-			fieldEncoder, err = compile(runtime.Type2RType(field.Type))
+			fieldEncoder, err = compile(runtime.Type2RType(field.Type), seen)
 			if err != nil {
 				return nil, err
 			}

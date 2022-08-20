@@ -13,10 +13,12 @@ type encoder func(ctx *Ctx, b []byte, p uintptr) ([]byte, error)
 func compileTypeID(typeID uintptr) (encoder, error) {
 	rt := *(**runtime.Type)(unsafe.Pointer(&typeID))
 
-	return compile(rt)
+	return compile(rt, seenMap{})
 }
 
-func compile(rt *runtime.Type) (encoder, error) {
+type seenMap = map[*runtime.Type]bool
+
+func compile(rt *runtime.Type, seen seenMap) (encoder, error) {
 	switch rt.Kind() {
 	case reflect.Bool:
 		return encodeBool, nil
@@ -47,17 +49,17 @@ func compile(rt *runtime.Type) (encoder, error) {
 	case reflect.String:
 		return encodeString, nil
 	case reflect.Struct:
-		return compileStruct(rt)
+		return compileStruct(rt, seen)
 	case reflect.Array:
 		return compileArray(rt)
 	case reflect.Slice:
-		return compileSlice(rt)
+		return compileSlice(rt, seen)
 	case reflect.Map:
-		return compileMap(rt)
+		return compileMap(rt, seen)
 	case reflect.Interface:
 		return compileInterface(rt)
 	case reflect.Ptr:
-		return compilePtr(rt)
+		return compilePtr(rt, seen)
 	}
 
 	return nil, fmt.Errorf("failed to build encoder, unsupported type %s (kind %s)", rt.String(), rt.Kind())

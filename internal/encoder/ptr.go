@@ -8,7 +8,7 @@ import (
 )
 
 // MUST call `compilePtr` directly when compile encoder for struct field.
-func compilePtr(rt *runtime.Type) (encoder, error) {
+func compilePtr(rt *runtime.Type, seen seenMap) (encoder, error) {
 	switch rt.Elem().Kind() {
 	case reflect.Ptr:
 		return nil, fmt.Errorf("encoding nested ptr is not supported *%s", rt.Elem().String())
@@ -44,10 +44,10 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 	case reflect.Interface:
 		return compileInterface(rt.Elem())
 	case reflect.Map:
-		enc, err := compileMap(rt.Elem())
+		enc, err := compileMap(rt.Elem(), seen)
 		return deRefNilEncoder(enc), err
 	case reflect.Struct:
-		enc, err := compileStruct(rt.Elem())
+		enc, err := compileStruct(rt.Elem(), seen)
 		indirect := runtime.IfaceIndir(rt.Elem())
 		if indirect {
 			return wrapNilEncoder(enc), err
@@ -56,7 +56,7 @@ func compilePtr(rt *runtime.Type) (encoder, error) {
 		return deRefNilEncoder(enc), err
 	}
 
-	enc, err := compile(rt.Elem())
+	enc, err := compile(rt.Elem(), seen)
 	if err != nil {
 		return nil, err
 	}
