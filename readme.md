@@ -15,6 +15,7 @@ If you have any thought about how to support these types, please create an issue
 - 1.17
 - 1.18 (1.18+ are tested with extra generic type tests)
 - 1.19
+- 1.20
 
 ## Use case:
 
@@ -38,10 +39,10 @@ recursive struct are not supported yet.
 
 ## Usage
 
-See [examples](./example_test.go)
 
 ## Unmarshal
 
+See [examples](./example_test.go)
 `any` type will be decoded to `map[any]any` or `map[string]any`, depends on raw input is `array` or `class`,
 
 map `any` key maybe `int64` or `string`.
