@@ -17,6 +17,10 @@ If you have any thought about how to support these types, please create an issue
 - 1.19
 - 1.20
 
+You may see [compile error](https://github.com/trim21/go-phpserialize/issues/31) in very new golang version, but it's expected.
+
+Due to the usage of unsafe, new version of golang may break this package, so it use go build flags to make it only compile on tested go versions.
+
 ## Use case:
 
 You serialize all data into php array only. 
