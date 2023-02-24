@@ -19,7 +19,9 @@ If you have any thought about how to support these types, please create an issue
 
 ## Use case:
 
-You serialize all data into php array only. Decoding from php serialized array or class are both supported.
+You serialize all data into php array only. 
+
+Decoding from php serialized array or class are both supported.
 
 ## Install
 
