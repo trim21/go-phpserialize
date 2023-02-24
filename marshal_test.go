@@ -8,10 +8,11 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/stretchr/testify/require"
+	"github.com/volatiletech/null/v9"
+
 	"github.com/trim21/go-phpserialize"
 	"github.com/trim21/go-phpserialize/internal/runtime"
 	"github.com/trim21/go-phpserialize/internal/test"
-	"github.com/volatiletech/null/v9"
 )
 
 type any = interface{}
@@ -1147,10 +1148,22 @@ func TestRecursivePanic(t *testing.T) {
 	t.Parallel()
 
 	type O struct {
-		E []O
+		Name string
+		E    []O
 	}
 
-	require.Panics(t, func() {
-		phpserialize.Marshal(O{})
+	actual, err := phpserialize.Marshal(O{
+		Name: "hello",
+		E: []O{
+			{
+				Name: "BB",
+				E: []O{
+					{Name: "C C D D E E F F"},
+				},
+			},
+		},
 	})
+	require.NoError(t, err)
+
+	test.StringEqual(t, `a:2:{s:4:"Name";s:5:"hello";s:1:"E";a:1:{i:0;a:2:{s:4:"Name";s:2:"BB";s:1:"E";a:1:{i:0;a:2:{s:4:"Name";s:15:"C C D D E E F F";s:1:"E";N;}}}}}`, string(actual))
 }

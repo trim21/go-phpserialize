@@ -16,8 +16,6 @@ func compileTypeID(typeID uintptr) (encoder, error) {
 	return compile(rt, seenMap{})
 }
 
-type seenMap = map[*runtime.Type]bool
-
 func compile(rt *runtime.Type, seen seenMap) (encoder, error) {
 	switch rt.Kind() {
 	case reflect.Bool:

@@ -23,22 +23,51 @@ type structEncoder struct {
 
 var timeType = runtime.Type2RType(reflect.TypeOf((*time.Time)(nil)).Elem())
 
+type seenMap = map[*runtime.Type]*structRecEncoder
+
+type structRecEncoder struct {
+	enc encoder
+}
+
+func (s *structRecEncoder) Encode(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+	return s.enc(ctx, b, p)
+}
+
 func compileStruct(rt *runtime.Type, seen seenMap) (encoder, error) {
-	if seen[rt] {
-		panic("recursive struct is not supported yet: " + rt.String())
+	recursiveEnc, hasSeen := seen[rt]
+
+	if hasSeen {
+		return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
+			return recursiveEnc.Encode(ctx, b, p)
+		}, nil
+	} else {
+		seen[rt] = &structRecEncoder{}
 	}
-	seen[rt] = true
 
 	hasOmitEmpty, err := hasOmitEmptyField(runtime.RType2Type(rt))
 	if err != nil {
 		return nil, err
 	}
 
+	var enc encoder
 	if !hasOmitEmpty {
-		return compileStructNoOmitEmptyFastPath(rt, seen)
+		enc, err = compileStructNoOmitEmptyFastPath(rt, seen)
+	} else {
+		enc, err = compileStructBufferSlowPath(rt, seen)
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	return compileStructBufferSlowPath(rt, seen)
+	recursiveEnc, recursiveStruct := seen[rt]
+	if recursiveStruct {
+		if recursiveEnc.enc == nil {
+			recursiveEnc.enc = enc
+			return recursiveEnc.Encode, nil
+		}
+	}
+
+	return enc, nil
 }
 
 func hasOmitEmptyField(rt reflect.Type) (bool, error) {
