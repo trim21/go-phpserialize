@@ -37,9 +37,7 @@ func compileStruct(rt *runtime.Type, seen seenMap) (encoder, error) {
 	recursiveEnc, hasSeen := seen[rt]
 
 	if hasSeen {
-		return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-			return recursiveEnc.Encode(ctx, b, p)
-		}, nil
+		return recursiveEnc.Encode, nil
 	} else {
 		seen[rt] = &structRecEncoder{}
 	}
