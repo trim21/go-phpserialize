@@ -37,7 +37,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: "${{ matrix.go_version }}"
-          cache: true
 
       - run: go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out -count=1 ./...
 
