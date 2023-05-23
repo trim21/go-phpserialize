@@ -2,4 +2,4 @@ package encoder
 
 type any = interface{}
 
-var _ = NEWER_GO_VERSION_NOT_SUPPORTED_YET
+var _ = golang_version_higher_than_1_20_not_supported_yet

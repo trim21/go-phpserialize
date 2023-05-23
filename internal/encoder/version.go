@@ -4,6 +4,6 @@
 
 package encoder
 
-// NEWER_GO_VERSION_NOT_SUPPORTED_YET variable to check tested and supported go version.
+// golang_version_higher_than_1_21_not_supported_yet variable to check tested and supported go version.
 // If you saw this variable is not defined in your go version, please try to update to latest version.
-const NEWER_GO_VERSION_NOT_SUPPORTED_YET = 0
+const golang_version_higher_than_1_20_not_supported_yet = 0

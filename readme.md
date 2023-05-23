@@ -17,9 +17,14 @@ If you have any thought about how to support these types, please create an issue
 - 1.19
 - 1.20
 
-You may see [compile error](https://github.com/trim21/go-phpserialize/issues/31) in very new golang version, but it's expected.
+You may see compile error about `golang_version_higher_than_*_not_supported_yet is undefined`,
+please try to upgrade version of this package.
 
-Due to the usage of unsafe, new version of golang may break this package, so it use go build flags to make it only compile on tested go versions.
+If you are using the latest version of this package, this is expected.
+
+Due to the usage of unsafe (unsafe doesn't follow Go 1 promise of compatibility), 
+new version of golang may break this package,
+so it use go build flags to make sure it only compile on tested go versions.
 
 ## Use case:
 
