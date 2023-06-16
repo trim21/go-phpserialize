@@ -15,8 +15,6 @@ import (
 	"github.com/trim21/go-phpserialize/internal/test"
 )
 
-type any = interface{}
-
 func init() {
 	color.NoColor = false // force color
 }

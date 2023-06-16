@@ -12,8 +12,7 @@ If you have any thought about how to support these types, please create an issue
 
 ## supported and tested go version
 
-- 1.17
-- 1.18 (1.18+ are tested with extra generic type tests)
+- 1.18
 - 1.19
 - 1.20
 
