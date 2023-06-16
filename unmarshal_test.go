@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/trim21/go-phpserialize"
 )
 
@@ -594,4 +595,34 @@ func TestUnmarshal_as_string_2(t *testing.T) {
 	err := phpserialize.Unmarshal([]byte(raw), &data)
 	require.NoError(t, err)
 
+}
+
+func TestUnmarshal_null_array_1(t *testing.T) {
+	raw := `a:0:{}`
+
+	type Tag struct {
+		Name  *string `php:"tag_name"`
+		Count int     `php:"result,string"`
+	}
+
+	var tags []Tag
+
+	err := phpserialize.Unmarshal([]byte(raw), &tags)
+	require.NoError(t, err)
+}
+
+func TestUnmarshal_null_array_2(t *testing.T) {
+	raw := `a:4:{s:1:"a";i:2;s:4:"Test";a:0:{}s:1:"b";a:0:{}s:1:"o";i:1;}`
+
+	var data any
+
+	err := phpserialize.Unmarshal([]byte(raw), &data)
+	require.NoError(t, err)
+
+	require.Equal(t, data, map[any]any{
+		"a":    int64(2),
+		"o":    int64(1),
+		"Test": map[any]any{},
+		"b":    map[any]any{},
+	})
 }

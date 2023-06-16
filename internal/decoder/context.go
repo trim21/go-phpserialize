@@ -176,8 +176,8 @@ func skipValue(buf []byte, cursor, depth int64) (int64, error) {
 
 // caller should check `a:0` , this function check  `0:{};`
 func validateEmptyArray(buf []byte, cursor int64) error {
-	if cursor+4 >= int64(len(buf)) {
-		return errors.ErrUnexpectedEnd("null", cursor)
+	if cursor+4 > int64(len(buf)) {
+		return errors.ErrUnexpectedEnd("array", cursor)
 	}
 
 	if buf[cursor+1] != ':' {
