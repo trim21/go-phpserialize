@@ -15,6 +15,7 @@ If you have any thought about how to support these types, please create an issue
 - 1.18
 - 1.19
 - 1.20
+- 1.21
 
 You may see compile error about `golang_version_higher_than_*_not_supported_yet is undefined`,
 please try to upgrade version of this package.
