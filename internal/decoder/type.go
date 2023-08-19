@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"encoding"
 	"reflect"
 	"unsafe"
 )
@@ -15,5 +16,6 @@ const (
 )
 
 var (
-	unmarshalPHPType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
+	unmarshalPHPType             = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
+	unmarshalTextUnmarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 )

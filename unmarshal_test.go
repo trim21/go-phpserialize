@@ -1,7 +1,9 @@
 package phpserialize_test
 
 import (
+	"encoding"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -625,4 +627,28 @@ func TestUnmarshal_null_array_2(t *testing.T) {
 		"Test": map[any]any{},
 		"b":    map[any]any{},
 	})
+}
+
+type textUnmarshalerType struct {
+	value string
+}
+
+func (t *textUnmarshalerType) UnmarshalText(text []byte) error {
+	t.value = string(text)
+	return nil
+}
+
+var _ encoding.TextUnmarshaler = (*textUnmarshalerType)(nil)
+
+func TestUnmarshal_TextUnmarshaler(t *testing.T) {
+	t.Parallel()
+
+	raw := `s:31:"2012-10-31T15:50:13.793654+0000";`
+
+	var data time.Time
+
+	err := phpserialize.Unmarshal([]byte(raw), &data)
+	require.NoError(t, err)
+
+	require.Equal(t, data, &textUnmarshalerType{value: `qwer"qwer`})
 }

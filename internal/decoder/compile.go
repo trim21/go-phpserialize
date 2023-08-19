@@ -58,7 +58,9 @@ func compileToGetDecoderSlowPath(typeptr uintptr, typ *runtime.Type) (Decoder, e
 func compileHead(typ *runtime.Type, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
 	switch {
 	case runtime.PtrTo(typ).Implements(unmarshalPHPType):
-		return newUnmarshalTextDecoder(runtime.PtrTo(typ), "", ""), nil
+		return newUnmarshalPackageDecoder(runtime.PtrTo(typ), "", ""), nil
+	case runtime.PtrTo(typ).Implements(unmarshalTextUnmarshalerType):
+		return newUnmarshalTextUnmarshalerDecoder(runtime.PtrTo(typ), "", ""), nil
 	}
 	return compile(typ.Elem(), "", "", structTypeToDecoder)
 }
@@ -66,7 +68,9 @@ func compileHead(typ *runtime.Type, structTypeToDecoder map[uintptr]Decoder) (De
 func compile(typ *runtime.Type, structName, fieldName string, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
 	switch {
 	case runtime.PtrTo(typ).Implements(unmarshalPHPType):
-		return newUnmarshalTextDecoder(runtime.PtrTo(typ), structName, fieldName), nil
+		return newUnmarshalPackageDecoder(runtime.PtrTo(typ), structName, fieldName), nil
+	case runtime.PtrTo(typ).Implements(unmarshalTextUnmarshalerType):
+		return newUnmarshalTextUnmarshalerDecoder(runtime.PtrTo(typ), "", ""), nil
 	}
 
 	switch typ.Kind() {
@@ -142,7 +146,7 @@ func isStringTagSupportedType(typ *runtime.Type) bool {
 
 func compileMapKey(typ *runtime.Type, structName, fieldName string, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
 	if runtime.PtrTo(typ).Implements(unmarshalPHPType) {
-		return newUnmarshalTextDecoder(runtime.PtrTo(typ), structName, fieldName), nil
+		return newUnmarshalPackageDecoder(runtime.PtrTo(typ), structName, fieldName), nil
 	}
 	if typ.Kind() == reflect.String {
 		return newStringDecoder(structName, fieldName), nil
