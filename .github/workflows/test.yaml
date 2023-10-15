@@ -31,7 +31,7 @@ jobs:
         go_version: ["~1.18", "~1.19", "~1.20", "~1.21"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Go
         uses: actions/setup-go@v4
@@ -40,6 +40,6 @@ jobs:
 
       - run: go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out -count=1 ./...
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           files: coverage.out
