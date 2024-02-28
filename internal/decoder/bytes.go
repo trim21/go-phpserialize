@@ -19,7 +19,7 @@ func byteUnmarshalerSliceDecoder(typ *runtime.Type, structName string, fieldName
 	var unmarshalDecoder Decoder
 	switch {
 	case runtime.PtrTo(typ).Implements(unmarshalPHPType):
-		unmarshalDecoder = newUnmarshalTextDecoder(runtime.PtrTo(typ), structName, fieldName)
+		unmarshalDecoder = newUnmarshalPackageDecoder(runtime.PtrTo(typ), structName, fieldName)
 	default:
 		unmarshalDecoder, _ = compileUint8(typ, structName, fieldName)
 	}

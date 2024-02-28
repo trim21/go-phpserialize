@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/trim21/go-phpserialize"
 	"github.com/trim21/go-phpserialize/internal/test"
 )
