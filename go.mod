@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/fatih/color v1.16.0
 	github.com/sergi/go-diff v1.3.1
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/volatiletech/null/v9 v9.0.0
 )
 
