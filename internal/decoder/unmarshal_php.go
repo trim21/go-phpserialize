@@ -21,7 +21,7 @@ type unmarshalPHPDecoder struct {
 	fieldName  string
 }
 
-func newUnmarshalTextDecoder(typ *runtime.Type, structName, fieldName string) *unmarshalPHPDecoder {
+func newUnmarshalPackageDecoder(typ *runtime.Type, structName, fieldName string) *unmarshalPHPDecoder {
 	return &unmarshalPHPDecoder{
 		typ:        typ,
 		structName: structName,
