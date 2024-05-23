@@ -228,7 +228,7 @@ func (d *interfaceDecoder) decodeEmptyInterface(ctx *RuntimeContext, cursor, dep
 			**(**any)(unsafe.Pointer(&p)) = false
 		}
 
-		return cursor + 3, nil
+		return cursor + 4, nil
 	case 'N':
 		if err := validateNull(buf, cursor); err != nil {
 			return 0, err
