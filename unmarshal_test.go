@@ -174,7 +174,6 @@ func TestUnmarshal_struct_float(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, float64(147852369), c.F)
 	})
-
 }
 
 func TestUnmarshal_struct_uint(t *testing.T) {
@@ -594,7 +593,6 @@ func TestUnmarshal_as_string_2(t *testing.T) {
 
 	err := phpserialize.Unmarshal([]byte(raw), &data)
 	require.NoError(t, err)
-
 }
 
 func TestUnmarshal_null_array_1(t *testing.T) {
@@ -625,4 +623,18 @@ func TestUnmarshal_null_array_2(t *testing.T) {
 		"Test": map[any]any{},
 		"b":    map[any]any{},
 	})
+}
+
+func TestUnmarshal_array_with_bool_to_map(t *testing.T) {
+	data := `O:8:"stdClass":1:{s:1:"a";b:0;}`
+
+	var actual map[string]interface{}
+
+	err := phpserialize.Unmarshal([]byte(data), &actual)
+	require.NoError(t, err)
+
+	expected := map[string]interface{}{
+		"a": false,
+	}
+	require.Equal(t, expected, actual)
 }
