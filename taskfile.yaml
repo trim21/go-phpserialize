@@ -1,0 +1,17 @@
+version: 3
+tasks:
+  default: task --list-all
+
+  test:
+    cmd: go test ./...
+
+  fmt:
+    cmd: go fmt ./...
+
+  bump:
+    requires:
+      vars:
+        - VERSION
+    cmds:
+      - 'git commit -m "bump: {{.VERSION}}"'
+      - 'git tag "v{{.VERSION}}" -m "v{{.VERSION}}"'
