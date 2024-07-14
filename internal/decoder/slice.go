@@ -17,7 +17,7 @@ var (
 )
 
 type sliceDecoder struct {
-	elemType          *runtime.Type
+	elemType          reflect.Type
 	isElemPointerType bool
 	valueDecoder      Decoder
 	size              uintptr
@@ -39,7 +39,7 @@ const (
 	defaultSliceCapacity = 2
 )
 
-func newSliceDecoder(dec Decoder, elemType *runtime.Type, size uintptr, structName, fieldName string) *sliceDecoder {
+func newSliceDecoder(dec Decoder, elemType reflect.Type, size uintptr, structName, fieldName string) *sliceDecoder {
 	return &sliceDecoder{
 		valueDecoder:      dec,
 		elemType:          elemType,
@@ -64,13 +64,13 @@ func (d *sliceDecoder) releaseSlice(p *sliceHeader) {
 }
 
 //go:linkname copySlice reflect.typedslicecopy
-func copySlice(elemType *runtime.Type, dst, src sliceHeader) int
+func copySlice(elemType reflect.Type, dst, src sliceHeader) int
 
 //go:linkname newArray reflect.unsafe_NewArray
-func newArray(*runtime.Type, int) unsafe.Pointer
+func newArray(reflect.Type, int) unsafe.Pointer
 
 //go:linkname typedmemmove reflect.typedmemmove
-func typedmemmove(t *runtime.Type, dst, src unsafe.Pointer)
+func typedmemmove(t reflect.Type, dst, src unsafe.Pointer)
 
 func (d *sliceDecoder) errNumber(offset int64) *errors.UnmarshalTypeError {
 	return &errors.UnmarshalTypeError{

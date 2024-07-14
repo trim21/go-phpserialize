@@ -4,15 +4,15 @@
 package decoder
 
 import (
-	"unsafe"
+	"reflect"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func CompileToGetDecoder(typ *runtime.Type) (Decoder, error) {
-	typeptr := uintptr(unsafe.Pointer(typ))
+func CompileToGetDecoder(rt reflect.Type) (Decoder, error) {
+	typeptr := runtime.TypeID(rt)
 	if typeptr > typeAddr.MaxTypeAddr {
-		return compileToGetDecoderSlowPath(typeptr, typ)
+		return compileToGetDecoderSlowPath(typeptr, rt)
 	}
 
 	index := (typeptr - typeAddr.BaseTypeAddr) >> typeAddr.AddrShift
@@ -20,7 +20,7 @@ func CompileToGetDecoder(typ *runtime.Type) (Decoder, error) {
 		return dec, nil
 	}
 
-	dec, err := compileHead(typ, map[uintptr]Decoder{})
+	dec, err := compileHead(rt, map[uintptr]Decoder{})
 	if err != nil {
 		return nil, err
 	}

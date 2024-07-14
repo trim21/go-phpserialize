@@ -10,7 +10,7 @@ import (
 )
 
 type interfaceDecoder struct {
-	typ              *runtime.Type
+	typ              reflect.Type
 	structName       string
 	fieldName        string
 	sliceDecoder     *sliceDecoder
@@ -65,7 +65,7 @@ func newEmptyInterfaceDecoder(structName, fieldName string) *interfaceDecoder {
 	return ifaceDecoder
 }
 
-func newInterfaceDecoder(typ *runtime.Type, structName, fieldName string) *interfaceDecoder {
+func newInterfaceDecoder(typ reflect.Type, structName, fieldName string) *interfaceDecoder {
 	emptyIfaceDecoder := newEmptyInterfaceDecoder(structName, fieldName)
 	stringDecoder := newStringDecoder(structName, fieldName)
 	return &interfaceDecoder{
@@ -124,7 +124,7 @@ func decodePHPUnmarshaler(buf []byte, cursor, depth int64, unmarshaler Unmarshal
 }
 
 type emptyInterface struct {
-	typ *runtime.Type
+	typ uintptr // type ID
 	ptr unsafe.Pointer
 }
 

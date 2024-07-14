@@ -12,7 +12,7 @@ import (
 var setsMu sync.RWMutex
 
 func compileToGetCodeSet(rt reflect.Type) (encoder, error) {
-	typeID := runtime.ToTypeID(rt)
+	typeID := runtime.TypeID(rt)
 
 	if typeID > typeAddr.MaxTypeAddr || typeID < typeAddr.BaseTypeAddr {
 		return compileToGetEncoderSlowPath(typeID, rt)

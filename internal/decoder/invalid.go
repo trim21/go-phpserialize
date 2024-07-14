@@ -9,13 +9,13 @@ import (
 )
 
 type invalidDecoder struct {
-	typ        *runtime.Type
+	typ        reflect.Type
 	kind       reflect.Kind
 	structName string
 	fieldName  string
 }
 
-func newInvalidDecoder(typ *runtime.Type, structName, fieldName string) *invalidDecoder {
+func newInvalidDecoder(typ reflect.Type, structName, fieldName string) *invalidDecoder {
 	return &invalidDecoder{
 		typ:        typ,
 		kind:       typ.Kind(),

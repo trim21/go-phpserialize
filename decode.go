@@ -11,21 +11,23 @@ import (
 )
 
 type emptyInterface struct {
-	typ *runtime.Type
+	typ reflect.Type
 	ptr unsafe.Pointer
 }
 
 func unmarshal(data []byte, v any) error {
 	header := (*emptyInterface)(unsafe.Pointer(&v))
 
-	if err := validateType(header.typ, uintptr(header.ptr)); err != nil {
+	rt := reflect.TypeOf(v)
+
+	if err := validateType(rt, uintptr(header.ptr)); err != nil {
 		return err
 	}
 
 	src := make([]byte, len(data)) // append nul byte to the end
 	copy(src, data)
 
-	dec, err := decoder.CompileToGetDecoder(header.typ)
+	dec, err := decoder.CompileToGetDecoder(rt)
 	if err != nil {
 		return err
 	}
@@ -51,9 +53,9 @@ func validateEndBuf(src []byte, cursor int64) error {
 	)
 }
 
-func validateType(typ *runtime.Type, p uintptr) error {
+func validateType(typ reflect.Type, p uintptr) error {
 	if typ == nil || typ.Kind() != reflect.Ptr || p == 0 {
-		return &errors.InvalidUnmarshalError{Type: runtime.RType2Type(typ)}
+		return &errors.InvalidUnmarshalError{Type: typ}
 	}
 	return nil
 }

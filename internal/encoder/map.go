@@ -43,7 +43,7 @@ func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
 		}
 	}
 
-	typeID := runtime.ToTypeID(rt)
+	typeID := runtime.TypeID(rt)
 
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		if p == 0 {

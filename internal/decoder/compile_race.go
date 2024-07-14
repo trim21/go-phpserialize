@@ -12,7 +12,7 @@ import (
 
 var decMu sync.RWMutex
 
-func CompileToGetDecoder(typ *runtime.Type) (Decoder, error) {
+func CompileToGetDecoder(typ reflect.Type) (Decoder, error) {
 	typeptr := uintptr(unsafe.Pointer(typ))
 	if typeptr > typeAddr.MaxTypeAddr {
 		return compileToGetDecoderSlowPath(typeptr, typ)

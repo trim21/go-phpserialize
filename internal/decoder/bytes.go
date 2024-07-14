@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"reflect"
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
@@ -8,25 +9,25 @@ import (
 )
 
 type bytesDecoder struct {
-	typ           *runtime.Type
+	typ           reflect.Type
 	sliceDecoder  Decoder
 	stringDecoder *stringDecoder
 	structName    string
 	fieldName     string
 }
 
-func byteUnmarshalerSliceDecoder(typ *runtime.Type, structName string, fieldName string) Decoder {
+func byteUnmarshalerSliceDecoder(typ reflect.Type, structName string, fieldName string) Decoder {
 	var unmarshalDecoder Decoder
 	switch {
-	case runtime.PtrTo(typ).Implements(unmarshalPHPType):
-		unmarshalDecoder = newUnmarshalTextDecoder(runtime.PtrTo(typ), structName, fieldName)
+	case reflect.PointerTo(typ).Implements(unmarshalPHPType):
+		unmarshalDecoder = newUnmarshalTextDecoder(reflect.PointerTo(typ), structName, fieldName)
 	default:
 		unmarshalDecoder, _ = compileUint8(typ, structName, fieldName)
 	}
 	return newSliceDecoder(unmarshalDecoder, typ, 1, structName, fieldName)
 }
 
-func newBytesDecoder(typ *runtime.Type, structName string, fieldName string) *bytesDecoder {
+func newBytesDecoder(typ reflect.Type, structName string, fieldName string) *bytesDecoder {
 	return &bytesDecoder{
 		typ:           typ,
 		sliceDecoder:  byteUnmarshalerSliceDecoder(typ, structName, fieldName),

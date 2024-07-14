@@ -1,18 +1,17 @@
 package decoder
 
 import (
+	"reflect"
 	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type anonymousFieldDecoder struct {
-	structType *runtime.Type
+	structType reflect.Type
 	offset     uintptr
 	dec        Decoder
 }
 
-func newAnonymousFieldDecoder(structType *runtime.Type, offset uintptr, dec Decoder) *anonymousFieldDecoder {
+func newAnonymousFieldDecoder(structType reflect.Type, offset uintptr, dec Decoder) *anonymousFieldDecoder {
 	return &anonymousFieldDecoder{
 		structType: structType,
 		offset:     offset,
@@ -25,5 +24,5 @@ func (d *anonymousFieldDecoder) Decode(ctx *RuntimeContext, cursor, depth int64,
 		*(*unsafe.Pointer)(p) = unsafe_New(d.structType)
 	}
 	p = *(*unsafe.Pointer)(p)
-	return d.dec.Decode(ctx, cursor, depth, unsafe.Pointer(uintptr(p)+d.offset))
+	return d.dec.Decode(ctx, cursor, depth, unsafe.Add(p, d.offset))
 }

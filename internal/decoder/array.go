@@ -1,14 +1,14 @@
 package decoder
 
 import (
+	"reflect"
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type arrayDecoder struct {
-	elemType     *runtime.Type
+	elemType     reflect.Type
 	size         uintptr
 	valueDecoder Decoder
 	alen         int
@@ -17,7 +17,7 @@ type arrayDecoder struct {
 	zeroValue    unsafe.Pointer
 }
 
-func newArrayDecoder(dec Decoder, elemType *runtime.Type, alen int, structName, fieldName string) *arrayDecoder {
+func newArrayDecoder(dec Decoder, elemType reflect.Type, alen int, structName, fieldName string) *arrayDecoder {
 	zeroValue := *(*unsafe.Pointer)(unsafe_New(elemType))
 	return &arrayDecoder{
 		valueDecoder: dec,
@@ -52,7 +52,7 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 
 		// set zero value first, php array may skip some index
 		for i := 0; i < d.alen; i++ {
-			*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(i)*d.size)) = d.zeroValue
+			*(*unsafe.Pointer)(unsafe.Add(p, uintptr(i)*d.size)) = d.zeroValue
 		}
 
 		cursor++

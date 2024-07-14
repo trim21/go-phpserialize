@@ -10,14 +10,14 @@ import (
 )
 
 type uintDecoder struct {
-	typ        *runtime.Type
+	typ        reflect.Type
 	kind       reflect.Kind
 	op         func(unsafe.Pointer, uint64)
 	structName string
 	fieldName  string
 }
 
-func newUintDecoder(typ *runtime.Type, structName, fieldName string, op func(unsafe.Pointer, uint64)) *uintDecoder {
+func newUintDecoder(typ reflect.Type, structName, fieldName string, op func(unsafe.Pointer, uint64)) *uintDecoder {
 	return &uintDecoder{
 		typ:        typ,
 		kind:       typ.Kind(),

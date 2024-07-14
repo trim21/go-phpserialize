@@ -18,7 +18,7 @@ type eface struct {
 func compileInterface(rt reflect.Type) (encoder, error) {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		v := *(*any)(unsafe.Pointer(&eface{
-			typ: runtime.ToTypeID(rt),
+			typ: runtime.TypeID(rt),
 			ptr: unsafe.Pointer(&p),
 		}))
 
@@ -92,7 +92,7 @@ LOOP:
 func compileInterfaceAsString(rt reflect.Type) (encoder, error) {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 		v := *(*any)(unsafe.Pointer(&eface{
-			typ: runtime.ToTypeID(rt),
+			typ: runtime.TypeID(rt),
 			ptr: unsafe.Pointer(p),
 		}))
 

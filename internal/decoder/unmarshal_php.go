@@ -2,6 +2,7 @@ package decoder
 
 import (
 	"bytes"
+	"reflect"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -16,12 +17,12 @@ type Unmarshaler interface {
 }
 
 type unmarshalPHPDecoder struct {
-	typ        *runtime.Type
+	typ        reflect.Type
 	structName string
 	fieldName  string
 }
 
-func newUnmarshalTextDecoder(typ *runtime.Type, structName, fieldName string) *unmarshalPHPDecoder {
+func newUnmarshalTextDecoder(typ reflect.Type, structName, fieldName string) *unmarshalPHPDecoder {
 	return &unmarshalPHPDecoder{
 		typ:        typ,
 		structName: structName,
@@ -56,19 +57,19 @@ func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p
 		case '[':
 			return 0, &errors.UnmarshalTypeError{
 				Value:  "array",
-				Type:   runtime.RType2Type(d.typ),
+				Type:   d.typ,
 				Offset: start,
 			}
 		case '{':
 			return 0, &errors.UnmarshalTypeError{
 				Value:  "object",
-				Type:   runtime.RType2Type(d.typ),
+				Type:   d.typ,
 				Offset: start,
 			}
 		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			return 0, &errors.UnmarshalTypeError{
 				Value:  "number",
-				Type:   runtime.RType2Type(d.typ),
+				Type:   d.typ,
 				Offset: start,
 			}
 		case 'N':
@@ -83,7 +84,7 @@ func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p
 		src = s
 	}
 	v := *(*any)(unsafe.Pointer(&emptyInterface{
-		typ: d.typ,
+		typ: runtime.TypeID(d.typ),
 		ptr: *(*unsafe.Pointer)(unsafe.Pointer(&p)),
 	}))
 	if err := v.(Unmarshaler).UnmarshalPHP(src); err != nil {

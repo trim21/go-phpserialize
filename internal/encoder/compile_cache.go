@@ -11,7 +11,7 @@ import (
 var (
 	cachedEncoder    []encoder
 	cachedEncoderMap unsafe.Pointer // map[uintptr]*OpcodeSet
-	typeAddr         *runtime.TypeAddr
+	typeAddr         reflect.TypeAddr
 )
 
 func init() {

@@ -9,48 +9,24 @@ import (
 )
 
 type mapDecoder struct {
-	mapType                 *runtime.Type
-	keyType                 *runtime.Type
-	valueType               *runtime.Type
-	canUseAssignFaststrType bool
-	keyDecoder              Decoder
-	valueDecoder            Decoder
-	structName              string
-	fieldName               string
+	mapType      reflect.Type
+	keyType      reflect.Type
+	valueType    reflect.Type
+	keyDecoder   Decoder
+	valueDecoder Decoder
+	structName   string
+	fieldName    string
 }
 
-func newMapDecoder(mapType *runtime.Type, keyType *runtime.Type, keyDec Decoder, valueType *runtime.Type, valueDec Decoder, structName, fieldName string) *mapDecoder {
+func newMapDecoder(mapType reflect.Type, keyType reflect.Type, keyDec Decoder, valueType reflect.Type, valueDec Decoder, structName, fieldName string) *mapDecoder {
 	return &mapDecoder{
-		mapType:                 mapType,
-		keyDecoder:              keyDec,
-		keyType:                 keyType,
-		canUseAssignFaststrType: canUseAssignFaststrType(keyType, valueType),
-		valueType:               valueType,
-		valueDecoder:            valueDec,
-		structName:              structName,
-		fieldName:               fieldName,
-	}
-}
-
-const (
-	mapMaxElemSize = 128
-)
-
-// See detail: https://github.com/goccy/go-json/pull/283
-func canUseAssignFaststrType(key *runtime.Type, value *runtime.Type) bool {
-	indirectElem := value.Size() > mapMaxElemSize
-	if indirectElem {
-		return false
-	}
-	return key.Kind() == reflect.String
-}
-
-func (d *mapDecoder) mapassign(t *runtime.Type, m, k, v unsafe.Pointer) {
-	if d.canUseAssignFaststrType {
-		mapV := runtime.MapAssignFastStr(t, m, *(*string)(k))
-		typedmemmove(d.valueType, mapV, v)
-	} else {
-		runtime.MapAssign(t, m, k, v)
+		mapType:      mapType,
+		keyDecoder:   keyDec,
+		keyType:      keyType,
+		valueType:    valueType,
+		valueDecoder: valueDec,
+		structName:   structName,
+		fieldName:    fieldName,
 	}
 }
 
@@ -99,8 +75,11 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 	}
 
 	mapValue := *(*unsafe.Pointer)(p)
+
+	rv := reflect.MakeMapWithSize(d.mapType, int(l))
+
 	if mapValue == nil {
-		mapValue = runtime.MakeMap(d.mapType, int(l))
+		mapValue = rv.UnsafePointer()
 	}
 
 	cursor++
@@ -111,19 +90,19 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 	}
 
 	for {
-		k := unsafe_New(d.keyType)
-		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k)
+		k := reflect.New(runtime.RType2Type(d.keyType))
+		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k.UnsafePointer())
 		if err != nil {
 			return 0, err
 		}
 		cursor = keyCursor
-		v := unsafe_New(d.valueType)
-		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v)
+		v := reflect.New(runtime.RType2Type(d.valueType))
+		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v.UnsafePointer())
 		if err != nil {
 			return 0, err
 		}
 
-		d.mapassign(d.mapType, mapValue, k, v)
+		rv.SetMapIndex(k, v)
 		cursor = valueCursor
 		if buf[cursor] == '}' {
 			**(**unsafe.Pointer)(unsafe.Pointer(&p)) = mapValue

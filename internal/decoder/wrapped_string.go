@@ -14,7 +14,7 @@ type stringWrappedDecoder interface {
 }
 
 type wrappedStringDecoder struct {
-	typ           *runtime.Type
+	typ           reflect.Type
 	dec           stringWrappedDecoder
 	stringDecoder *stringDecoder
 	structName    string
@@ -22,7 +22,7 @@ type wrappedStringDecoder struct {
 	isPtrType     bool
 }
 
-func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldName string) (Decoder, error) {
+func newWrappedStringDecoder(typ reflect.Type, dec Decoder, structName, fieldName string) (Decoder, error) {
 	var innerDec stringWrappedDecoder
 	switch v := dec.(type) {
 	case *boolDecoder:

@@ -10,15 +10,15 @@ import (
 
 type ptrDecoder struct {
 	dec        Decoder
-	typ        *runtime.Type
+	typ        reflect.Type
 	structName string
 	fieldName  string
 }
 
-func newPtrDecoder(dec Decoder, typ *runtime.Type, structName, fieldName string) (Decoder, error) {
+func newPtrDecoder(dec Decoder, typ reflect.Type, structName, fieldName string) (Decoder, error) {
 	if typ.Kind() == reflect.Ptr {
 		return nil, &errors.UnsupportedTypeError{
-			Type: runtime.RType2Type(runtime.PtrTo(typ)),
+			Type: runtime.RType2Type(reflect.PointerTo(typ)),
 		}
 	}
 	return &ptrDecoder{
@@ -39,7 +39,7 @@ func (d *ptrDecoder) contentDecoder() Decoder {
 
 //nolint:golint
 //go:linkname unsafe_New reflect.unsafe_New
-func unsafe_New(*runtime.Type) unsafe.Pointer
+func unsafe_New(reflect.Type) unsafe.Pointer
 
 func (d *ptrDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf

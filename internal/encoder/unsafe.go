@@ -2,8 +2,6 @@ package encoder
 
 import (
 	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 func PtrDeRef(p uintptr) uintptr {
@@ -15,6 +13,6 @@ func ptrToUnsafePtr(p uintptr) unsafe.Pointer {
 }
 
 type emptyInterface struct {
-	typ *runtime.Type  // value type
+	typ reflect.Type   // value type
 	ptr unsafe.Pointer // value address
 }
