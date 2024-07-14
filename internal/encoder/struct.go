@@ -3,7 +3,6 @@ package encoder
 import (
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
@@ -21,9 +20,7 @@ type structEncoder struct {
 	ptrDepth  int
 }
 
-var timeType = runtime.Type2RType(reflect.TypeOf((*time.Time)(nil)).Elem())
-
-type seenMap = map[*runtime.Type]*structRecEncoder
+type seenMap = map[reflect.Type]*structRecEncoder
 
 type structRecEncoder struct {
 	enc encoder
@@ -33,7 +30,7 @@ func (s *structRecEncoder) Encode(ctx *Ctx, b []byte, p uintptr) ([]byte, error)
 	return s.enc(ctx, b, p)
 }
 
-func compileStruct(rt *runtime.Type, seen seenMap) (encoder, error) {
+func compileStruct(rt reflect.Type, seen seenMap) (encoder, error) {
 	recursiveEnc, hasSeen := seen[rt]
 
 	if hasSeen {
@@ -42,7 +39,7 @@ func compileStruct(rt *runtime.Type, seen seenMap) (encoder, error) {
 		seen[rt] = &structRecEncoder{}
 	}
 
-	hasOmitEmpty, err := hasOmitEmptyField(runtime.RType2Type(rt))
+	hasOmitEmpty, err := hasOmitEmptyField(rt)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +91,7 @@ func hasOmitEmptyField(rt reflect.Type) (bool, error) {
 }
 
 // struct don't have `omitempty` tag, fast path
-func compileStructNoOmitEmptyFastPath(rt *runtime.Type, seen seenMap) (encoder, error) {
+func compileStructNoOmitEmptyFastPath(rt reflect.Type, seen seenMap) (encoder, error) {
 	fields, err := compileStructFieldsEncoders(rt, 0, seen)
 	if err != nil {
 		return nil, err
@@ -141,7 +138,7 @@ func compileStructNoOmitEmptyFastPath(rt *runtime.Type, seen seenMap) (encoder, 
 	}, nil
 }
 
-func compileStructBufferSlowPath(rt *runtime.Type, seen seenMap) (encoder, error) {
+func compileStructBufferSlowPath(rt reflect.Type, seen seenMap) (encoder, error) {
 	encoders, err := compileStructFieldsEncoders(rt, 0, seen)
 	if err != nil {
 		return nil, err
@@ -217,7 +214,7 @@ func compileStructBufferSlowPath(rt *runtime.Type, seen seenMap) (encoder, error
 	}, nil
 }
 
-func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr, seen seenMap) (encoders []structEncoder, err error) {
+func compileStructFieldsEncoders(rt reflect.Type, baseOffset uintptr, seen seenMap) (encoders []structEncoder, err error) {
 	indirect := runtime.IfaceIndir(rt)
 
 	for i := 0; i < rt.NumField(); i++ {
@@ -247,7 +244,7 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr, seen seen
 				ptrDepth++
 				fallthrough
 			default:
-				fieldEncoder, err = compile(runtime.Type2RType(field.Type.Elem()), seen)
+				fieldEncoder, err = compile(field.Type.Elem(), seen)
 				if err != nil {
 					return nil, err
 				}
@@ -256,7 +253,7 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr, seen seen
 
 		if fieldEncoder == nil {
 			if field.Type.Kind() == reflect.Struct && field.Anonymous {
-				enc, err := compileStructFieldsEncoders(runtime.Type2RType(field.Type), offset, seen)
+				enc, err := compileStructFieldsEncoders(field.Type, offset, seen)
 				if err != nil {
 					return nil, err
 				}
@@ -265,7 +262,7 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr, seen seen
 				continue
 			}
 
-			fieldEncoder, err = compile(runtime.Type2RType(field.Type), seen)
+			fieldEncoder, err = compile(field.Type, seen)
 			if err != nil {
 				return nil, err
 			}
@@ -274,7 +271,7 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr, seen seen
 		var enc encoder
 		if cfg.IsString {
 			if field.Type.Kind() == reflect.Ptr {
-				enc, err = compileAsString(runtime.Type2RType(field.Type.Elem()))
+				enc, err = compileAsString(field.Type.Elem())
 				fieldEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 					// fmt.Println(p)
 					// fmt.Println(**(**bool)(unsafe.Pointer(&p)))
@@ -286,7 +283,7 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr, seen seen
 				// 	ptrDepth++
 				// }
 			} else {
-				fieldEncoder, err = compileAsString(runtime.Type2RType(field.Type))
+				fieldEncoder, err = compileAsString(field.Type)
 			}
 			if err != nil {
 				return nil, err
@@ -298,7 +295,7 @@ func compileStructFieldsEncoders(rt *runtime.Type, baseOffset uintptr, seen seen
 		}
 
 		if cfg.IsOmitEmpty && isEmpty == nil {
-			isEmpty, err = compileEmptyFunc(runtime.Type2RType(field.Type))
+			isEmpty, err = compileEmptyFunc(field.Type)
 			if err != nil {
 				return nil, err
 			}

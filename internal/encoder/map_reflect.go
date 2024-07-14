@@ -56,7 +56,7 @@ func reflectMap(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 	var mr = newMapCtx()
 	defer freeMapCtx(mr)
 
-	valueEncoder, err := compileInterface(runtime.Type2RType(rt.Elem()))
+	valueEncoder, err := compileInterface(rt.Elem())
 	if err != nil {
 		return b, err
 	}
@@ -95,7 +95,7 @@ func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, k
 	var err error
 	var valueType = rt.Elem()
 
-	valueEncoder, err = compileWithCache(runtime.Type2RType(valueType))
+	valueEncoder, err = compileWithCache(valueType)
 	if err != nil {
 		return nil, err
 	}

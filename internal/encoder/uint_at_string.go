@@ -5,11 +5,9 @@ import (
 	"reflect"
 	"strconv"
 	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func compileUintAsString(rt *runtime.Type) (encoder, error) {
+func compileUintAsString(rt reflect.Type) (encoder, error) {
 	switch rt.Kind() {
 	case reflect.Uint8:
 		return encodeUint8AsString, nil

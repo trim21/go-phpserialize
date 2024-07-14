@@ -1,6 +1,7 @@
 package encoder
 
 import (
+	"reflect"
 	"unsafe"
 )
 
@@ -24,10 +25,8 @@ func Marshal(v any) ([]byte, error) {
 
 func encode(ctx *Ctx, b []byte, v any) ([]byte, error) {
 	header := (*emptyInterface)(unsafe.Pointer(&v))
-	typ := header.typ
 
-	typeID := uintptr(unsafe.Pointer(typ))
-	enc, err := compileTypeIDWithCache(typeID)
+	enc, err := compileWithCache(reflect.TypeOf(v))
 	if err != nil {
 		return nil, err
 	}

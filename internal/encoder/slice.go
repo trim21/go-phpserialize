@@ -3,19 +3,17 @@ package encoder
 import (
 	"reflect"
 	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 const lenOffset = unsafe.Offsetof(reflect.SliceHeader{}.Len)
 
-func compileSlice(rt *runtime.Type, seen seenMap) (encoder, error) {
+func compileSlice(rt reflect.Type, seen seenMap) (encoder, error) {
 	offset := rt.Elem().Size()
 	var enc encoder
 	var err error
 
 	if rt.Elem().Kind() == reflect.Map {
-		enc, err = compile(runtime.PtrTo(rt.Elem()), seen)
+		enc, err = compile(rt.Elem(), seen)
 		if err != nil {
 			return nil, err
 		}

@@ -1,6 +1,7 @@
 package encoder
 
 import (
+	"reflect"
 	"sync/atomic"
 	"unsafe"
 
@@ -22,12 +23,12 @@ func init() {
 	cachedEncoder = make([]encoder, typeAddr.AddrRange>>typeAddr.AddrShift+1)
 }
 
-func compileToGetEncoderSlowPath(typeID uintptr) (encoder, error) {
+func compileToGetEncoderSlowPath(typeID uintptr, rt reflect.Type) (encoder, error) {
 	opcodeMap := loadEncoderMap()
 	if codeSet, exists := opcodeMap[typeID]; exists {
 		return codeSet, nil
 	}
-	codeSet, err := compileTypeID(typeID)
+	codeSet, err := compileType(rt)
 	if err != nil {
 		return nil, err
 	}
@@ -51,11 +52,6 @@ func storeEncoder(typ uintptr, set encoder, m map[uintptr]encoder) {
 	atomic.StorePointer(&cachedEncoderMap, *(*unsafe.Pointer)(unsafe.Pointer(&newEncoderMap)))
 }
 
-func compileWithCache(rt *runtime.Type) (encoder, error) {
-	typeID := uintptr(unsafe.Pointer(rt))
-	return compileToGetCodeSet(typeID)
-}
-
-func compileTypeIDWithCache(typeID uintptr) (encoder, error) {
-	return compileToGetCodeSet(typeID)
+func compileWithCache(rt reflect.Type) (encoder, error) {
+	return compileToGetCodeSet(rt)
 }

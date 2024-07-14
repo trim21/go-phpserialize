@@ -16,7 +16,7 @@ func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, erro
 
 	// not slice of interface, fast path
 	if rt.Elem().Kind() != reflect.Interface {
-		return reflectConcreteSlice(ctx, b, runtime.Type2RType(rt), p)
+		return reflectConcreteSlice(ctx, b, rt, p)
 	}
 
 	shPtr := unpackIface(p)
@@ -26,9 +26,7 @@ func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, erro
 		return appendNull(b), nil
 	}
 
-	el := runtime.Type2RType(rt.Elem())
-
-	encoder, err := compileInterface(el)
+	encoder, err := compileInterface(rt.Elem())
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +49,7 @@ func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, erro
 	return append(b, '}'), nil
 }
 
-func reflectConcreteSlice(ctx *Ctx, b []byte, rt *runtime.Type, p uintptr) ([]byte, error) {
+func reflectConcreteSlice(ctx *Ctx, b []byte, rt reflect.Type, p uintptr) ([]byte, error) {
 	enc, err := compileWithCache(rt)
 	if err != nil {
 		return nil, err

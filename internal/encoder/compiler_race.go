@@ -3,19 +3,24 @@
 package encoder
 
 import (
+	"reflect"
 	"sync"
+
+	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 var setsMu sync.RWMutex
 
-func compileToGetCodeSet(typeID uintptr) (encoder, error) {
+func compileToGetCodeSet(rt reflect.Type) (encoder, error) {
+	typeID := runtime.ToTypeID(rt)
+
 	if typeID > typeAddr.MaxTypeAddr || typeID < typeAddr.BaseTypeAddr {
-		return compileToGetEncoderSlowPath(typeID)
+		return compileToGetEncoderSlowPath(typeID, rt)
 	}
 	index := (typeID - typeAddr.BaseTypeAddr) >> typeAddr.AddrShift
 	setsMu.RLock()
 	if codeSet := cachedEncoder[index]; codeSet != nil {
-		encoder, err := compileTypeID(typeID)
+		encoder, err := compileType(typeID)
 		if err != nil {
 			setsMu.RUnlock()
 			return nil, err
@@ -25,7 +30,7 @@ func compileToGetCodeSet(typeID uintptr) (encoder, error) {
 	}
 	setsMu.RUnlock()
 
-	encoder, err := compileTypeID(typeID)
+	encoder, err := compileType(rt)
 	if err != nil {
 		return nil, err
 	}

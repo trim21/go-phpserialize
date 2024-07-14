@@ -11,6 +11,17 @@ type SliceHeader struct {
 	Cap  int
 }
 
+type eface struct {
+	_type uintptr
+	data  unsafe.Pointer
+}
+
+func ToTypeID(rt reflect.Type) uintptr {
+	p := unsafe.Pointer(&rt)
+	var ef eface = **(**eface)(p)
+	return uintptr(ef.data)
+}
+
 const (
 	maxAcceptableTypeAddrRange = 1024 * 1024 * 2 // 2 Mib
 )

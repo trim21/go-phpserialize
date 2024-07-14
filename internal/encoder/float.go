@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"strconv"
 	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 func encodeFloat32(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
@@ -54,7 +52,7 @@ func appendFloat64(b []byte, f64 float64) []byte {
 	return append(b, ';')
 }
 
-func compileFloatAsString(typ *runtime.Type) (encoder, error) {
+func compileFloatAsString(typ reflect.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.Float32:
 		return encodeFloat32AsString, nil

@@ -8,13 +8,18 @@ import (
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
+type eface struct {
+	typ uintptr
+	ptr unsafe.Pointer
+}
+
 // will need to get type message at marshal time, slow path.
 // should avoid interface for performance thinking.
-func compileInterface(rt *runtime.Type) (encoder, error) {
+func compileInterface(rt reflect.Type) (encoder, error) {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		v := *(*any)(unsafe.Pointer(&emptyInterface{
-			typ: rt,
-			ptr: *(*unsafe.Pointer)(unsafe.Pointer(&p)),
+		v := *(*any)(unsafe.Pointer(&eface{
+			typ: runtime.ToTypeID(rt),
+			ptr: unsafe.Pointer(&p),
 		}))
 
 		return reflectInterfaceValue(ctx, b, reflect.ValueOf(v), p)
@@ -84,10 +89,10 @@ LOOP:
 	return b, &UnsupportedInterfaceTypeError{rv.Type()}
 }
 
-func compileInterfaceAsString(rt *runtime.Type) (encoder, error) {
+func compileInterfaceAsString(rt reflect.Type) (encoder, error) {
 	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		v := *(*any)(unsafe.Pointer(&emptyInterface{
-			typ: rt,
+		v := *(*any)(unsafe.Pointer(&eface{
+			typ: runtime.ToTypeID(rt),
 			ptr: unsafe.Pointer(p),
 		}))
 

@@ -3,12 +3,10 @@ package encoder
 import (
 	"fmt"
 	"reflect"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 // MUST call `compilePtr` directly when compile encoder for struct field.
-func compilePtr(rt *runtime.Type, seen seenMap) (encoder, error) {
+func compilePtr(rt reflect.Type, seen seenMap) (encoder, error) {
 	switch rt.Elem().Kind() {
 	case reflect.Ptr:
 		return nil, fmt.Errorf("encoding nested ptr is not supported *%s", rt.Elem().String())
@@ -48,7 +46,7 @@ func compilePtr(rt *runtime.Type, seen seenMap) (encoder, error) {
 		return deRefNilEncoder(enc), err
 	case reflect.Struct:
 		enc, err := compileStruct(rt.Elem(), seen)
-		indirect := runtime.IfaceIndir(rt.Elem())
+		indirect := rt.Elem().Kind()
 		if indirect {
 			return wrapNilEncoder(enc), err
 		}

@@ -2,11 +2,9 @@ package encoder
 
 import (
 	"reflect"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func compileArray(rt *runtime.Type) (encoder, error) {
+func compileArray(rt reflect.Type) (encoder, error) {
 	offset := rt.Elem().Size()
 	length := rt.Len()
 	i64 := int64(length)
@@ -14,7 +12,7 @@ func compileArray(rt *runtime.Type) (encoder, error) {
 	var err error
 
 	if rt.Elem().Kind() == reflect.Map {
-		enc, err = compileWithCache(runtime.PtrTo(rt.Elem()))
+		enc, err = compileWithCache(rt.Elem())
 		if err != nil {
 			return nil, err
 		}

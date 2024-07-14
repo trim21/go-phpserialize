@@ -3,20 +3,15 @@ package encoder
 import (
 	"fmt"
 	"reflect"
-	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type encoder func(ctx *Ctx, b []byte, p uintptr) ([]byte, error)
 
-func compileTypeID(typeID uintptr) (encoder, error) {
-	rt := *(**runtime.Type)(unsafe.Pointer(&typeID))
-
+func compileType(rt reflect.Type) (encoder, error) {
 	return compile(rt, seenMap{})
 }
 
-func compile(rt *runtime.Type, seen seenMap) (encoder, error) {
+func compile(rt reflect.Type, seen seenMap) (encoder, error) {
 	switch rt.Kind() {
 	case reflect.Bool:
 		return encodeBool, nil
@@ -63,7 +58,7 @@ func compile(rt *runtime.Type, seen seenMap) (encoder, error) {
 	return nil, fmt.Errorf("failed to build encoder, unsupported type %s (kind %s)", rt.String(), rt.Kind())
 }
 
-func compileMapKey(typ *runtime.Type) (encoder, error) {
+func compileMapKey(typ reflect.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.String:
 		return encodeString, nil
@@ -93,7 +88,7 @@ func compileMapKey(typ *runtime.Type) (encoder, error) {
 	return nil, fmt.Errorf("failed to build encoder for map key, unsupported type %s (kind %s)", typ.String(), typ.Kind())
 }
 
-func compileAsString(rt *runtime.Type) (encoder, error) {
+func compileAsString(rt reflect.Type) (encoder, error) {
 	switch rt.Kind() {
 	case reflect.Bool:
 		return compileBoolAsString(rt)

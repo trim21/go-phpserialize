@@ -1,12 +1,11 @@
 package encoder
 
 import (
+	"reflect"
 	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-func compileBoolAsString(typ *runtime.Type) (encoder, error) {
+func compileBoolAsString(typ reflect.Type) (encoder, error) {
 	return encodeBoolAsString, nil
 }
 

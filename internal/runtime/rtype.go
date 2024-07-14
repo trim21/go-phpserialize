@@ -244,6 +244,10 @@ func (t *Type) Out(i int) reflect.Type {
 	return rtype_Out(t, i)
 }
 
+func _() {
+	_ = reflect.ifaceIndir
+}
+
 //go:linkname IfaceIndir reflect.ifaceIndir
 //go:noescape
 func IfaceIndir(*Type) bool
