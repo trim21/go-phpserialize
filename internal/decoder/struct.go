@@ -114,7 +114,7 @@ func (d *structDecoder) tryOptimize() {
 	}
 
 	var maxKeyLen int
-	sortedKeys := []string{}
+	var sortedKeys []string
 	for key := range fieldMap {
 		keyLen := len(key)
 		if keyLen > allowOptimizeMaxKeyLen {

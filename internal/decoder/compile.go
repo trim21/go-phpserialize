@@ -20,8 +20,20 @@ func init() {
 	cachedDecoderMap.Store(&m)
 }
 
-func CompileToGetDecoder(typ reflect.Type) (Decoder, error) {
-	return compileToGetDecoderSlowPath(typ)
+func CompileToGetDecoder(rt reflect.Type) (Decoder, error) {
+	decoderMap := *cachedDecoderMap.Load()
+	if dec, exists := decoderMap[rt]; exists {
+		return dec, nil
+	}
+
+	dec, err := compileHead(rt, map[reflect.Type]Decoder{})
+	if err != nil {
+		return nil, err
+	}
+
+	storeDecoder(rt, dec, decoderMap)
+
+	return dec, nil
 }
 
 func storeDecoder(rt reflect.Type, dec Decoder, m map[reflect.Type]Decoder) {
@@ -35,21 +47,7 @@ func storeDecoder(rt reflect.Type, dec Decoder, m map[reflect.Type]Decoder) {
 	cachedDecoderMap.Store(&newDecoderMap)
 }
 
-func compileToGetDecoderSlowPath(rt reflect.Type) (Decoder, error) {
-	decoderMap := *cachedDecoderMap.Load()
-	if dec, exists := decoderMap[rt]; exists {
-		return dec, nil
-	}
-
-	dec, err := compileHead(rt, map[uintptr]Decoder{})
-	if err != nil {
-		return nil, err
-	}
-	storeDecoder(rt, dec, decoderMap)
-	return dec, nil
-}
-
-func compileHead(rt reflect.Type, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
+func compileHead(rt reflect.Type, structTypeToDecoder map[reflect.Type]Decoder) (Decoder, error) {
 	switch {
 	case reflect.PointerTo(rt).Implements(unmarshalPHPType):
 		return newUnmarshalTextDecoder(reflect.PointerTo(rt), "", ""), nil
@@ -57,7 +55,7 @@ func compileHead(rt reflect.Type, structTypeToDecoder map[uintptr]Decoder) (Deco
 	return compile(rt.Elem(), "", "", structTypeToDecoder)
 }
 
-func compile(rt reflect.Type, structName, fieldName string, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
+func compile(rt reflect.Type, structName, fieldName string, structTypeToDecoder map[reflect.Type]Decoder) (Decoder, error) {
 	switch {
 	case reflect.PointerTo(rt).Implements(unmarshalPHPType):
 		return newUnmarshalTextDecoder(reflect.PointerTo(rt), structName, fieldName), nil
@@ -134,7 +132,7 @@ func isStringTagSupportedType(typ reflect.Type) bool {
 	return true
 }
 
-func compileMapKey(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
+func compileMapKey(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[reflect.Type]Decoder) (Decoder, error) {
 	if reflect.PointerTo(typ).Implements(unmarshalPHPType) {
 		return newUnmarshalTextDecoder(reflect.PointerTo(typ), structName, fieldName), nil
 	}
@@ -160,7 +158,7 @@ func compileMapKey(typ reflect.Type, structName, fieldName string, structTypeToD
 	}
 }
 
-func compilePtr(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
+func compilePtr(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[reflect.Type]Decoder) (Decoder, error) {
 	dec, err := compile(typ.Elem(), structName, fieldName, structTypeToDecoder)
 	if err != nil {
 		return nil, err
@@ -252,7 +250,7 @@ func compileBytes(typ reflect.Type, structName, fieldName string) (Decoder, erro
 	return newBytesDecoder(typ, structName, fieldName), nil
 }
 
-func compileSlice(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
+func compileSlice(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[reflect.Type]Decoder) (Decoder, error) {
 	elem := typ.Elem()
 	decoder, err := compile(elem, structName, fieldName, structTypeToDecoder)
 	if err != nil {
@@ -261,7 +259,7 @@ func compileSlice(typ reflect.Type, structName, fieldName string, structTypeToDe
 	return newSliceDecoder(decoder, elem, elem.Size(), structName, fieldName), nil
 }
 
-func compileArray(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
+func compileArray(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[reflect.Type]Decoder) (Decoder, error) {
 	elem := typ.Elem()
 	decoder, err := compile(elem, structName, fieldName, structTypeToDecoder)
 	if err != nil {
@@ -270,7 +268,7 @@ func compileArray(typ reflect.Type, structName, fieldName string, structTypeToDe
 	return newArrayDecoder(decoder, elem, typ.Len(), structName, fieldName), nil
 }
 
-func compileMap(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
+func compileMap(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[reflect.Type]Decoder) (Decoder, error) {
 	keyDec, err := compileMapKey(typ.Key(), structName, fieldName, structTypeToDecoder)
 	if err != nil {
 		return nil, err
@@ -299,20 +297,19 @@ func typeToStructTags(typ reflect.Type) runtime.StructTags {
 	return tags
 }
 
-func compileStruct(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
-	fieldNum := typ.NumField()
+func compileStruct(rt reflect.Type, structName, fieldName string, structTypeToDecoder map[reflect.Type]Decoder) (Decoder, error) {
+	fieldNum := rt.NumField()
 	fieldMap := map[string]*structFieldSet{}
-	typeptr := runtime.TypeID(typ)
-	if dec, exists := structTypeToDecoder[typeptr]; exists {
+	if dec, exists := structTypeToDecoder[rt]; exists {
 		return dec, nil
 	}
 	structDec := newStructDecoder(structName, fieldName, fieldMap)
-	structTypeToDecoder[typeptr] = structDec
-	structName = typ.Name()
-	tags := typeToStructTags(typ)
-	allFields := []*structFieldSet{}
+	structTypeToDecoder[rt] = structDec
+	structName = rt.Name()
+	tags := typeToStructTags(rt)
+	var allFields []*structFieldSet
 	for i := 0; i < fieldNum; i++ {
-		field := typ.Field(i)
+		field := rt.Field(i)
 		if runtime.IsIgnoredStructField(field) {
 			continue
 		}
@@ -324,7 +321,7 @@ func compileStruct(typ reflect.Type, structName, fieldName string, structTypeToD
 		}
 		if field.Anonymous && !tag.IsTaggedKey {
 			if stDec, ok := dec.(*structDecoder); ok {
-				if runtime.Type2RType(field.Type) == typ {
+				if runtime.Type2RType(field.Type) == rt {
 					// recursive definition
 					continue
 				}
@@ -343,7 +340,7 @@ func compileStruct(typ reflect.Type, structName, fieldName string, structTypeToD
 				}
 			} else if pdec, ok := dec.(*ptrDecoder); ok {
 				contentDec := pdec.contentDecoder()
-				if pdec.typ == typ {
+				if pdec.typ == rt {
 					// recursive definition
 					continue
 				}
@@ -411,7 +408,7 @@ func compileStruct(typ reflect.Type, structName, fieldName string, structTypeToD
 			fieldMap[lower] = set
 		}
 	}
-	delete(structTypeToDecoder, typeptr)
+	delete(structTypeToDecoder, rt)
 	structDec.tryOptimize()
 	return structDec, nil
 }
