@@ -6,7 +6,6 @@ import (
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type uintDecoder struct {
@@ -30,7 +29,7 @@ func newUintDecoder(typ reflect.Type, structName, fieldName string, op func(unsa
 func (d *uintDecoder) typeError(buf []byte, offset int64) *errors.UnmarshalTypeError {
 	return &errors.UnmarshalTypeError{
 		Value:  fmt.Sprintf("number %s", string(buf)),
-		Type:   runtime.RType2Type(d.typ),
+		Type:   d.typ,
 		Offset: offset,
 	}
 }

@@ -2,9 +2,6 @@ package encoder
 
 import (
 	"reflect"
-	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 // fast array for map reflect
@@ -53,32 +50,25 @@ func reflectMap(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 
 	keyEncoder := mapKeyEncoder[keyType.Kind()]
 
-	var mr = newMapCtx()
-	defer freeMapCtx(mr)
-
 	valueEncoder, err := compileInterface(rt.Elem())
 	if err != nil {
 		return b, err
 	}
 
-	runtime.MapIterInit(runtime.Type2RType(rt), unsafe.Pointer(rv.Pointer()), &mr.Iter)
-	for i := 0; i < mapLen; i++ {
-		b, err = keyEncoder(ctx, b, runtime.MapIterKey(&mr.Iter))
+	keys := rv.MapKeys()
+
+	for _, key := range keys {
+		b, err = keyEncoder(ctx, b, key.Pointer())
 		if err != nil {
 			return b, err
 		}
-
-		b, err = valueEncoder(ctx, b, runtime.MapIterValue(&mr.Iter))
+		b, err = valueEncoder(ctx, b, rv.MapIndex(key).Pointer())
 		if err != nil {
 			return b, err
 		}
-
-		runtime.MapIterNext(&mr.Iter)
 	}
 
-	b = append(b, '}')
-
-	return b, nil
+	return append(b, '}'), nil
 }
 
 func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, keyType reflect.Type) ([]byte, error) {
@@ -109,22 +99,17 @@ func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, k
 
 	keyEncoder := mapKeyEncoder[keyType.Kind()]
 
-	var mr = newMapCtx()
-	defer freeMapCtx(mr)
+	keys := rv.MapKeys()
 
-	runtime.MapIterInit(runtime.Type2RType(rt), unsafe.Pointer(rv.Pointer()), &mr.Iter)
-	for i := 0; i < mapLen; i++ {
-		b, err = keyEncoder(ctx, b, runtime.MapIterKey(&mr.Iter))
+	for _, key := range keys {
+		b, err = keyEncoder(ctx, b, key.Pointer())
 		if err != nil {
 			return b, err
 		}
-
-		b, err = valueEncoder(ctx, b, runtime.MapIterValue(&mr.Iter))
+		b, err = valueEncoder(ctx, b, rv.MapIndex(key).Pointer())
 		if err != nil {
 			return b, err
 		}
-
-		runtime.MapIterNext(&mr.Iter)
 	}
 
 	return append(b, '}'), nil

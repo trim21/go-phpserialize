@@ -149,7 +149,7 @@ func (d *structDecoder) tryOptimize() {
 	for i, key := range sortedKeys {
 		for j := 0; j < len(key); j++ {
 			c := key[j]
-			keyBitmap[j][c] |= (1 << uint(i))
+			keyBitmap[j][c] |= 1 << uint(i)
 		}
 		d.sortedFieldSets = append(d.sortedFieldSets, fieldMap[key])
 	}

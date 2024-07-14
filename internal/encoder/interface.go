@@ -46,7 +46,7 @@ LOOP:
 	pp := uintptr(v.ptr)
 
 	// simple type
-	switch v.typ.Kind() {
+	switch rv.Type().Kind() {
 	case reflect.Bool:
 		return encodeBool(ctx, b, pp)
 	case reflect.Uint8:
@@ -120,7 +120,7 @@ LOOP:
 	p := uintptr(v.ptr)
 
 	// simple type
-	switch v.typ.Kind() {
+	switch rv.Type().Kind() {
 	case reflect.Bool:
 		return encodeBoolAsString(ctx, b, p)
 	case reflect.Uint8:

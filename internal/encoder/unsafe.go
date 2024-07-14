@@ -13,6 +13,6 @@ func ptrToUnsafePtr(p uintptr) unsafe.Pointer {
 }
 
 type emptyInterface struct {
-	typ reflect.Type   // value type
+	typ uintptr        // value type
 	ptr unsafe.Pointer // value address
 }

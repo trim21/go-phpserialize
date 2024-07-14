@@ -75,7 +75,7 @@ func typedmemmove(t reflect.Type, dst, src unsafe.Pointer)
 func (d *sliceDecoder) errNumber(offset int64) *errors.UnmarshalTypeError {
 	return &errors.UnmarshalTypeError{
 		Value:  "number",
-		Type:   reflect.SliceOf(runtime.RType2Type(d.elemType)),
+		Type:   reflect.SliceOf(d.elemType),
 		Struct: d.structName,
 		Field:  d.fieldName,
 		Offset: offset,

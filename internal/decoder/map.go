@@ -5,7 +5,6 @@ import (
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type mapDecoder struct {
@@ -76,6 +75,7 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 
 	mapValue := *(*unsafe.Pointer)(p)
 
+	// TODO
 	rv := reflect.MakeMapWithSize(d.mapType, int(l))
 
 	if mapValue == nil {
@@ -90,13 +90,13 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 	}
 
 	for {
-		k := reflect.New(runtime.RType2Type(d.keyType))
+		k := reflect.New(d.keyType)
 		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k.UnsafePointer())
 		if err != nil {
 			return 0, err
 		}
 		cursor = keyCursor
-		v := reflect.New(runtime.RType2Type(d.valueType))
+		v := reflect.New(d.valueType)
 		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v.UnsafePointer())
 		if err != nil {
 			return 0, err

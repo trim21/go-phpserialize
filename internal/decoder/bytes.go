@@ -5,7 +5,6 @@ import (
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type bytesDecoder struct {
@@ -55,7 +54,7 @@ func (d *bytesDecoder) decodeBinary(ctx *RuntimeContext, cursor, depth int64, p 
 	if buf[cursor] == 'a' {
 		if d.sliceDecoder == nil {
 			return nil, 0, &errors.UnmarshalTypeError{
-				Type:   runtime.RType2Type(d.typ),
+				Type:   d.typ,
 				Offset: cursor,
 			}
 		}

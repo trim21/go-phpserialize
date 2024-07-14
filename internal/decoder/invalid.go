@@ -5,7 +5,6 @@ import (
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type invalidDecoder struct {
@@ -27,7 +26,7 @@ func newInvalidDecoder(typ reflect.Type, structName, fieldName string) *invalidD
 func (d *invalidDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	return 0, &errors.UnmarshalTypeError{
 		Value:  "object",
-		Type:   runtime.RType2Type(d.typ),
+		Type:   d.typ,
 		Offset: cursor,
 		Struct: d.structName,
 		Field:  d.fieldName,

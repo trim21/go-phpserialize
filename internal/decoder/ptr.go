@@ -5,7 +5,6 @@ import (
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type ptrDecoder struct {
@@ -18,7 +17,7 @@ type ptrDecoder struct {
 func newPtrDecoder(dec Decoder, typ reflect.Type, structName, fieldName string) (Decoder, error) {
 	if typ.Kind() == reflect.Ptr {
 		return nil, &errors.UnsupportedTypeError{
-			Type: runtime.RType2Type(reflect.PointerTo(typ)),
+			Type: reflect.PointerTo(typ),
 		}
 	}
 	return &ptrDecoder{

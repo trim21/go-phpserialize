@@ -12,38 +12,32 @@ import (
 )
 
 var (
-	typeAddr         reflect.TypeAddr
-	cachedDecoderMap unsafe.Pointer // map[uintptr]decoder
-	cachedDecoder    []Decoder
+	cachedDecoderMap atomic.Pointer[map[reflect.Type]Decoder]
 )
 
 func init() {
-	typeAddr = runtime.AnalyzeTypeAddr()
-	if typeAddr == nil {
-		typeAddr = &runtime.TypeAddr{}
-	}
-	cachedDecoder = make([]Decoder, typeAddr.AddrRange>>typeAddr.AddrShift+1)
+	var m = map[reflect.Type]Decoder{}
+	cachedDecoderMap.Store(&m)
 }
 
-func loadDecoderMap() map[uintptr]Decoder {
-	p := atomic.LoadPointer(&cachedDecoderMap)
-	return *(*map[uintptr]Decoder)(unsafe.Pointer(&p))
+func CompileToGetDecoder(typ reflect.Type) (Decoder, error) {
+	return compileToGetDecoderSlowPath(typ)
 }
 
-func storeDecoder(typ uintptr, dec Decoder, m map[uintptr]Decoder) {
-	newDecoderMap := make(map[uintptr]Decoder, len(m)+1)
-	newDecoderMap[typ] = dec
+func storeDecoder(rt reflect.Type, dec Decoder, m map[reflect.Type]Decoder) {
+	newDecoderMap := make(map[reflect.Type]Decoder, len(m)+1)
+	newDecoderMap[rt] = dec
 
 	for k, v := range m {
 		newDecoderMap[k] = v
 	}
 
-	atomic.StorePointer(&cachedDecoderMap, *(*unsafe.Pointer)(unsafe.Pointer(&newDecoderMap)))
+	cachedDecoderMap.Store(&newDecoderMap)
 }
 
-func compileToGetDecoderSlowPath(typeptr uintptr, rt reflect.Type) (Decoder, error) {
-	decoderMap := loadDecoderMap()
-	if dec, exists := decoderMap[typeptr]; exists {
+func compileToGetDecoderSlowPath(rt reflect.Type) (Decoder, error) {
+	decoderMap := *cachedDecoderMap.Load()
+	if dec, exists := decoderMap[rt]; exists {
 		return dec, nil
 	}
 
@@ -51,7 +45,7 @@ func compileToGetDecoderSlowPath(typeptr uintptr, rt reflect.Type) (Decoder, err
 	if err != nil {
 		return nil, err
 	}
-	storeDecoder(typeptr, dec, decoderMap)
+	storeDecoder(rt, dec, decoderMap)
 	return dec, nil
 }
 
@@ -308,7 +302,7 @@ func typeToStructTags(typ reflect.Type) runtime.StructTags {
 func compileStruct(typ reflect.Type, structName, fieldName string, structTypeToDecoder map[uintptr]Decoder) (Decoder, error) {
 	fieldNum := typ.NumField()
 	fieldMap := map[string]*structFieldSet{}
-	typeptr := uintptr(unsafe.Pointer(typ))
+	typeptr := runtime.TypeID(typ)
 	if dec, exists := structTypeToDecoder[typeptr]; exists {
 		return dec, nil
 	}

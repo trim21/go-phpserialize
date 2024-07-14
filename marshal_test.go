@@ -587,7 +587,7 @@ func TestMarshal_ptr(t *testing.T) {
 
 		var i int = 50
 
-		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Indirect{})))
+		indirect := runtime.IfaceIndir(reflect.TypeOf(Indirect{}))
 		require.True(t, indirect, "struct should be indirect")
 
 		actual, err := phpserialize.Marshal(Indirect{B: &i})

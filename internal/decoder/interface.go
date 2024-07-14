@@ -141,7 +141,7 @@ func (d *interfaceDecoder) errUnmarshalType(typ reflect.Type, offset int64) *err
 func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
 	buf := ctx.Buf
 
-	runtimeInterfaceValue := *(*any)(unsafe.Pointer(&emptyInterface{typ: d.typ, ptr: p}))
+	runtimeInterfaceValue := *(*any)(unsafe.Pointer(&emptyInterface{typ: runtime.TypeID(d.typ), ptr: p}))
 	rv := reflect.ValueOf(runtimeInterfaceValue)
 	if rv.NumMethod() > 0 && rv.CanInterface() {
 		if u, ok := rv.Interface().(Unmarshaler); ok {
@@ -160,12 +160,11 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p un
 
 	iface := rv.Interface()
 	ifaceHeader := (*emptyInterface)(unsafe.Pointer(&iface))
-	typ := ifaceHeader.typ
-	if ifaceHeader.ptr == nil || d.typ == typ || typ == nil {
+	if rv.Type().NumMethod() == 0 {
 		// concrete type is empty interface
 		return d.decodeEmptyInterface(ctx, cursor, depth, p)
 	}
-	if typ.Kind() == reflect.Ptr && typ.Elem() == d.typ || typ.Kind() != reflect.Ptr {
+	if rv.Type().Kind() == reflect.Ptr && rv.Type().Elem() == d.typ || rv.Type().Kind() != reflect.Ptr {
 		return d.decodeEmptyInterface(ctx, cursor, depth, p)
 	}
 	if buf[cursor] == 'N' {
@@ -176,7 +175,7 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p un
 		**(**any)(unsafe.Pointer(&p)) = nil
 		return cursor, nil
 	}
-	decoder, err := CompileToGetDecoder(typ)
+	decoder, err := CompileToGetDecoder(rv.Type())
 	if err != nil {
 		return 0, err
 	}

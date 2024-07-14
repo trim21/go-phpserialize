@@ -7,7 +7,6 @@ import (
 
 	"github.com/trim21/go-phpserialize/internal/decoder"
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type emptyInterface struct {

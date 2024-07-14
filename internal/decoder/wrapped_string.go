@@ -6,7 +6,6 @@ import (
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type stringWrappedDecoder interface {
@@ -37,7 +36,7 @@ func newWrappedStringDecoder(typ reflect.Type, dec Decoder, structName, fieldNam
 		err := v.wrapString()
 		return dec, err
 	default:
-		return nil, &errors.UnsupportedTypeError{Type: runtime.RType2Type(typ)}
+		return nil, &errors.UnsupportedTypeError{Type: typ}
 	}
 
 	return &wrappedStringDecoder{

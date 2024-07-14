@@ -5,17 +5,13 @@ import (
 	"unsafe"
 )
 
-func PtrTo(rt reflect.Type) reflect.Type {
-	return reflect.PointerTo(rt)
+func IfaceIndir(rt reflect.Type) bool {
+	return ifaceIndir(unsafe.Pointer(TypeID(rt)))
 }
 
-//go:linkname IfaceIndir reflect.ifaceIndir
+//go:linkname ifaceIndir reflect.ifaceIndir
 //go:noescape
-func IfaceIndir(any) bool
-
-func RType2Type(t reflect.Type) reflect.Type {
-	return t
-}
+func ifaceIndir(p unsafe.Pointer) bool
 
 //go:nolint structcheck
 type emptyInterface struct {
