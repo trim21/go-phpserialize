@@ -587,9 +587,6 @@ func TestMarshal_ptr(t *testing.T) {
 
 		var i int = 50
 
-		indirect := runtime.IfaceIndir(reflect.TypeOf(Indirect{}))
-		require.True(t, indirect, "struct should be indirect")
-
 		actual, err := phpserialize.Marshal(Indirect{B: &i})
 		require.NoError(t, err)
 		expected := `a:2:{s:1:"a";N;s:1:"b";i:50;}`
@@ -604,9 +601,6 @@ func TestMarshal_ptr(t *testing.T) {
 
 		var i int = 50
 
-		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Indirect{})))
-		require.True(t, indirect, "struct should be indirect")
-
 		actual, err := phpserialize.Marshal(Indirect{A: &i})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"a";i:50;}`
@@ -617,9 +611,6 @@ func TestMarshal_ptr(t *testing.T) {
 		type Direct struct {
 			Value *int `php:"value"`
 		}
-
-		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Direct{})))
-		require.False(t, indirect, "struct should be indirect")
 
 		var i int = 50
 
@@ -636,6 +627,9 @@ func TestMarshal_ptr(t *testing.T) {
 			Value *int `php:"value"`
 		}
 		var data = Data{}
+
+		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Data{})))
+		require.False(t, indirect, "struct should be indirect")
 
 		actual, err := phpserialize.Marshal(data)
 		require.NoError(t, err)

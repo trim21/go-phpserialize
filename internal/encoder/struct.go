@@ -279,7 +279,7 @@ func compileStructFieldsEncoders(rt reflect.Type, baseOffset uintptr, seen seenM
 					// fmt.Println(PtrDeRef(PtrDeRef(p)))
 					return enc(ctx, b, p)
 				}
-				// if !indirect && field.Type.Elem().Kind() != reflect.Bool {
+				// if !indirect && field.abiType.Elem().Kind() != reflect.Bool {
 				// 	ptrDepth++
 				// }
 			} else {
