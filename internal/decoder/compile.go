@@ -315,13 +315,13 @@ func compileStruct(rt reflect.Type, structName, fieldName string, structTypeToDe
 		}
 		isUnexportedField := unicode.IsLower([]rune(field.Name)[0])
 		tag := runtime.StructTagFromField(field)
-		dec, err := compile(runtime.Type2RType(field.Type), structName, field.Name, structTypeToDecoder)
+		dec, err := compile(field.Type, structName, field.Name, structTypeToDecoder)
 		if err != nil {
 			return nil, err
 		}
 		if field.Anonymous && !tag.IsTaggedKey {
 			if stDec, ok := dec.(*structDecoder); ok {
-				if runtime.Type2RType(field.Type) == rt {
+				if field.Type == rt {
 					// recursive definition
 					continue
 				}
@@ -378,8 +378,8 @@ func compileStruct(rt reflect.Type, structName, fieldName string, structTypeToDe
 				allFields = append(allFields, fieldSet)
 			}
 		} else {
-			if tag.IsString && isStringTagSupportedType(runtime.Type2RType(field.Type)) {
-				dec, err = newWrappedStringDecoder(runtime.Type2RType(field.Type), dec, structName, field.Name)
+			if tag.IsString && isStringTagSupportedType(field.Type) {
+				dec, err = newWrappedStringDecoder(field.Type, dec, structName, field.Name)
 				if err != nil {
 					return nil, err
 				}

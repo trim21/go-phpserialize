@@ -2,7 +2,6 @@ package encoder
 
 import (
 	"reflect"
-	"unsafe"
 )
 
 func Marshal(v any) ([]byte, error) {
@@ -24,15 +23,12 @@ func Marshal(v any) ([]byte, error) {
 }
 
 func encode(ctx *Ctx, b []byte, v any) ([]byte, error) {
-	header := (*emptyInterface)(unsafe.Pointer(&v))
+	rv := reflect.ValueOf(v)
 
-	enc, err := compileWithCache(reflect.TypeOf(v))
+	enc, err := compileWithCache(rv.Type())
 	if err != nil {
 		return nil, err
 	}
 
-	ptr := uintptr(header.ptr)
-	ctx.KeepRefs = append(ctx.KeepRefs, header.ptr)
-
-	return enc(ctx, b, ptr)
+	return enc(ctx, b, rv)
 }

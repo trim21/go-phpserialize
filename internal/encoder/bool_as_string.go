@@ -6,7 +6,12 @@ import (
 )
 
 func compileBoolAsString(typ reflect.Type) (encoder, error) {
-	return encodeBoolAsString, nil
+	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+		if rv.Bool() {
+			return append(b, `s:4:"true";`...), nil
+		}
+		return append(b, `s:5:"false";`...), nil
+	}, nil
 }
 
 func encodeBoolAsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {

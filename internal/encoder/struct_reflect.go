@@ -10,5 +10,5 @@ func reflectStruct(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, err
 		return nil, err
 	}
 
-	return enc(ctx, b, p)
+	return enc(ctx, b, rv)
 }

@@ -5,7 +5,6 @@ import (
 )
 
 func compileArray(rt reflect.Type) (encoder, error) {
-	offset := rt.Elem().Size()
 	length := rt.Len()
 	i64 := int64(length)
 	var enc encoder
@@ -23,16 +22,18 @@ func compileArray(rt reflect.Type) (encoder, error) {
 		}
 	}
 
-	return func(ctx *Ctx, b []byte, dataPtr uintptr) ([]byte, error) {
+	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 		b = appendArrayBegin(b, i64)
+
 		var err error // create a new error value, so shadow compiler's error
 		for i := 0; i < length; i++ {
 			b = appendIntBytes(b, int64(i))
-			b, err = enc(ctx, b, dataPtr+offset*uintptr(i))
+			b, err = enc(ctx, b, rv.Index(i))
 			if err != nil {
 				return b, err
 			}
 		}
+
 		return append(b, '}'), nil
 	}, nil
 }

@@ -1,14 +1,12 @@
 package encoder
 
 import (
-	"unsafe"
+	"reflect"
 )
 
-func encodeBool(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	v := **(**bool)(unsafe.Pointer(&p))
-
+func encodeBool(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 	b = append(b, 'b', ':')
-	if v {
+	if rv.Bool() {
 		b = append(b, '1')
 	} else {
 		b = append(b, '0')

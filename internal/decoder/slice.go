@@ -6,14 +6,11 @@ import (
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 var (
-	sliceType = runtime.Type2RType(
-		reflect.TypeOf((*sliceHeader)(nil)).Elem(),
-	)
-	nilSlice = unsafe.Pointer(&sliceHeader{})
+	sliceType = reflect.TypeOf((*sliceHeader)(nil)).Elem()
+	nilSlice  = unsafe.Pointer(&sliceHeader{})
 )
 
 type sliceDecoder struct {

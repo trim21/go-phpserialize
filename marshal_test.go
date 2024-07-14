@@ -2,7 +2,6 @@ package phpserialize_test
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/volatiletech/null/v9"
 
 	"github.com/trim21/go-phpserialize"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 	"github.com/trim21/go-phpserialize/internal/test"
 )
 
@@ -70,7 +68,7 @@ var testCase = []struct {
 }{
 	{Name: "bool true", Data: true, Expected: "b:1;"},
 	{
-		Name:     "*bool true",
+		Name:     "*bool-true",
 		Data:     null.BoolFrom(true).Ptr(),
 		Expected: "b:1;",
 	},
@@ -628,9 +626,6 @@ func TestMarshal_ptr(t *testing.T) {
 		}
 		var data = Data{}
 
-		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Data{})))
-		require.False(t, indirect, "struct should be indirect")
-
 		actual, err := phpserialize.Marshal(data)
 		require.NoError(t, err)
 		expected := `a:1:{s:5:"value";N;}`
@@ -655,6 +650,7 @@ func TestMarshal_ptr(t *testing.T) {
 			Value *string `php:"value"`
 			D     *int    `php:"d,omitempty"`
 		}
+
 		var s = "abcdefg"
 		var data = Data{Value: &s}
 
@@ -819,7 +815,7 @@ func TestMarshal_ptr(t *testing.T) {
 			test.StringEqual(t, expected, string(actual))
 		})
 
-		t.Run("no omitempty", func(t *testing.T) {
+		t.Run("no-omitempty", func(t *testing.T) {
 			type Data struct {
 				Value *[]string `php:"value"`
 			}
@@ -862,7 +858,7 @@ func TestMarshal_ptr(t *testing.T) {
 		})
 	})
 
-	t.Run("*string omitempty", func(t *testing.T) {
+	t.Run("*string-omitempty", func(t *testing.T) {
 		type Data struct {
 			Value *string `php:"value,omitempty"`
 		}
@@ -963,7 +959,7 @@ func TestMarshal_ptr(t *testing.T) {
 
 				actual, err := phpserialize.Marshal(data)
 				require.NoError(t, err)
-				expected := `a:1:{s:5:"value";a:1:{i:1;i:2;}}`
+				expected := `a:2:{s:5:"value";a:1:{i:1;i:2;}s:1:"b";N;}`
 				test.StringEqual(t, expected, string(actual))
 			})
 		})

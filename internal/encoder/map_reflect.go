@@ -8,15 +8,15 @@ import (
 var mapKeyEncoder = [25]encoder{
 	reflect.String: encodeString,
 	reflect.Int:    encodeInt,
-	reflect.Int8:   encodeInt8,
-	reflect.Int16:  encodeInt16,
-	reflect.Int32:  encodeInt32,
-	reflect.Int64:  encodeInt64,
+	reflect.Int8:   encodeInt,
+	reflect.Int16:  encodeInt,
+	reflect.Int32:  encodeInt,
+	reflect.Int64:  encodeInt,
 	reflect.Uint:   encodeUint,
-	reflect.Uint8:  encodeUint8,
-	reflect.Uint16: encodeUint16,
-	reflect.Uint32: encodeUint32,
-	reflect.Uint64: encodeUint64,
+	reflect.Uint8:  encodeUint,
+	reflect.Uint16: encodeUint,
+	reflect.Uint32: encodeUint,
+	reflect.Uint64: encodeUint,
 }
 
 func reflectMap(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
@@ -58,11 +58,11 @@ func reflectMap(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 	keys := rv.MapKeys()
 
 	for _, key := range keys {
-		b, err = keyEncoder(ctx, b, key.Pointer())
+		b, err = keyEncoder(ctx, b, key)
 		if err != nil {
 			return b, err
 		}
-		b, err = valueEncoder(ctx, b, rv.MapIndex(key).Pointer())
+		b, err = valueEncoder(ctx, b, rv.MapIndex(key))
 		if err != nil {
 			return b, err
 		}
@@ -92,9 +92,7 @@ func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, k
 
 	if rt.Elem().Kind() == reflect.Map {
 		originValueEncoder := valueEncoder
-		valueEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-			return originValueEncoder(ctx, b, PtrDeRef(p))
-		}
+		valueEncoder = originValueEncoder
 	}
 
 	keyEncoder := mapKeyEncoder[keyType.Kind()]
@@ -102,11 +100,11 @@ func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, k
 	keys := rv.MapKeys()
 
 	for _, key := range keys {
-		b, err = keyEncoder(ctx, b, key.Pointer())
+		b, err = keyEncoder(ctx, b, key)
 		if err != nil {
 			return b, err
 		}
-		b, err = valueEncoder(ctx, b, rv.MapIndex(key).Pointer())
+		b, err = valueEncoder(ctx, b, rv.MapIndex(key))
 		if err != nil {
 			return b, err
 		}

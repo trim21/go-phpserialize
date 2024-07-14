@@ -3,23 +3,25 @@ package encoder
 import (
 	"reflect"
 	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
+
+func unpackAny(v any) uintptr {
+	return unpackIface(uintptr(unsafe.Pointer(&v)))
+}
 
 func unpackIface(p uintptr) uintptr {
 	return uintptr((**(**emptyInterface)(unsafe.Pointer(&p))).ptr)
 }
 
-func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, error) {
+func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 	rt := rv.Type()
 
 	// not slice of interface, fast path
 	if rt.Elem().Kind() != reflect.Interface {
-		return reflectConcreteSlice(ctx, b, rt, p)
+		return reflectConcreteSlice(ctx, b, rv)
 	}
 
-	shPtr := unpackIface(p)
+	shPtr := unpackIface(rv.UnsafeAddr())
 	// no data ptr, nil slice
 	// even empty slice has a non-zero data ptr
 	if shPtr == 0 {
@@ -31,16 +33,12 @@ func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, erro
 		return nil, err
 	}
 
-	sh := **(**runtime.SliceHeader)(unsafe.Pointer(&shPtr))
-	offset := rt.Elem().Size()
+	size := rv.Len()
+	b = appendArrayBegin(b, int64(size))
 
-	dataPtr := uintptr(sh.Data)
-
-	b = appendArrayBegin(b, int64(sh.Len))
-
-	for i := 0; i < sh.Len; i++ {
+	for i := 0; i < size; i++ {
 		b = appendIntBytes(b, int64(i))
-		b, err = encoder(ctx, b, dataPtr+uintptr(i)*offset)
+		b, err = encoder(ctx, b, rv.Index(i))
 		if err != nil {
 			return b, err
 		}
@@ -49,13 +47,11 @@ func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, erro
 	return append(b, '}'), nil
 }
 
-func reflectConcreteSlice(ctx *Ctx, b []byte, rt reflect.Type, p uintptr) ([]byte, error) {
-	enc, err := compileWithCache(rt)
+func reflectConcreteSlice(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	enc, err := compileWithCache(rv.Type())
 	if err != nil {
 		return nil, err
 	}
 
-	p = unpackIface(p)
-
-	return enc(ctx, b, p)
+	return enc(ctx, b, rv)
 }

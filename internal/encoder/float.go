@@ -8,14 +8,12 @@ import (
 	"unsafe"
 )
 
-func encodeFloat32(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := **(**float32)(unsafe.Pointer(&p))
-	return appendFloat32(b, value), nil
+func encodeFloat32(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	return appendFloat32(b, rv.Interface().(float32)), nil
 }
 
-func encodeFloat64(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := **(**float64)(unsafe.Pointer(&p))
-	return appendFloat64(b, value), nil
+func encodeFloat64(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	return appendFloat64(b, rv.Float()), nil
 }
 
 // https://github.com/goccy/go-json/blob/4d0a50640b999aeafd15e3b20d8ad47fe917e6e8/internal/encoder/encoder.go#L335
@@ -55,9 +53,9 @@ func appendFloat64(b []byte, f64 float64) []byte {
 func compileFloatAsString(typ reflect.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.Float32:
-		return encodeFloat32AsString, nil
+		return wrapOldEncoder(encodeFloat32AsString), nil
 	case reflect.Float64:
-		return encodeFloat64AsString, nil
+		return wrapOldEncoder(encodeFloat64AsString), nil
 	}
 
 	panic(fmt.Sprintf("unexpected kind %s", typ.Kind()))

@@ -2,9 +2,6 @@ package encoder
 
 import (
 	"reflect"
-	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 // !!! not safe to use in reflect case !!!
@@ -42,31 +39,21 @@ func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
 		}
 	}
 
-	typeID := runtime.TypeID(rt)
-
-	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		if p == 0 {
-			// nil
+	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+		if rv.IsNil() {
 			return appendNull(b), nil
 		}
-
-		ptr := ptrToUnsafePtr(p)
-
-		rv := reflect.ValueOf(*(*any)(unsafe.Pointer(&eface{
-			typ: typeID,
-			ptr: ptr,
-		})))
 
 		keys := rv.MapKeys()
 
 		b = appendArrayBegin(b, int64(len(keys)))
 
 		for _, key := range keys {
-			b, err = keyEncoder(ctx, b, key.Pointer())
+			b, err = keyEncoder(ctx, b, key)
 			if err != nil {
 				return b, err
 			}
-			b, err = valueEncoder(ctx, b, rv.MapIndex(key).Pointer())
+			b, err = valueEncoder(ctx, b, rv.MapIndex(key))
 			if err != nil {
 				return b, err
 			}

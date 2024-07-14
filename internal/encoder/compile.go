@@ -5,34 +5,45 @@ import (
 	"reflect"
 )
 
-type encoder func(ctx *Ctx, b []byte, p uintptr) ([]byte, error)
+type encoder func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error)
+type oldEncoder func(ctx *Ctx, b []byte, p uintptr) ([]byte, error)
 
 func compileType(rt reflect.Type) (encoder, error) {
 	return compile(rt, seenMap{})
 }
 
+func wrapOldEncoder(enc oldEncoder) encoder {
+	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+		return enc(ctx, b, unpackAny(rv.Interface()))
+	}
+}
+
 func compile(rt reflect.Type, seen seenMap) (encoder, error) {
+	if rt == bytesType {
+		return encodeBytes, nil
+	}
+
 	switch rt.Kind() {
 	case reflect.Bool:
 		return encodeBool, nil
 	case reflect.Int8:
-		return encodeInt8, nil
+		return encodeInt, nil
 	case reflect.Int16:
-		return encodeInt16, nil
+		return encodeInt, nil
 	case reflect.Int32:
-		return encodeInt32, nil
+		return encodeInt, nil
 	case reflect.Int64:
-		return encodeInt64, nil
+		return encodeInt, nil
 	case reflect.Int:
 		return encodeInt, nil
 	case reflect.Uint8:
-		return encodeUint8, nil
+		return encodeUint, nil
 	case reflect.Uint16:
-		return encodeUint16, nil
+		return encodeUint, nil
 	case reflect.Uint32:
-		return encodeUint32, nil
+		return encodeUint, nil
 	case reflect.Uint64:
-		return encodeUint64, nil
+		return encodeUint, nil
 	case reflect.Uint:
 		return encodeUint, nil
 	case reflect.Float32:
@@ -62,26 +73,9 @@ func compileMapKey(typ reflect.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.String:
 		return encodeString, nil
-
-	case reflect.Int8:
-		return encodeInt8, nil
-	case reflect.Int16:
-		return encodeInt16, nil
-	case reflect.Int32:
-		return encodeInt32, nil
-	case reflect.Int64:
-		return encodeInt64, nil
-	case reflect.Int:
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 		return encodeInt, nil
-	case reflect.Uint8:
-		return encodeUint8, nil
-	case reflect.Uint16:
-		return encodeUint16, nil
-	case reflect.Uint32:
-		return encodeUint32, nil
-	case reflect.Uint64:
-		return encodeUint64, nil
-	case reflect.Uint:
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 		return encodeUint, nil
 	}
 

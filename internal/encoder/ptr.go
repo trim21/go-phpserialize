@@ -3,44 +3,40 @@ package encoder
 import (
 	"fmt"
 	"reflect"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
-// MUST call `compilePtr` directly when compile encoder for struct field.
 func compilePtr(rt reflect.Type, seen seenMap) (encoder, error) {
 	switch rt.Elem().Kind() {
 	case reflect.Ptr:
 		return nil, fmt.Errorf("encoding nested ptr is not supported *%s", rt.Elem().String())
-
 	case reflect.Bool:
-		return encodeBool, nil
+		return deRefNilEncoder(encodeBool), nil
 	case reflect.Uint8:
-		return encodeUint8, nil
+		return deRefNilEncoder(encodeUint), nil
 	case reflect.Uint16:
-		return encodeUint16, nil
+		return deRefNilEncoder(encodeUint), nil
 	case reflect.Uint32:
-		return encodeUint32, nil
+		return deRefNilEncoder(encodeUint), nil
 	case reflect.Uint64:
-		return encodeUint64, nil
+		return deRefNilEncoder(encodeUint), nil
 	case reflect.Uint:
-		return encodeUint, nil
+		return deRefNilEncoder(encodeUint), nil
 	case reflect.Int8:
-		return encodeInt8, nil
+		return deRefNilEncoder(encodeInt), nil
 	case reflect.Int16:
-		return encodeInt16, nil
+		return deRefNilEncoder(encodeInt), nil
 	case reflect.Int32:
-		return encodeInt32, nil
+		return deRefNilEncoder(encodeInt), nil
 	case reflect.Int64:
-		return encodeInt64, nil
+		return deRefNilEncoder(encodeInt), nil
 	case reflect.Int:
-		return encodeInt, nil
+		return deRefNilEncoder(encodeInt), nil
 	case reflect.Float32:
-		return encodeFloat32, nil
+		return deRefNilEncoder(encodeFloat32), nil
 	case reflect.Float64:
-		return encodeFloat64, nil
+		return deRefNilEncoder(encodeFloat64), nil
 	case reflect.String:
-		return encodeString, nil
+		return deRefNilEncoder(encodeString), nil
 	case reflect.Interface:
 		return compileInterface(rt.Elem())
 	case reflect.Map:
@@ -48,11 +44,6 @@ func compilePtr(rt reflect.Type, seen seenMap) (encoder, error) {
 		return deRefNilEncoder(enc), err
 	case reflect.Struct:
 		enc, err := compileStruct(rt.Elem(), seen)
-		indirect := runtime.IfaceIndir(rt.Elem())
-		if indirect {
-			return wrapNilEncoder(enc), err
-		}
-
 		return deRefNilEncoder(enc), err
 	}
 
@@ -65,20 +56,11 @@ func compilePtr(rt reflect.Type, seen seenMap) (encoder, error) {
 }
 
 func deRefNilEncoder(enc encoder) encoder {
-	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		if p == 0 {
+	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+		if rv.IsNil() {
 			return appendNull(b), nil
 		}
-		p = PtrDeRef(p)
-		return enc(ctx, b, p)
-	}
-}
 
-func wrapNilEncoder(enc encoder) encoder {
-	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		if p == 0 {
-			return appendNull(b), nil
-		}
-		return enc(ctx, b, p)
+		return enc(ctx, b, rv.Elem())
 	}
 }

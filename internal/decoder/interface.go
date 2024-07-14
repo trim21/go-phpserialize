@@ -96,11 +96,11 @@ func newInterfaceDecoder(typ reflect.Type, structName, fieldName string) *interf
 }
 
 var (
-	stringType            = runtime.Type2RType(reflect.TypeOf((*string)(nil)).Elem())
-	emptyInterfaceType    = runtime.Type2RType(reflect.TypeOf((*any)(nil)).Elem())
-	interfaceMapType      = runtime.Type2RType(reflect.TypeOf((*map[any]any)(nil)).Elem())
-	interfaceClassMapType = runtime.Type2RType(reflect.TypeOf((*map[string]any)(nil)).Elem())
-	interfaceIntType      = runtime.Type2RType(reflect.TypeOf((*int64)(nil))).Elem()
+	stringType            = reflect.TypeOf((*string)(nil)).Elem()
+	emptyInterfaceType    = reflect.TypeOf((*any)(nil)).Elem()
+	interfaceMapType      = reflect.TypeOf((*map[any]any)(nil)).Elem()
+	interfaceClassMapType = reflect.TypeOf((*map[string]any)(nil)).Elem()
+	interfaceIntType      = reflect.TypeOf((*int64)(nil)).Elem()
 )
 
 func decodePHPUnmarshaler(buf []byte, cursor, depth int64, unmarshaler Unmarshaler, p unsafe.Pointer) (int64, error) {

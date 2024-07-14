@@ -4,14 +4,6 @@ import (
 	"unsafe"
 )
 
-func PtrDeRef(p uintptr) uintptr {
-	return **(**uintptr)(unsafe.Pointer(&p))
-}
-
-func ptrToUnsafePtr(p uintptr) unsafe.Pointer {
-	return *(*unsafe.Pointer)(unsafe.Pointer(&p))
-}
-
 type emptyInterface struct {
 	typ uintptr        // value type
 	ptr unsafe.Pointer // value address

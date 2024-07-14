@@ -10,15 +10,15 @@ import (
 func compileIntAsString(typ reflect.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.Int8:
-		return encodeInt8AsString, nil
+		return wrapOldEncoder(encodeInt8AsString), nil
 	case reflect.Int16:
-		return encodeInt16AsString, nil
+		return wrapOldEncoder(encodeInt16AsString), nil
 	case reflect.Int32:
-		return encodeInt32AsString, nil
+		return wrapOldEncoder(encodeInt32AsString), nil
 	case reflect.Int64:
-		return encodeInt64AsString, nil
+		return wrapOldEncoder(encodeInt64AsString), nil
 	case reflect.Int:
-		return encodeIntAsString, nil
+		return wrapOldEncoder(encodeIntAsString), nil
 	}
 
 	panic(fmt.Sprintf("unexpected kind %s", typ.Kind()))
