@@ -11,25 +11,9 @@ func compilePtr(rt reflect.Type, seen seenMap) (encoder, error) {
 		return nil, fmt.Errorf("encoding nested ptr is not supported *%s", rt.Elem().String())
 	case reflect.Bool:
 		return deRefNilEncoder(encodeBool), nil
-	case reflect.Uint8:
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 		return deRefNilEncoder(encodeUint), nil
-	case reflect.Uint16:
-		return deRefNilEncoder(encodeUint), nil
-	case reflect.Uint32:
-		return deRefNilEncoder(encodeUint), nil
-	case reflect.Uint64:
-		return deRefNilEncoder(encodeUint), nil
-	case reflect.Uint:
-		return deRefNilEncoder(encodeUint), nil
-	case reflect.Int8:
-		return deRefNilEncoder(encodeInt), nil
-	case reflect.Int16:
-		return deRefNilEncoder(encodeInt), nil
-	case reflect.Int32:
-		return deRefNilEncoder(encodeInt), nil
-	case reflect.Int64:
-		return deRefNilEncoder(encodeInt), nil
-	case reflect.Int:
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 		return deRefNilEncoder(encodeInt), nil
 	case reflect.Float32:
 		return deRefNilEncoder(encodeFloat32), nil

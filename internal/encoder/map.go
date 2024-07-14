@@ -23,20 +23,9 @@ func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
 		return nil, err
 	}
 
-	var valueEncoder encoder
-
-	// need special take care
-	if valueType.Kind() == reflect.Map {
-		enc, err := compileMap(valueType, seen)
-		if err != nil {
-			return nil, err
-		}
-		valueEncoder = deRefNilEncoder(enc)
-	} else {
-		valueEncoder, err = compile(valueType, seen)
-		if err != nil {
-			return nil, err
-		}
+	valueEncoder, err := compile(valueType, seen)
+	if err != nil {
+		return nil, err
 	}
 
 	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
@@ -44,10 +33,9 @@ func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
 			return appendNull(b), nil
 		}
 
+		b = appendArrayBegin(b, int64(rv.Len()))
+
 		keys := rv.MapKeys()
-
-		b = appendArrayBegin(b, int64(len(keys)))
-
 		for _, key := range keys {
 			b, err = keyEncoder(ctx, b, key)
 			if err != nil {

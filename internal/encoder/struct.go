@@ -8,7 +8,7 @@ import (
 )
 
 type structEncoder struct {
-	offset uintptr
+	index int
 	// a direct value handler, like `encodeInt`
 	// struct encoder should de-ref pointers and pass real address to encoder.
 	// address of map, slice, array may still be 0, bug theirs encoder will handle that at null.
@@ -55,7 +55,7 @@ func compileStruct(rt reflect.Type, seen seenMap) (encoder, error) {
 
 // struct don't have `omitempty` tag, fast path
 func compileStructFields(rt reflect.Type, seen seenMap) (encoder, error) {
-	fields, err := compileStructFieldsEncoders(rt, 0, seen)
+	fields, err := compileStructFieldsEncoders(rt, seen)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +68,8 @@ func compileStructFields(rt reflect.Type, seen seenMap) (encoder, error) {
 		var writtenField int64
 
 	FIELD:
-		for i, field := range fields {
-			v := rv.Field(i)
+		for _, field := range fields {
+			v := rv.Field(field.index)
 
 			if field.omitEmpty {
 				if v.IsZero() {
@@ -104,7 +104,7 @@ func compileStructFields(rt reflect.Type, seen seenMap) (encoder, error) {
 	}, nil
 }
 
-func compileStructFieldsEncoders(rt reflect.Type, baseOffset uintptr, seen seenMap) ([]structEncoder, error) {
+func compileStructFieldsEncoders(rt reflect.Type, seen seenMap) ([]structEncoder, error) {
 	var encoders []structEncoder
 
 	for i := 0; i < rt.NumField(); i++ {
@@ -113,7 +113,6 @@ func compileStructFieldsEncoders(rt reflect.Type, baseOffset uintptr, seen seenM
 		if cfg.Key == "-" || !cfg.Field.IsExported() {
 			continue
 		}
-		offset := field.Offset + baseOffset
 
 		var fieldEncoder encoder
 		var err error
@@ -121,52 +120,37 @@ func compileStructFieldsEncoders(rt reflect.Type, baseOffset uintptr, seen seenM
 		var isPtrField = field.Type.Kind() == reflect.Ptr
 
 		if field.Type.Kind() == reflect.Ptr {
-			switch field.Type.Elem().Kind() {
-			case reflect.Ptr:
+			if field.Type.Elem().Kind() == reflect.Ptr {
 				return nil, fmt.Errorf("encoding nested ptr is not supported %s", field.Type.String())
-
-			default:
-				fieldEncoder, err = compile(field.Type.Elem(), seen)
-				if err != nil {
-					return nil, err
-				}
 			}
 		}
 
-		if fieldEncoder == nil {
-			if field.Type.Kind() == reflect.Struct && field.Anonymous {
-				enc, err := compileStructFieldsEncoders(field.Type, offset, seen)
-				if err != nil {
-					return nil, err
-				}
-
-				encoders = append(encoders, enc...)
-				continue
-			}
-
-			fieldEncoder, err = compile(field.Type, seen)
-			if err != nil {
-				return nil, err
+		if field.Anonymous {
+			if field.Type.Kind() == reflect.Struct || (field.Type.Kind() == reflect.Ptr && field.Type.Kind() == reflect.Struct) {
+				return nil, fmt.Errorf("supported for Anonymous struct field has been removed: %s", field.Type.String())
 			}
 		}
 
-		var enc encoder
 		if cfg.IsString {
 			if field.Type.Kind() == reflect.Ptr {
-				enc, err = compileAsString(field.Type.Elem())
-				fieldEncoder = func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
-					return enc(ctx, b, rv)
-				}
+				fieldEncoder, err = compileAsString(field.Type.Elem())
 			} else {
 				fieldEncoder, err = compileAsString(field.Type)
 			}
-			if err != nil {
-				return nil, err
+		} else {
+			if field.Type.Kind() == reflect.Ptr {
+				fieldEncoder, err = compile(field.Type.Elem(), seen)
+			} else {
+				fieldEncoder, err = compile(field.Type, seen)
 			}
 		}
 
+		if err != nil {
+			return nil, err
+		}
+
 		encoders = append(encoders, structEncoder{
-			offset:    offset,
+			index:     i,
 			encode:    fieldEncoder,
 			fieldName: cfg.Name(),
 			omitEmpty: cfg.IsOmitEmpty,

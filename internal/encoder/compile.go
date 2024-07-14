@@ -26,25 +26,9 @@ func compile(rt reflect.Type, seen seenMap) (encoder, error) {
 	switch rt.Kind() {
 	case reflect.Bool:
 		return encodeBool, nil
-	case reflect.Int8:
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 		return encodeInt, nil
-	case reflect.Int16:
-		return encodeInt, nil
-	case reflect.Int32:
-		return encodeInt, nil
-	case reflect.Int64:
-		return encodeInt, nil
-	case reflect.Int:
-		return encodeInt, nil
-	case reflect.Uint8:
-		return encodeUint, nil
-	case reflect.Uint16:
-		return encodeUint, nil
-	case reflect.Uint32:
-		return encodeUint, nil
-	case reflect.Uint64:
-		return encodeUint, nil
-	case reflect.Uint:
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 		return encodeUint, nil
 	case reflect.Float32:
 		return encodeFloat32, nil
