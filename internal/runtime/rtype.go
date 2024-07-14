@@ -6,12 +6,12 @@ import (
 )
 
 func IfaceIndir(rt reflect.Type) bool {
-	return ifaceIndir(unsafe.Pointer(TypeID(rt)))
+	return ifaceIndir((*struct{})(unsafe.Pointer(TypeID(rt))))
 }
 
 //go:linkname ifaceIndir reflect.ifaceIndir
 //go:noescape
-func ifaceIndir(p unsafe.Pointer) bool
+func ifaceIndir(p *struct{}) bool
 
 //go:nolint structcheck
 type emptyInterface struct {

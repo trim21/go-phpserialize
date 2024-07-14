@@ -29,7 +29,6 @@ func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
 	var valueEncoder encoder
 
 	// need special take care
-	// fmt.Println(runtime.IfaceIndir(rt), runtime.IfaceIndir(valueType), rt.String())
 	if valueType.Kind() == reflect.Map {
 		enc, err := compileMap(valueType, seen)
 		if err != nil {
@@ -58,14 +57,9 @@ func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
 			ptr: ptr,
 		})))
 
-		mapLen := rv.Len()
-		if mapLen == 0 {
-			return appendEmptyArray(b), nil
-		}
-
-		b = appendArrayBegin(b, int64(mapLen))
-
 		keys := rv.MapKeys()
+
+		b = appendArrayBegin(b, int64(len(keys)))
 
 		for _, key := range keys {
 			b, err = keyEncoder(ctx, b, key.Pointer())

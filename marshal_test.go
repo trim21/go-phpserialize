@@ -353,12 +353,12 @@ var testCase = []struct {
 
 func TestMarshal_concrete_types(t *testing.T) {
 	for _, data := range testCase {
-		data := data
-		t.Run(data.Name, func(t *testing.T) {
-			actual, err := phpserialize.Marshal(data.Data)
+		d := data
+		t.Run(d.Name, func(t *testing.T) {
+			actual, err := phpserialize.Marshal(d.Data)
 			require.NoError(t, err)
 
-			test.StringEqual(t, data.Expected, string(actual))
+			test.StringEqual(t, d.Expected, string(actual))
 		})
 	}
 }
