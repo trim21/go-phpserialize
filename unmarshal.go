@@ -8,18 +8,6 @@ import (
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
 
-type Unmarshaler interface {
-	UnmarshalPHP([]byte) error
-}
-
-func Unmarshal(data []byte, v any) error {
-	if len(data) == 0 {
-		return fmt.Errorf("empty bytes")
-	}
-
-	return unmarshal(data, v)
-}
-
 func unmarshal(data []byte, v any) error {
 	rv := reflect.ValueOf(v)
 
