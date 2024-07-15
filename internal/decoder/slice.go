@@ -2,7 +2,6 @@ package decoder
 
 import (
 	"reflect"
-	"sync"
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
@@ -18,7 +17,6 @@ type sliceDecoder struct {
 	isElemPointerType bool
 	valueDecoder      Decoder
 	size              uintptr
-	arrayPool         sync.Pool
 	structName        string
 	fieldName         string
 }
@@ -42,22 +40,9 @@ func newSliceDecoder(dec Decoder, elemType reflect.Type, size uintptr, structNam
 		elemType:          elemType,
 		isElemPointerType: elemType.Kind() == reflect.Ptr || elemType.Kind() == reflect.Map,
 		size:              size,
-		arrayPool: sync.Pool{
-			New: func() any {
-				return &sliceHeader{
-					data: newArray(elemType, defaultSliceCapacity),
-					len:  0,
-					cap:  defaultSliceCapacity,
-				}
-			},
-		},
-		structName: structName,
-		fieldName:  fieldName,
+		structName:        structName,
+		fieldName:         fieldName,
 	}
-}
-
-func (d *sliceDecoder) releaseSlice(p *sliceHeader) {
-	d.arrayPool.Put(p)
 }
 
 func (d *sliceDecoder) errNumber(offset int64) *errors.UnmarshalTypeError {
@@ -83,7 +68,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 			return 0, err
 		}
 		cursor += 2
-		typedmemmove(sliceType, p, nilSlice)
+		rv.SetZero()
 		return cursor, nil
 	case 'a':
 		cursor++
@@ -97,14 +82,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 			if err != nil {
 				return cursor, err
 			}
-
-			dst := (*sliceHeader)(p)
-			if dst.data == nil {
-				dst.data = newArray(d.elemType, 0)
-			} else {
-				dst.len = 0
-			}
-
+			rv.SetZero()
 			return cursor + 4, nil
 		}
 

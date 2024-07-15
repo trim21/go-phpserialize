@@ -2,7 +2,6 @@ package decoder
 
 import (
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -42,26 +41,24 @@ func (d *ptrDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 		if err := validateNull(buf, cursor); err != nil {
 			return 0, err
 		}
-		if p != nil {
-			*(*unsafe.Pointer)(p) = nil
-		}
+		rv.SetZero()
 		cursor += 2
 		return cursor, nil
 	}
 
-	var newptr unsafe.Pointer
-
-	if *(*unsafe.Pointer)(p) == nil {
-		newptr = unsafe_New(d.typ)
-		*(*unsafe.Pointer)(p) = newptr
+	var np reflect.Value
+	if rv.IsNil() {
+		np = reflect.New(d.typ)
+		rv.Set(np)
 	} else {
-		newptr = *(*unsafe.Pointer)(p)
+		np = rv.Elem()
 	}
 
-	c, err := d.dec.Decode(ctx, cursor, depth, newptr)
+	c, err := d.dec.Decode(ctx, cursor, depth, np)
 	if err != nil {
 		return 0, err
 	}
 	cursor = c
+
 	return cursor, nil
 }

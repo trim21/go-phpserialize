@@ -148,7 +148,7 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv r
 				return 0, err
 			}
 			cursor += 2
-			**(**any)(unsafe.Pointer(&p)) = nil
+			rv.SetZero()
 			return cursor, nil
 		}
 		return 0, d.errUnmarshalType(rv.Type(), cursor)
@@ -156,7 +156,7 @@ func (d *interfaceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv r
 
 	if rv.Type().NumMethod() == 0 {
 		// concrete type is empty interface
-		return d.decodeEmptyInterface(ctx, cursor, depth, p)
+		return d.decodeEmptyInterface(ctx, cursor, depth, rv)
 	}
 	if rv.Type().Kind() == reflect.Ptr && rv.Type().Elem() == d.typ || rv.Type().Kind() != reflect.Ptr {
 		return d.decodeEmptyInterface(ctx, cursor, depth, rv)
@@ -181,53 +181,65 @@ func (d *interfaceDecoder) decodeEmptyInterface(ctx *RuntimeContext, cursor, dep
 	switch buf[cursor] {
 	case 'O':
 		var v map[string]any
-		ptr := unsafe.Pointer(&v)
+		ptr := reflect.ValueOf(&v)
 		cursor, err := d.mapClassDecoder.Decode(ctx, cursor, depth, ptr)
 		if err != nil {
 			return 0, err
 		}
-		**(**any)(unsafe.Pointer(&p)) = v
+		rv.Set(ptr)
 		return cursor, nil
 	case 'a':
 		var v map[any]any
-		ptr := unsafe.Pointer(&v)
+		ptr := reflect.ValueOf(&v)
 		cursor, err := d.mapArrayDecoder.Decode(ctx, cursor, depth, ptr)
 		if err != nil {
 			return 0, err
 		}
-		**(**any)(unsafe.Pointer(&p)) = v
+		rv.Set(ptr)
 		return cursor, nil
-	case 'd': // with op
-		return d.floatDecoder.Decode(ctx, cursor, depth, p)
+	case 'd':
+		var v float64
+		ptr := reflect.ValueOf(&v)
+		cursor, err := d.floatDecoder.Decode(ctx, cursor, depth, ptr)
+		if err != nil {
+			return 0, err
+		}
+		rv.Set(ptr)
+		return cursor, nil
 	case 's':
 		cursor++
 		b, end, err := readString(buf, cursor)
 		if err != nil {
 			return 0, err
 		}
-		*(*any)(p) = string(b)
+		rv.Set(reflect.ValueOf(string(b)))
 		return end, nil
-	case 'i': // with op
-		return d.intDecode.Decode(ctx, cursor, depth, p)
+	case 'i':
+		var v int64
+		ptr := reflect.ValueOf(&v)
+		cursor, err := d.intDecode.Decode(ctx, cursor, depth, ptr)
+		if err != nil {
+			return 0, err
+		}
+		rv.Set(ptr)
+		return cursor, nil
 	case 'b':
 		v, err := readBool(buf, cursor)
 		if err != nil {
 			return 0, err
 		}
-
 		if v {
-			**(**any)(unsafe.Pointer(&p)) = true
+			rv.Set(reflect.ValueOf(true))
 		} else {
-			**(**any)(unsafe.Pointer(&p)) = false
+			rv.Set(reflect.ValueOf(false))
 		}
-
 		return cursor + 4, nil
 	case 'N':
 		if err := validateNull(buf, cursor); err != nil {
 			return 0, err
 		}
 		cursor += 2
-		**(**any)(unsafe.Pointer(&p)) = nil
+		rv.SetZero()
 		return cursor, nil
 	}
 	return cursor, errors.ErrInvalidBeginningOfValue(buf[cursor], cursor)
@@ -249,7 +261,7 @@ func (d *mapKeyDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 		if err != nil {
 			return 0, err
 		}
-		*(*any)(p) = v
+		rv.Set(ptr)
 		return cursor, nil
 	// string key
 	case 'i':
@@ -259,7 +271,7 @@ func (d *mapKeyDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 		if err != nil {
 			return 0, err
 		}
-		*(*any)(p) = v
+		rv.Set(ptr)
 		return cursor, nil
 	default:
 		return 0, errors.ErrExpected("array key", cursor)

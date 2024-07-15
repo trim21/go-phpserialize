@@ -46,7 +46,7 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 			return 0, err
 		}
 		cursor += 2
-		**(**unsafe.Pointer)(unsafe.Pointer(&p)) = nil
+		rv.SetZero()
 		return cursor, nil
 	case 'O':
 		// O:8:"stdClass":1:{s:1:"a";s:1:"q";}
