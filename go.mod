@@ -7,7 +7,6 @@ require (
 	github.com/sergi/go-diff v1.3.1
 	github.com/stretchr/testify v1.9.0
 	github.com/volatiletech/null/v9 v9.0.0
-	go4.org/unsafe/assume-no-moving-gc v0.0.0-20231121144256-b99613f794b6
 )
 
 require (

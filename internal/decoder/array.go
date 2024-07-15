@@ -1,24 +1,23 @@
 package decoder
 
 import (
-	"unsafe"
+	"reflect"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type arrayDecoder struct {
-	elemType     *runtime.Type
+	elemType     reflect.Type
 	size         uintptr
 	valueDecoder Decoder
 	alen         int
 	structName   string
 	fieldName    string
-	zeroValue    unsafe.Pointer
+	zeroValue    reflect.Value
 }
 
-func newArrayDecoder(dec Decoder, elemType *runtime.Type, alen int, structName, fieldName string) *arrayDecoder {
-	zeroValue := *(*unsafe.Pointer)(unsafe_New(elemType))
+func newArrayDecoder(dec Decoder, elemType reflect.Type, alen int, structName, fieldName string) *arrayDecoder {
+	zeroValue := reflect.Zero(elemType)
 	return &arrayDecoder{
 		valueDecoder: dec,
 		elemType:     elemType,
@@ -30,7 +29,7 @@ func newArrayDecoder(dec Decoder, elemType *runtime.Type, alen int, structName, 
 	}
 }
 
-func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	depth++
 	if depth > maxDecodeNestingDepth {
@@ -51,9 +50,7 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 		}
 
 		// set zero value first, php array may skip some index
-		for i := 0; i < d.alen; i++ {
-			*(*unsafe.Pointer)(unsafe.Pointer(uintptr(p) + uintptr(i)*d.size)) = d.zeroValue
-		}
+		rv.SetZero()
 
 		cursor++
 		if buf[cursor] == '0' {
@@ -81,7 +78,7 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			cursor = end
 
 			if idx < d.alen {
-				c, err := d.valueDecoder.Decode(ctx, cursor, depth, unsafe.Pointer(uintptr(p)+uintptr(idx)*d.size))
+				c, err := d.valueDecoder.Decode(ctx, cursor, depth, rv.Index(idx))
 				if err != nil {
 					return 0, err
 				}

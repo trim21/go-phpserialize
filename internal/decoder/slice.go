@@ -2,26 +2,22 @@ package decoder
 
 import (
 	"reflect"
-	"sync"
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 var (
-	sliceType = runtime.Type2RType(
-		reflect.TypeOf((*sliceHeader)(nil)).Elem(),
-	)
-	nilSlice = unsafe.Pointer(&sliceHeader{})
+	sliceType = reflect.TypeOf((*sliceHeader)(nil)).Elem()
+	nilSlice  = unsafe.Pointer(&sliceHeader{})
 )
 
 type sliceDecoder struct {
-	elemType          *runtime.Type
+	stype             reflect.Type // type of slice
+	elemType          reflect.Type // type of element
 	isElemPointerType bool
 	valueDecoder      Decoder
 	size              uintptr
-	arrayPool         sync.Pool
 	structName        string
 	fieldName         string
 }
@@ -39,50 +35,29 @@ const (
 	defaultSliceCapacity = 2
 )
 
-func newSliceDecoder(dec Decoder, elemType *runtime.Type, size uintptr, structName, fieldName string) *sliceDecoder {
+func newSliceDecoder(dec Decoder, elemType reflect.Type, size uintptr, structName, fieldName string) *sliceDecoder {
 	return &sliceDecoder{
 		valueDecoder:      dec,
 		elemType:          elemType,
+		stype:             reflect.SliceOf(elemType),
 		isElemPointerType: elemType.Kind() == reflect.Ptr || elemType.Kind() == reflect.Map,
 		size:              size,
-		arrayPool: sync.Pool{
-			New: func() any {
-				return &sliceHeader{
-					data: newArray(elemType, defaultSliceCapacity),
-					len:  0,
-					cap:  defaultSliceCapacity,
-				}
-			},
-		},
-		structName: structName,
-		fieldName:  fieldName,
+		structName:        structName,
+		fieldName:         fieldName,
 	}
 }
-
-func (d *sliceDecoder) releaseSlice(p *sliceHeader) {
-	d.arrayPool.Put(p)
-}
-
-//go:linkname copySlice reflect.typedslicecopy
-func copySlice(elemType *runtime.Type, dst, src sliceHeader) int
-
-//go:linkname newArray reflect.unsafe_NewArray
-func newArray(*runtime.Type, int) unsafe.Pointer
-
-//go:linkname typedmemmove reflect.typedmemmove
-func typedmemmove(t *runtime.Type, dst, src unsafe.Pointer)
 
 func (d *sliceDecoder) errNumber(offset int64) *errors.UnmarshalTypeError {
 	return &errors.UnmarshalTypeError{
 		Value:  "number",
-		Type:   reflect.SliceOf(runtime.RType2Type(d.elemType)),
+		Type:   reflect.SliceOf(d.elemType),
 		Struct: d.structName,
 		Field:  d.fieldName,
 		Offset: offset,
 	}
 }
 
-func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	depth++
 	if depth > maxDecodeNestingDepth {
@@ -95,7 +70,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			return 0, err
 		}
 		cursor += 2
-		typedmemmove(sliceType, p, nilSlice)
+		rv.SetZero()
 		return cursor, nil
 	case 'a':
 		cursor++
@@ -109,14 +84,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			if err != nil {
 				return cursor, err
 			}
-
-			dst := (*sliceHeader)(p)
-			if dst.data == nil {
-				dst.data = newArray(d.elemType, 0)
-			} else {
-				dst.len = 0
-			}
-
+			rv.SetZero()
 			return cursor + 4, nil
 		}
 
@@ -131,15 +99,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 		}
 		cursor++
 
-		// pre-alloc
-		slice := &sliceHeader{
-			data: newArray(d.elemType, arrLen),
-			len:  0,
-			cap:  arrLen,
-		}
-		srcLen := slice.len
-		capacity := slice.cap
-		data := slice.data
+		slice := reflect.MakeSlice(d.stype, arrLen, arrLen)
 
 		idx := 0
 		for {
@@ -151,42 +111,15 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 			idx = currentIndex
 			cursor = end
 
-			if capacity <= idx {
-				src := sliceHeader{data: data, len: idx, cap: capacity}
-				capacity *= 2
-				data = newArray(d.elemType, capacity)
-				dst := sliceHeader{data: data, len: idx, cap: capacity}
-				copySlice(d.elemType, dst, src)
-			}
-			ep := unsafe.Pointer(uintptr(data) + uintptr(idx)*d.size)
-			// if srcLen is greater than idx, keep the original reference
-			if srcLen <= idx {
-				if d.isElemPointerType {
-					**(**unsafe.Pointer)(unsafe.Pointer(&ep)) = nil // initialize elem pointer
-				} else {
-					// assign new element to the slice
-					typedmemmove(d.elemType, ep, unsafe_New(d.elemType))
-				}
-			}
-
-			c, err := d.valueDecoder.Decode(ctx, cursor, depth, ep)
+			c, err := d.valueDecoder.Decode(ctx, cursor, depth, slice.Index(idx))
 			if err != nil {
 				return 0, err
 			}
 
+			rv.Set(slice)
+
 			cursor = c
 			if buf[cursor] == '}' {
-				slice.cap = capacity
-				slice.len = idx + 1
-				slice.data = data
-				dst := (*sliceHeader)(p)
-				dst.len = idx + 1
-				if dst.len > dst.cap {
-					dst.data = newArray(d.elemType, dst.len)
-					dst.cap = dst.len
-				}
-				copySlice(d.elemType, *dst, *slice)
-				d.releaseSlice(slice)
 				cursor++
 				return cursor, nil
 			}

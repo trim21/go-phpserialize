@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go_version: ["~1.18", "~1.19", "~1.20", "~1.21", "~1.22"]
+        go_version: ["~1.20", "~1.21", "~1.22"]
 
     steps:
       - uses: actions/checkout@v4
@@ -43,3 +43,4 @@ jobs:
       - uses: codecov/codecov-action@v4
         with:
           files: coverage.out
+          token: ${{ secrets.CODECOV_TOKEN }}

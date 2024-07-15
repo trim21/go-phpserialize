@@ -6,22 +6,19 @@ import (
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type intDecoder struct {
-	typ        *runtime.Type
+	typ        reflect.Type
 	kind       reflect.Kind
-	op         func(unsafe.Pointer, int64)
 	structName string
 	fieldName  string
 }
 
-func newIntDecoder(typ *runtime.Type, structName, fieldName string, op func(unsafe.Pointer, int64)) *intDecoder {
+func newIntDecoder(typ reflect.Type, structName, fieldName string) *intDecoder {
 	return &intDecoder{
 		typ:        typ,
 		kind:       typ.Kind(),
-		op:         op,
 		structName: structName,
 		fieldName:  fieldName,
 	}
@@ -30,7 +27,7 @@ func newIntDecoder(typ *runtime.Type, structName, fieldName string, op func(unsa
 func (d *intDecoder) typeError(buf []byte, offset int64) *errors.UnmarshalTypeError {
 	return &errors.UnmarshalTypeError{
 		Value:  fmt.Sprintf("number %s", string(buf)),
-		Type:   runtime.RType2Type(d.typ),
+		Type:   d.typ,
 		Struct: d.structName,
 		Field:  d.fieldName,
 		Offset: offset,
@@ -127,7 +124,7 @@ func (d *intDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error)
 	}
 }
 
-func (d *intDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *intDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	bytes, c, err := d.decodeByte(ctx.Buf, cursor)
 	if err != nil {
 		return 0, err
@@ -137,30 +134,20 @@ func (d *intDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 	}
 	cursor = c
 
-	return d.processBytes(bytes, cursor, p)
+	return d.processBytes(bytes, cursor, rv)
 }
 
-func (d *intDecoder) processBytes(bytes []byte, cursor int64, p unsafe.Pointer) (int64, error) {
+func (d *intDecoder) processBytes(bytes []byte, cursor int64, rv reflect.Value) (int64, error) {
 	i64, err := d.parseInt(bytes)
 	if err != nil {
 		return 0, d.typeError(bytes, cursor)
 	}
-	switch d.kind {
-	case reflect.Int8:
-		if i64 < -1*(1<<7) || (1<<7) <= i64 {
-			return 0, d.typeError(bytes, cursor)
-		}
-	case reflect.Int16:
-		if i64 < -1*(1<<15) || (1<<15) <= i64 {
-			return 0, d.typeError(bytes, cursor)
-		}
-	case reflect.Int32:
-		if i64 < -1*(1<<31) || (1<<31) <= i64 {
-			return 0, d.typeError(bytes, cursor)
-		}
+
+	if rv.OverflowInt(i64) {
+		return 0, errors.ErrOverflow(i64, rv.Type().Name())
 	}
 
-	d.op(p, i64)
+	rv.SetInt(i64)
 
 	return cursor, nil
 }

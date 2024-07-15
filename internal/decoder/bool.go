@@ -1,7 +1,7 @@
 package decoder
 
 import (
-	"unsafe"
+	"reflect"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -15,7 +15,7 @@ func newBoolDecoder(structName, fieldName string) *boolDecoder {
 	return &boolDecoder{structName: structName, fieldName: fieldName}
 }
 
-func (d *boolDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *boolDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	switch buf[cursor] {
 	case 'b':
@@ -29,9 +29,9 @@ func (d *boolDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.
 		cursor++
 		switch buf[cursor] {
 		case '0':
-			**(**bool)(unsafe.Pointer(&p)) = false
+			rv.SetBool(false)
 		case '1':
-			**(**bool)(unsafe.Pointer(&p)) = true
+			rv.SetBool(true)
 		default:
 			return 0, errors.ErrInvalidCharacter(buf[cursor], "bool value", cursor)
 		}

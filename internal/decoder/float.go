@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"reflect"
 	"strconv"
 	"unsafe"
 
@@ -8,13 +9,12 @@ import (
 )
 
 type floatDecoder struct {
-	op         func(unsafe.Pointer, float64)
 	structName string
 	fieldName  string
 }
 
-func newFloatDecoder(structName, fieldName string, op func(unsafe.Pointer, float64)) *floatDecoder {
-	return &floatDecoder{op: op, structName: structName, fieldName: fieldName}
+func newFloatDecoder(structName, fieldName string) *floatDecoder {
+	return &floatDecoder{structName: structName, fieldName: fieldName}
 }
 
 func (d *floatDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
@@ -50,7 +50,7 @@ func (d *floatDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, erro
 	return num, cursor, nil
 }
 
-func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	bytes, cursor, err := d.decodeByte(buf, cursor)
 	if err != nil {
@@ -66,17 +66,21 @@ func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 		return cursor, nil
 	}
 
-	return d.processBytes(bytes, cursor, p)
+	return d.processBytes(bytes, cursor, rv)
 }
 
-func (d *floatDecoder) processBytes(bytes []byte, cursor int64, p unsafe.Pointer) (int64, error) {
+func (d *floatDecoder) processBytes(bytes []byte, cursor int64, rv reflect.Value) (int64, error) {
 	s := *(*string)(unsafe.Pointer(&bytes))
 	f64, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return 0, errors.ErrSyntax(err.Error(), cursor)
 	}
 
-	d.op(p, f64)
+	if rv.OverflowFloat(f64) {
+		return 0, errors.ErrOverflow(f64, rv.Type().Name())
+	}
+
+	rv.SetFloat(f64)
 
 	return cursor, nil
 }

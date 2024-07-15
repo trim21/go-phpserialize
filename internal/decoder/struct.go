@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/bits"
+	"reflect"
 	"runtime"
 	"sort"
 	"strings"
@@ -114,7 +115,7 @@ func (d *structDecoder) tryOptimize() {
 	}
 
 	var maxKeyLen int
-	sortedKeys := []string{}
+	var sortedKeys []string
 	for key := range fieldMap {
 		keyLen := len(key)
 		if keyLen > allowOptimizeMaxKeyLen {
@@ -149,7 +150,7 @@ func (d *structDecoder) tryOptimize() {
 	for i, key := range sortedKeys {
 		for j := 0; j < len(key); j++ {
 			c := key[j]
-			keyBitmap[j][c] |= (1 << uint(i))
+			keyBitmap[j][c] |= 1 << uint(i)
 		}
 		d.sortedFieldSets = append(d.sortedFieldSets, fieldMap[key])
 	}
@@ -372,7 +373,7 @@ func decodeKey(d *structDecoder, buf []byte, cursor int64) (int64, *structFieldS
 	return cursor, field, nil
 }
 
-func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	depth++
 	if depth > maxDecodeNestingDepth {
@@ -436,7 +437,7 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 			if field.err != nil {
 				return 0, field.err
 			}
-			c, err := field.dec.Decode(ctx, cursor, depth, unsafe.Pointer(uintptr(p)+field.offset))
+			c, err := field.dec.Decode(ctx, cursor, depth, rv.Field(field.fieldIdx))
 			if err != nil {
 				return 0, err
 			}

@@ -4,24 +4,22 @@ import (
 	"fmt"
 	"reflect"
 	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
+
+type eface struct {
+	typ uintptr
+	ptr unsafe.Pointer
+}
 
 // will need to get type message at marshal time, slow path.
 // should avoid interface for performance thinking.
-func compileInterface(rt *runtime.Type) (encoder, error) {
-	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		v := *(*any)(unsafe.Pointer(&emptyInterface{
-			typ: rt,
-			ptr: *(*unsafe.Pointer)(unsafe.Pointer(&p)),
-		}))
-
-		return reflectInterfaceValue(ctx, b, reflect.ValueOf(v), p)
+func compileInterface(rt reflect.Type) (encoder, error) {
+	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+		return reflectInterfaceValue(ctx, b, rv)
 	}, nil
 }
 
-func reflectInterfaceValue(ctx *Ctx, b []byte, rv reflect.Value, p uintptr) ([]byte, error) {
+func reflectInterfaceValue(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 LOOP:
 	for {
 		switch rv.Kind() {
@@ -41,40 +39,24 @@ LOOP:
 	pp := uintptr(v.ptr)
 
 	// simple type
-	switch v.typ.Kind() {
+	switch rv.Type().Kind() {
 	case reflect.Bool:
-		return encodeBool(ctx, b, pp)
-	case reflect.Uint8:
-		return encodeUint8(ctx, b, pp)
-	case reflect.Uint16:
-		return encodeUint16(ctx, b, pp)
-	case reflect.Uint32:
-		return encodeUint32(ctx, b, pp)
-	case reflect.Uint64:
-		return encodeUint64(ctx, b, pp)
-	case reflect.Uint:
-		return encodeUint(ctx, b, pp)
-	case reflect.Int8:
-		return encodeInt8(ctx, b, pp)
-	case reflect.Int16:
-		return encodeInt16(ctx, b, pp)
-	case reflect.Int32:
-		return encodeInt32(ctx, b, pp)
-	case reflect.Int64:
-		return encodeInt64(ctx, b, pp)
-	case reflect.Int:
-		return encodeInt(ctx, b, pp)
+		return encodeBool(ctx, b, rv)
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
+		return encodeUint(ctx, b, rv)
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
+		return encodeInt(ctx, b, rv)
 	case reflect.Float32:
-		return encodeFloat32(ctx, b, pp)
+		return encodeFloat32(ctx, b, rv)
 	case reflect.Float64:
-		return encodeFloat64(ctx, b, pp)
+		return encodeFloat64(ctx, b, rv)
 	case reflect.String:
-		return encodeString(ctx, b, pp)
+		return encodeString(ctx, b, rv)
 	}
 
 	switch rv.Kind() {
 	case reflect.Slice:
-		return reflectSlice(ctx, b, rv, p)
+		return reflectSlice(ctx, b, rv)
 	case reflect.Map:
 		return reflectMap(ctx, b, rv)
 	case reflect.Struct:
@@ -84,14 +66,9 @@ LOOP:
 	return b, &UnsupportedInterfaceTypeError{rv.Type()}
 }
 
-func compileInterfaceAsString(rt *runtime.Type) (encoder, error) {
-	return func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-		v := *(*any)(unsafe.Pointer(&emptyInterface{
-			typ: rt,
-			ptr: unsafe.Pointer(p),
-		}))
-
-		return reflectInterfaceValueAsString(ctx, b, reflect.ValueOf(v))
+func compileInterfaceAsString(rt reflect.Type) (encoder, error) {
+	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+		return reflectInterfaceValueAsString(ctx, b, rv)
 	}, nil
 }
 
@@ -115,7 +92,7 @@ LOOP:
 	p := uintptr(v.ptr)
 
 	// simple type
-	switch v.typ.Kind() {
+	switch rv.Type().Kind() {
 	case reflect.Bool:
 		return encodeBoolAsString(ctx, b, p)
 	case reflect.Uint8:

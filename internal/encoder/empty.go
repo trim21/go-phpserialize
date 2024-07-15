@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"reflect"
 	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type emptyFunc func(ctx *Ctx, p uintptr) (isEmpty bool, err error)
 
-func compileEmptyFunc(rt *runtime.Type) (emptyFunc, error) {
+func compileEmptyFunc(rt reflect.Type) (emptyFunc, error) {
 	switch rt.Kind() {
 	case reflect.Bool:
 		return func(ctx *Ctx, p uintptr) (bool, error) {

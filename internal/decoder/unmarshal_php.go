@@ -2,13 +2,12 @@ package decoder
 
 import (
 	"bytes"
+	"reflect"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type Unmarshaler interface {
@@ -16,12 +15,12 @@ type Unmarshaler interface {
 }
 
 type unmarshalPHPDecoder struct {
-	typ        *runtime.Type
+	typ        reflect.Type
 	structName string
 	fieldName  string
 }
 
-func newUnmarshalTextDecoder(typ *runtime.Type, structName, fieldName string) *unmarshalPHPDecoder {
+func newUnmarshalTextDecoder(typ reflect.Type, structName, fieldName string) *unmarshalPHPDecoder {
 	return &unmarshalPHPDecoder{
 		typ:        typ,
 		structName: structName,
@@ -43,7 +42,7 @@ var (
 	nullbytes = []byte(`N;`)
 )
 
-func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	start := cursor
 	end, err := skipValue(buf, cursor, depth)
@@ -56,24 +55,24 @@ func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p
 		case '[':
 			return 0, &errors.UnmarshalTypeError{
 				Value:  "array",
-				Type:   runtime.RType2Type(d.typ),
+				Type:   d.typ,
 				Offset: start,
 			}
 		case '{':
 			return 0, &errors.UnmarshalTypeError{
 				Value:  "object",
-				Type:   runtime.RType2Type(d.typ),
+				Type:   d.typ,
 				Offset: start,
 			}
 		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			return 0, &errors.UnmarshalTypeError{
 				Value:  "number",
-				Type:   runtime.RType2Type(d.typ),
+				Type:   d.typ,
 				Offset: start,
 			}
 		case 'N':
 			if bytes.Equal(src, nullbytes) {
-				*(*unsafe.Pointer)(p) = nil
+				rv.SetZero()
 				return end, nil
 			}
 		}
@@ -82,14 +81,16 @@ func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p
 	if s, ok := unquoteBytes(src); ok {
 		src = s
 	}
-	v := *(*any)(unsafe.Pointer(&emptyInterface{
-		typ: d.typ,
-		ptr: *(*unsafe.Pointer)(unsafe.Pointer(&p)),
-	}))
-	if err := v.(Unmarshaler).UnmarshalPHP(src); err != nil {
+
+	v := reflect.New(d.typ.Elem())
+
+	if err := v.Interface().(Unmarshaler).UnmarshalPHP(src); err != nil {
 		d.annotateError(cursor, err)
 		return 0, err
 	}
+
+	rv.Set(v.Elem())
+
 	return end, nil
 }
 

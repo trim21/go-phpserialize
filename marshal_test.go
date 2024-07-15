@@ -2,7 +2,7 @@ package phpserialize_test
 
 import (
 	"fmt"
-	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -11,7 +11,6 @@ import (
 	"github.com/volatiletech/null/v9"
 
 	"github.com/trim21/go-phpserialize"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 	"github.com/trim21/go-phpserialize/internal/test"
 )
 
@@ -70,7 +69,7 @@ var testCase = []struct {
 }{
 	{Name: "bool true", Data: true, Expected: "b:1;"},
 	{
-		Name:     "*bool true",
+		Name:     "*bool-true",
 		Data:     null.BoolFrom(true).Ptr(),
 		Expected: "b:1;",
 	},
@@ -289,7 +288,7 @@ var testCase = []struct {
 	},
 
 	{
-		Name:     "nested map",
+		Name:     "nested_map",
 		Data:     NestedMap{1: map[uint]string{4: "ok"}},
 		Expected: `a:1:{i:1;a:1:{i:4;s:2:"ok";}}`,
 	},
@@ -353,9 +352,9 @@ var testCase = []struct {
 
 func TestMarshal_concrete_types(t *testing.T) {
 	for _, data := range testCase {
-		data := data
-		t.Run(data.Name, func(t *testing.T) {
-			actual, err := phpserialize.Marshal(data.Data)
+		d := data
+		t.Run(d.Name, func(t *testing.T) {
+			actual, err := phpserialize.Marshal(d.Data)
 			require.NoError(t, err)
 
 			test.StringEqual(t, data.Expected, string(actual))
@@ -587,9 +586,6 @@ func TestMarshal_ptr(t *testing.T) {
 
 		var i int = 50
 
-		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Indirect{})))
-		require.True(t, indirect, "struct should be indirect")
-
 		actual, err := phpserialize.Marshal(Indirect{B: &i})
 		require.NoError(t, err)
 		expected := `a:2:{s:1:"a";N;s:1:"b";i:50;}`
@@ -604,9 +600,6 @@ func TestMarshal_ptr(t *testing.T) {
 
 		var i int = 50
 
-		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Indirect{})))
-		require.True(t, indirect, "struct should be indirect")
-
 		actual, err := phpserialize.Marshal(Indirect{A: &i})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"a";i:50;}`
@@ -617,9 +610,6 @@ func TestMarshal_ptr(t *testing.T) {
 		type Direct struct {
 			Value *int `php:"value"`
 		}
-
-		indirect := runtime.IfaceIndir(runtime.Type2RType(reflect.TypeOf(Direct{})))
-		require.False(t, indirect, "struct should be indirect")
 
 		var i int = 50
 
@@ -661,6 +651,7 @@ func TestMarshal_ptr(t *testing.T) {
 			Value *string `php:"value"`
 			D     *int    `php:"d,omitempty"`
 		}
+
 		var s = "abcdefg"
 		var data = Data{Value: &s}
 
@@ -825,7 +816,7 @@ func TestMarshal_ptr(t *testing.T) {
 			test.StringEqual(t, expected, string(actual))
 		})
 
-		t.Run("no omitempty", func(t *testing.T) {
+		t.Run("no-omitempty", func(t *testing.T) {
 			type Data struct {
 				Value *[]string `php:"value"`
 			}
@@ -868,7 +859,7 @@ func TestMarshal_ptr(t *testing.T) {
 		})
 	})
 
-	t.Run("*string omitempty", func(t *testing.T) {
+	t.Run("*string-omitempty", func(t *testing.T) {
 		type Data struct {
 			Value *string `php:"value,omitempty"`
 		}
@@ -969,7 +960,7 @@ func TestMarshal_ptr(t *testing.T) {
 
 				actual, err := phpserialize.Marshal(data)
 				require.NoError(t, err)
-				expected := `a:1:{s:5:"value";a:1:{i:1;i:2;}}`
+				expected := `a:2:{s:5:"value";a:1:{i:1;i:2;}s:1:"b";N;}`
 				test.StringEqual(t, expected, string(actual))
 			})
 		})
@@ -1108,38 +1099,12 @@ func TestMarshal_anonymous_field(t *testing.T) {
 		C int
 	}
 
-	actual, err := phpserialize.Marshal(M{N: N{
+	_, err := phpserialize.Marshal(M{N: N{
 		A: 3,
 		B: 2,
 	}, C: 1})
-	require.NoError(t, err)
-
-	test.StringEqual(t, `a:3:{s:1:"A";i:3;s:1:"B";i:2;s:1:"C";i:1;}`, string(actual))
-}
-
-func TestMarshal_anonymous_field_omitempty(t *testing.T) {
-	type L struct {
-		E int `php:"E,omitempty"`
-	}
-
-	type N struct {
-		L
-		A int
-		B int
-	}
-
-	type M struct {
-		N
-		C int
-	}
-
-	actual, err := phpserialize.Marshal(M{N: N{
-		A: 3,
-		B: 2,
-	}, C: 1})
-	require.NoError(t, err)
-
-	test.StringEqual(t, `a:3:{s:1:"A";i:3;s:1:"B";i:2;s:1:"C";i:1;}`, string(actual))
+	require.Error(t, err)
+	require.Regexp(t, regexp.MustCompile("supported for Anonymous struct field has been removed.*"), err.Error())
 }
 
 func TestRecursivePanic(t *testing.T) {

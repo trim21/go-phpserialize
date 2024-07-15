@@ -6,15 +6,14 @@ import (
 	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type stringWrappedDecoder interface {
-	DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error
+	DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error
 }
 
 type wrappedStringDecoder struct {
-	typ           *runtime.Type
+	typ           reflect.Type
 	dec           stringWrappedDecoder
 	stringDecoder *stringDecoder
 	structName    string
@@ -22,7 +21,7 @@ type wrappedStringDecoder struct {
 	isPtrType     bool
 }
 
-func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldName string) (Decoder, error) {
+func newWrappedStringDecoder(typ reflect.Type, dec Decoder, structName, fieldName string) (Decoder, error) {
 	var innerDec stringWrappedDecoder
 	switch v := dec.(type) {
 	case *boolDecoder:
@@ -37,7 +36,7 @@ func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldNa
 		err := v.wrapString()
 		return dec, err
 	default:
-		return nil, &errors.UnsupportedTypeError{Type: runtime.RType2Type(typ)}
+		return nil, &errors.UnsupportedTypeError{Type: typ}
 	}
 
 	return &wrappedStringDecoder{
@@ -50,19 +49,19 @@ func newWrappedStringDecoder(typ *runtime.Type, dec Decoder, structName, fieldNa
 	}, nil
 }
 
-func (d *wrappedStringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *wrappedStringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	bytes, c, err := d.stringDecoder.decodeByte(ctx.Buf, cursor)
 	if err != nil {
 		return 0, err
 	}
 	if bytes == nil {
 		if d.isPtrType {
-			*(*unsafe.Pointer)(p) = nil
+			rv.SetZero()
 		}
 		return c, nil
 	}
 
-	if err := d.dec.DecodeString(ctx, bytes, cursor, p); err != nil {
+	if err := d.dec.DecodeString(ctx, bytes, cursor, rv); err != nil {
 		return 0, err
 	}
 	return c, nil
@@ -77,7 +76,7 @@ var _ stringWrappedDecoder = (*stringBoolDecoder)(nil)
 type stringBoolDecoder struct {
 }
 
-func (s stringBoolDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error {
+func (s stringBoolDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
 	str := *(*string)(unsafe.Pointer(&bytes))
 
 	value, err := strconv.ParseBool(str)
@@ -86,9 +85,9 @@ func (s stringBoolDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCu
 	}
 
 	if value {
-		**(**bool)(unsafe.Pointer(&p)) = true
+		rv.SetBool(true)
 	} else {
-		**(**bool)(unsafe.Pointer(&p)) = false
+		rv.SetBool(false)
 	}
 
 	return nil
@@ -104,8 +103,8 @@ type stringFloatDecoder struct {
 	floatDecoder *floatDecoder
 }
 
-func (d stringFloatDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error {
-	_, err := d.floatDecoder.processBytes(bytes, topCursor, p)
+func (d stringFloatDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
+	_, err := d.floatDecoder.processBytes(bytes, topCursor, rv)
 	return err
 }
 
@@ -119,8 +118,8 @@ type stringUintDecoder struct {
 	uintDecoder *uintDecoder
 }
 
-func (d stringUintDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error {
-	_, err := d.uintDecoder.processBytes(bytes, topCursor, p)
+func (d stringUintDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
+	_, err := d.uintDecoder.processBytes(bytes, topCursor, rv)
 	return err
 }
 
@@ -134,8 +133,8 @@ type stringIntDecoder struct {
 	intDecoder *intDecoder
 }
 
-func (d *stringIntDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error {
-	_, err := d.intDecoder.processBytes(bytes, topCursor, p)
+func (d *stringIntDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
+	_, err := d.intDecoder.processBytes(bytes, topCursor, rv)
 	return err
 }
 

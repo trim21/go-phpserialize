@@ -1,61 +1,47 @@
 package encoder
 
 import (
+	"reflect"
 	"sync/atomic"
-	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 var (
-	cachedEncoder    []encoder
-	cachedEncoderMap unsafe.Pointer // map[uintptr]*OpcodeSet
-	typeAddr         *runtime.TypeAddr
+	cachedEncoderMap atomic.Pointer[map[reflect.Type]encoder]
 )
 
 func init() {
-	typeAddr = runtime.AnalyzeTypeAddr()
-	if typeAddr == nil {
-		typeAddr = &runtime.TypeAddr{}
-	}
-
-	cachedEncoder = make([]encoder, typeAddr.AddrRange>>typeAddr.AddrShift+1)
+	var m = map[reflect.Type]encoder{}
+	cachedEncoderMap.Store(&m)
 }
 
-func compileToGetEncoderSlowPath(typeID uintptr) (encoder, error) {
-	opcodeMap := loadEncoderMap()
-	if codeSet, exists := opcodeMap[typeID]; exists {
+func compileToGetCodeSet(rt reflect.Type) (encoder, error) {
+	return compileToGetEncoderSlowPath(rt)
+}
+
+func compileToGetEncoderSlowPath(rt reflect.Type) (encoder, error) {
+	opcodeMap := *cachedEncoderMap.Load()
+	if codeSet, exists := opcodeMap[rt]; exists {
 		return codeSet, nil
 	}
-	codeSet, err := compileTypeID(typeID)
+	codeSet, err := compileType(rt)
 	if err != nil {
 		return nil, err
 	}
-	storeEncoder(typeID, codeSet, opcodeMap)
+	storeEncoder(rt, codeSet, opcodeMap)
 	return codeSet, nil
 }
 
-func loadEncoderMap() map[uintptr]encoder {
-	p := atomic.LoadPointer(&cachedEncoderMap)
-	return *(*map[uintptr]encoder)(unsafe.Pointer(&p))
-}
-
-func storeEncoder(typ uintptr, set encoder, m map[uintptr]encoder) {
-	newEncoderMap := make(map[uintptr]encoder, len(m)+1)
-	newEncoderMap[typ] = set
+func storeEncoder(rt reflect.Type, set encoder, m map[reflect.Type]encoder) {
+	newEncoderMap := make(map[reflect.Type]encoder, len(m)+1)
+	newEncoderMap[rt] = set
 
 	for k, v := range m {
 		newEncoderMap[k] = v
 	}
 
-	atomic.StorePointer(&cachedEncoderMap, *(*unsafe.Pointer)(unsafe.Pointer(&newEncoderMap)))
+	cachedEncoderMap.Store(&newEncoderMap)
 }
 
-func compileWithCache(rt *runtime.Type) (encoder, error) {
-	typeID := uintptr(unsafe.Pointer(rt))
-	return compileToGetCodeSet(typeID)
-}
-
-func compileTypeIDWithCache(typeID uintptr) (encoder, error) {
-	return compileToGetCodeSet(typeID)
+func compileWithCache(rt reflect.Type) (encoder, error) {
+	return compileToGetCodeSet(rt)
 }

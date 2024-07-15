@@ -2,7 +2,6 @@ package decoder
 
 import (
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -29,7 +28,7 @@ func (d *stringDecoder) errUnmarshalType(typeName string, offset int64) *errors.
 	}
 }
 
-func (d *stringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *stringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	bytes, c, err := d.decodeByte(ctx.Buf, cursor)
 	if err != nil {
 		return 0, err
@@ -38,7 +37,7 @@ func (d *stringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsaf
 		return c, nil
 	}
 	cursor = c
-	**(**string)(unsafe.Pointer(&p)) = *(*string)(unsafe.Pointer(&bytes))
+	rv.SetString(string(bytes))
 	return cursor, nil
 }
 

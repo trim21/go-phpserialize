@@ -2,24 +2,21 @@ package encoder
 
 import (
 	"reflect"
-	"unsafe"
-
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 // fast array for map reflect
 var mapKeyEncoder = [25]encoder{
 	reflect.String: encodeString,
 	reflect.Int:    encodeInt,
-	reflect.Int8:   encodeInt8,
-	reflect.Int16:  encodeInt16,
-	reflect.Int32:  encodeInt32,
-	reflect.Int64:  encodeInt64,
+	reflect.Int8:   encodeInt,
+	reflect.Int16:  encodeInt,
+	reflect.Int32:  encodeInt,
+	reflect.Int64:  encodeInt,
 	reflect.Uint:   encodeUint,
-	reflect.Uint8:  encodeUint8,
-	reflect.Uint16: encodeUint16,
-	reflect.Uint32: encodeUint32,
-	reflect.Uint64: encodeUint64,
+	reflect.Uint8:  encodeUint,
+	reflect.Uint16: encodeUint,
+	reflect.Uint32: encodeUint,
+	reflect.Uint64: encodeUint,
 }
 
 func reflectMap(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
@@ -53,32 +50,25 @@ func reflectMap(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 
 	keyEncoder := mapKeyEncoder[keyType.Kind()]
 
-	var mr = newMapCtx()
-	defer freeMapCtx(mr)
-
-	valueEncoder, err := compileInterface(runtime.Type2RType(rt.Elem()))
+	valueEncoder, err := compileInterface(rt.Elem())
 	if err != nil {
 		return b, err
 	}
 
-	runtime.MapIterInit(runtime.Type2RType(rt), unsafe.Pointer(rv.Pointer()), &mr.Iter)
-	for i := 0; i < mapLen; i++ {
-		b, err = keyEncoder(ctx, b, runtime.MapIterKey(&mr.Iter))
+	keys := rv.MapKeys()
+
+	for _, key := range keys {
+		b, err = keyEncoder(ctx, b, key)
 		if err != nil {
 			return b, err
 		}
-
-		b, err = valueEncoder(ctx, b, runtime.MapIterValue(&mr.Iter))
+		b, err = valueEncoder(ctx, b, rv.MapIndex(key))
 		if err != nil {
 			return b, err
 		}
-
-		runtime.MapIterNext(&mr.Iter)
 	}
 
-	b = append(b, '}')
-
-	return b, nil
+	return append(b, '}'), nil
 }
 
 func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, keyType reflect.Type) ([]byte, error) {
@@ -95,36 +85,29 @@ func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, k
 	var err error
 	var valueType = rt.Elem()
 
-	valueEncoder, err = compileWithCache(runtime.Type2RType(valueType))
+	valueEncoder, err = compileWithCache(valueType)
 	if err != nil {
 		return nil, err
 	}
 
 	if rt.Elem().Kind() == reflect.Map {
 		originValueEncoder := valueEncoder
-		valueEncoder = func(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-			return originValueEncoder(ctx, b, PtrDeRef(p))
-		}
+		valueEncoder = originValueEncoder
 	}
 
 	keyEncoder := mapKeyEncoder[keyType.Kind()]
 
-	var mr = newMapCtx()
-	defer freeMapCtx(mr)
+	keys := rv.MapKeys()
 
-	runtime.MapIterInit(runtime.Type2RType(rt), unsafe.Pointer(rv.Pointer()), &mr.Iter)
-	for i := 0; i < mapLen; i++ {
-		b, err = keyEncoder(ctx, b, runtime.MapIterKey(&mr.Iter))
+	for _, key := range keys {
+		b, err = keyEncoder(ctx, b, key)
 		if err != nil {
 			return b, err
 		}
-
-		b, err = valueEncoder(ctx, b, runtime.MapIterValue(&mr.Iter))
+		b, err = valueEncoder(ctx, b, rv.MapIndex(key))
 		if err != nil {
 			return b, err
 		}
-
-		runtime.MapIterNext(&mr.Iter)
 	}
 
 	return append(b, '}'), nil

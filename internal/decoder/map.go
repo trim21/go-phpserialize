@@ -2,59 +2,33 @@ package decoder
 
 import (
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type mapDecoder struct {
-	mapType                 *runtime.Type
-	keyType                 *runtime.Type
-	valueType               *runtime.Type
-	canUseAssignFaststrType bool
-	keyDecoder              Decoder
-	valueDecoder            Decoder
-	structName              string
-	fieldName               string
+	mapType      reflect.Type
+	keyType      reflect.Type
+	valueType    reflect.Type
+	keyDecoder   Decoder
+	valueDecoder Decoder
+	structName   string
+	fieldName    string
 }
 
-func newMapDecoder(mapType *runtime.Type, keyType *runtime.Type, keyDec Decoder, valueType *runtime.Type, valueDec Decoder, structName, fieldName string) *mapDecoder {
+func newMapDecoder(mapType reflect.Type, keyType reflect.Type, keyDec Decoder, valueType reflect.Type, valueDec Decoder, structName, fieldName string) *mapDecoder {
 	return &mapDecoder{
-		mapType:                 mapType,
-		keyDecoder:              keyDec,
-		keyType:                 keyType,
-		canUseAssignFaststrType: canUseAssignFaststrType(keyType, valueType),
-		valueType:               valueType,
-		valueDecoder:            valueDec,
-		structName:              structName,
-		fieldName:               fieldName,
+		mapType:      mapType,
+		keyDecoder:   keyDec,
+		keyType:      keyType,
+		valueType:    valueType,
+		valueDecoder: valueDec,
+		structName:   structName,
+		fieldName:    fieldName,
 	}
 }
 
-const (
-	mapMaxElemSize = 128
-)
-
-// See detail: https://github.com/goccy/go-json/pull/283
-func canUseAssignFaststrType(key *runtime.Type, value *runtime.Type) bool {
-	indirectElem := value.Size() > mapMaxElemSize
-	if indirectElem {
-		return false
-	}
-	return key.Kind() == reflect.String
-}
-
-func (d *mapDecoder) mapassign(t *runtime.Type, m, k, v unsafe.Pointer) {
-	if d.canUseAssignFaststrType {
-		mapV := runtime.MapAssignFastStr(t, m, *(*string)(k))
-		typedmemmove(d.valueType, mapV, v)
-	} else {
-		runtime.MapAssign(t, m, k, v)
-	}
-}
-
-func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	depth++
 	if depth > maxDecodeNestingDepth {
@@ -71,7 +45,7 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 			return 0, err
 		}
 		cursor += 2
-		**(**unsafe.Pointer)(unsafe.Pointer(&p)) = nil
+		rv.SetZero()
 		return cursor, nil
 	case 'O':
 		// O:8:"stdClass":1:{s:1:"a";s:1:"q";}
@@ -98,35 +72,32 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 		return 0, errors.ErrExpected("{ character for map value", cursor)
 	}
 
-	mapValue := *(*unsafe.Pointer)(p)
-	if mapValue == nil {
-		mapValue = runtime.MakeMap(d.mapType, int(l))
+	if rv.IsNil() {
+		rv.Set(reflect.MakeMapWithSize(d.mapType, int(l)))
 	}
 
 	cursor++
 	if buf[cursor] == '}' {
-		**(**unsafe.Pointer)(unsafe.Pointer(&p)) = mapValue
 		cursor++
 		return cursor, nil
 	}
 
 	for {
-		k := unsafe_New(d.keyType)
-		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k)
+		k := reflect.New(d.keyType)
+		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k.Elem())
 		if err != nil {
 			return 0, err
 		}
 		cursor = keyCursor
-		v := unsafe_New(d.valueType)
-		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v)
+		v := reflect.New(d.valueType)
+		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v.Elem())
 		if err != nil {
 			return 0, err
 		}
 
-		d.mapassign(d.mapType, mapValue, k, v)
+		rv.SetMapIndex(k.Elem(), v.Elem())
 		cursor = valueCursor
 		if buf[cursor] == '}' {
-			**(**unsafe.Pointer)(unsafe.Pointer(&p)) = mapValue
 			cursor++
 			return cursor, nil
 		}
