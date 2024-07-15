@@ -4,9 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 	"sync/atomic"
-	"unicode"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
@@ -259,163 +257,69 @@ func compileInterface(typ reflect.Type, structName, fieldName string) (Decoder, 
 	return newInterfaceDecoder(typ, structName, fieldName), nil
 }
 
-func typeToStructTags(typ reflect.Type) runtime.StructTags {
-	tags := runtime.StructTags{}
-	fieldNum := typ.NumField()
-	for i := 0; i < fieldNum; i++ {
-		field := typ.Field(i)
-		if runtime.IsIgnoredStructField(field) {
-			continue
-		}
-		tags = append(tags, runtime.StructTagFromField(field))
-	}
-	return tags
-}
-
 func compileStruct(rt reflect.Type, structName, fieldName string, structTypeToDecoder map[reflect.Type]Decoder) (Decoder, error) {
-	fieldNum := rt.NumField()
-	fieldMap := map[string]*structFieldSet{}
 	if dec, exists := structTypeToDecoder[rt]; exists {
 		return dec, nil
 	}
-	structDec := newStructDecoder(structName, fieldName, fieldMap)
+	structDec := newStructDecoder(structName, fieldName, map[string]*structFieldSet{})
 	structTypeToDecoder[rt] = structDec
 	structName = rt.Name()
-	tags := typeToStructTags(rt)
+
 	var allFields []*structFieldSet
+
+	fieldNum := rt.NumField()
 	for i := 0; i < fieldNum; i++ {
 		field := rt.Field(i)
 		if runtime.IsIgnoredStructField(field) {
 			continue
 		}
-		if field.Anonymous && field.Type.Kind() == reflect.Struct {
-			return nil, errors.New("anonymous field is not supported")
+
+		if field.Anonymous {
+			if (field.Type.Kind() == reflect.Struct) || (field.Type.Kind() == reflect.Ptr && (field.Type.Elem().Kind() == reflect.Struct)) {
+				return nil, errors.New("anonymous struct field is not supported")
+			}
 		}
 
-		isUnexportedField := unicode.IsLower([]rune(field.Name)[0])
 		tag := runtime.StructTagFromField(field)
 		dec, err := compile(field.Type, structName, field.Name, structTypeToDecoder)
 		if err != nil {
 			return nil, err
 		}
-		if field.Anonymous && !tag.IsTaggedKey {
-			if stDec, ok := dec.(*structDecoder); ok {
-				if field.Type == rt {
-					// recursive definition
-					continue
-				}
-				for k, v := range stDec.fieldMap {
-					if tags.ExistsKey(k) {
-						continue
-					}
-					fieldSet := &structFieldSet{
-						dec:         v.dec,
-						offset:      field.Offset + v.offset,
-						isTaggedKey: v.isTaggedKey,
-						key:         k,
-						keyLen:      int64(len(k)),
-					}
-					allFields = append(allFields, fieldSet)
-				}
-			} else if pdec, ok := dec.(*ptrDecoder); ok {
-				contentDec := pdec.contentDecoder()
-				if pdec.typ == rt {
-					// recursive definition
-					continue
-				}
-				var fieldSetErr error
-				if isUnexportedField {
-					fieldSetErr = fmt.Errorf(
-						"php: cannot set embedded pointer to unexported struct: %v",
-						field.Type.Elem(),
-					)
-					return nil, fieldSetErr
-				}
-				if dec, ok := contentDec.(*structDecoder); ok {
-					for k, _ := range dec.fieldMap {
-						if tags.ExistsKey(k) {
-							continue
-						}
-					}
-				}
-			} else {
-				fieldSet := &structFieldSet{
-					dec:         dec,
-					offset:      field.Offset,
-					isTaggedKey: tag.IsTaggedKey,
-					key:         field.Name,
-					keyLen:      int64(len(field.Name)),
-				}
-				allFields = append(allFields, fieldSet)
+
+		if tag.IsString && isStringTagSupportedType(field.Type) {
+			dec, err = newWrappedStringDecoder(field.Type, dec, structName, field.Name)
+			if err != nil {
+				return nil, err
 			}
+		}
+
+		var key string
+		if tag.Key != "" {
+			key = tag.Key
 		} else {
-			if tag.IsString && isStringTagSupportedType(field.Type) {
-				dec, err = newWrappedStringDecoder(field.Type, dec, structName, field.Name)
-				if err != nil {
-					return nil, err
-				}
-			}
-			var key string
-			if tag.Key != "" {
-				key = tag.Key
-			} else {
-				key = field.Name
-			}
-			fieldSet := &structFieldSet{
-				dec:         dec,
-				offset:      field.Offset,
-				isTaggedKey: tag.IsTaggedKey,
-				key:         key,
-				keyLen:      int64(len(key)),
-			}
-			allFields = append(allFields, fieldSet)
+			key = field.Name
 		}
-	}
-	for _, set := range filterDuplicatedFields(allFields) {
-		fieldMap[set.key] = set
-		lower := strings.ToLower(set.key)
-		if _, exists := fieldMap[lower]; !exists {
-			// first win
-			fieldMap[lower] = set
+
+		fieldSet := &structFieldSet{
+			dec:    dec,
+			offset: field.Offset,
+			key:    key,
 		}
+
+		allFields = append(allFields, fieldSet)
 	}
+
+	seen := map[string]bool{}
+	for _, set := range allFields {
+		if seen[set.key] {
+			return nil, fmt.Errorf("found duplicate keys for struct %s: %s", rt.String(), set.key)
+		}
+
+		seen[set.key] = true
+		structDec.fieldMap[set.key] = set
+	}
+
 	delete(structTypeToDecoder, rt)
-	structDec.tryOptimize()
+
 	return structDec, nil
-}
-
-func filterDuplicatedFields(allFields []*structFieldSet) []*structFieldSet {
-	fieldMap := map[string][]*structFieldSet{}
-	for _, field := range allFields {
-		fieldMap[field.key] = append(fieldMap[field.key], field)
-	}
-	duplicatedFieldMap := map[string]struct{}{}
-	for k, sets := range fieldMap {
-		sets = filterFieldSets(sets)
-		if len(sets) != 1 {
-			duplicatedFieldMap[k] = struct{}{}
-		}
-	}
-
-	filtered := make([]*structFieldSet, 0, len(allFields))
-	for _, field := range allFields {
-		if _, exists := duplicatedFieldMap[field.key]; exists {
-			continue
-		}
-		filtered = append(filtered, field)
-	}
-	return filtered
-}
-
-func filterFieldSets(sets []*structFieldSet) []*structFieldSet {
-	if len(sets) == 1 {
-		return sets
-	}
-	filtered := make([]*structFieldSet, 0, len(sets))
-	for _, set := range sets {
-		if set.isTaggedKey {
-			filtered = append(filtered, set)
-		}
-	}
-	return filtered
 }

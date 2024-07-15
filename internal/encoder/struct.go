@@ -61,6 +61,9 @@ func compileStructFields(rt reflect.Type, seen seenMap) (encoder, error) {
 	}
 
 	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+		// shadow compiler's error
+		var err error
+
 		buf := newBuffer()
 		defer freeBuffer(buf)
 		structBuffer := buf.b

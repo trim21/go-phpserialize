@@ -27,14 +27,6 @@ func newPtrDecoder(dec Decoder, typ reflect.Type, structName, fieldName string) 
 	}, nil
 }
 
-func (d *ptrDecoder) contentDecoder() Decoder {
-	dec, ok := d.dec.(*ptrDecoder)
-	if !ok {
-		return d.dec
-	}
-	return dec.contentDecoder()
-}
-
 func (d *ptrDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	if buf[cursor] == 'N' {

@@ -327,8 +327,7 @@ func TestUnmarshal_slice(t *testing.T) {
 		}
 		var c Container
 		raw := `a:3:{s:2:"bb";b:1;s:5:"value";a:3:{i:0;s:3:"one";i:1;s:3:"two";i:2;s:1:"q";}}`
-		err := phpserialize.Unmarshal([]byte(raw), &c)
-		require.NoError(t, err)
+		require.NoError(t, phpserialize.Unmarshal([]byte(raw), &c))
 		require.Equal(t, []string{"one", "two", "q"}, c.Value)
 	})
 
@@ -427,8 +426,7 @@ func TestUnmarshal_string_wrapper(t *testing.T) {
 
 	var c Container
 	raw := `a:1:{s:5:"value";s:3:"233";}`
-	err := phpserialize.Unmarshal([]byte(raw), &c)
-	require.NoError(t, err)
+	require.NoError(t, phpserialize.Unmarshal([]byte(raw), &c))
 	require.Equal(t, int(233), c.Value)
 }
 

@@ -49,5 +49,6 @@ func (d *boolDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflec
 		cursor += 2
 		return cursor, nil
 	}
+
 	return 0, errors.ErrUnexpectedEnd("bool", cursor)
 }

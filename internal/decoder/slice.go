@@ -7,11 +7,6 @@ import (
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
 
-var (
-	sliceType = reflect.TypeOf((*sliceHeader)(nil)).Elem()
-	nilSlice  = unsafe.Pointer(&sliceHeader{})
-)
-
 type sliceDecoder struct {
 	stype             reflect.Type // type of slice
 	elemType          reflect.Type // type of element
@@ -30,10 +25,6 @@ type sliceHeader struct {
 	len  int
 	cap  int
 }
-
-const (
-	defaultSliceCapacity = 2
-)
 
 func newSliceDecoder(dec Decoder, elemType reflect.Type, size uintptr, structName, fieldName string) *sliceDecoder {
 	return &sliceDecoder{

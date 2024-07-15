@@ -11,27 +11,17 @@ func getTag(field reflect.StructField) string {
 }
 
 func IsIgnoredStructField(field reflect.StructField) bool {
-	if field.PkgPath != "" {
-		if field.Anonymous {
-			t := field.Type
-			if t.Kind() == reflect.Ptr {
-				t = t.Elem()
-			}
-			if t.Kind() != reflect.Struct {
-				return true
-			}
-		} else {
-			// private field
-			return true
-		}
+	if !field.IsExported() {
+		return true
 	}
+
 	tag := getTag(field)
+
 	return tag == "-"
 }
 
 type StructTag struct {
 	Key         string
-	IsTaggedKey bool
 	IsOmitEmpty bool
 	IsString    bool
 	Field       reflect.StructField
@@ -80,7 +70,6 @@ func StructTagFromField(field reflect.StructField) *StructTag {
 	if len(opts) > 0 {
 		if opts[0] != "" && isValidTag(opts[0]) {
 			keyName = opts[0]
-			st.IsTaggedKey = true
 		}
 	}
 	st.Key = keyName

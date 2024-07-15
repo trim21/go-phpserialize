@@ -21,9 +21,3 @@ func appendArrayBegin(b []byte, fieldNum int64) []byte {
 	b = strconv.AppendInt(b, fieldNum, 10)
 	return append(b, ':', '{')
 }
-
-func appendBytesAsPhpStringVariable(dst, src []byte) []byte {
-	dst = append(dst, 's', ':', '"')
-	dst = strconv.AppendInt(dst, int64(len(src)), 10)
-	return append(dst, '"', ':')
-}

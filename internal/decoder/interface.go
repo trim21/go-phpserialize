@@ -3,7 +3,6 @@ package decoder
 import (
 	"bytes"
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -120,11 +119,6 @@ func decodePHPUnmarshaler(buf []byte, cursor, depth int64, unmarshaler Unmarshal
 		return 0, err
 	}
 	return end, nil
-}
-
-type emptyInterface struct {
-	typ uintptr // type ID
-	ptr unsafe.Pointer
 }
 
 func (d *interfaceDecoder) errUnmarshalType(typ reflect.Type, offset int64) *errors.UnmarshalTypeError {
