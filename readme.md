@@ -39,7 +39,13 @@ go get github.com/trim21/go-phpserialize
 
 ## Usage
 
-## Unmarshal
+Go 1.23 has decide to [lock down future uses of `//go:linkname`](https://github.com/golang/go/issues/67401),
+So we didn't a major refactoring in v0.1.0 (not released yet).
+
+For simplicity, support for embed struct has been removed,
+if you need this feature, consider send a Pull Request.
+
+### Unmarshal
 
 See [examples](./example_test.go)
 `any` type will be decoded to `map[any]any` or `map[string]any`, depends on raw input is `array` or `class`,
