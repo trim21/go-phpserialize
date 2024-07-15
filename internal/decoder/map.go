@@ -2,7 +2,6 @@ package decoder
 
 import (
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -73,17 +72,16 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 		return 0, errors.ErrExpected("{ character for map value", cursor)
 	}
 
-	mapValue := *(*unsafe.Pointer)(p)
-
-	// TODO
-	rv := reflect.MakeMapWithSize(d.mapType, int(l))
-	if mapValue == nil {
-		mapValue = rv.UnsafePointer()
+	var m reflect.Value
+	if rv.IsNil() {
+		m = reflect.MakeMapWithSize(d.mapType, int(l))
+		rv.Set(m)
+	} else {
+		m = rv.Elem()
 	}
 
 	cursor++
 	if buf[cursor] == '}' {
-		**(**unsafe.Pointer)(unsafe.Pointer(&p)) = mapValue
 		cursor++
 		return cursor, nil
 	}
@@ -101,7 +99,7 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 			return 0, err
 		}
 
-		rv.SetMapIndex(k, v)
+		m.SetMapIndex(k, v)
 		cursor = valueCursor
 		if buf[cursor] == '}' {
 			cursor++

@@ -6,10 +6,8 @@ import (
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
-	"github.com/trim21/go-phpserialize/internal/runtime"
 )
 
 type Unmarshaler interface {
@@ -74,7 +72,7 @@ func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, r
 			}
 		case 'N':
 			if bytes.Equal(src, nullbytes) {
-				*(*unsafe.Pointer)(p) = nil
+				rv.SetZero()
 				return end, nil
 			}
 		}
@@ -83,11 +81,7 @@ func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, r
 	if s, ok := unquoteBytes(src); ok {
 		src = s
 	}
-	v := *(*any)(unsafe.Pointer(&emptyInterface{
-		typ: runtime.TypeID(d.typ),
-		ptr: *(*unsafe.Pointer)(unsafe.Pointer(&p)),
-	}))
-	if err := v.(Unmarshaler).UnmarshalPHP(src); err != nil {
+	if err := rv.Interface().(Unmarshaler).UnmarshalPHP(src); err != nil {
 		d.annotateError(cursor, err)
 		return 0, err
 	}

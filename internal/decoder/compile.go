@@ -324,21 +324,14 @@ func compileStruct(rt reflect.Type, structName, fieldName string, structTypeToDe
 						"php: cannot set embedded pointer to unexported struct: %v",
 						field.Type.Elem(),
 					)
+					return nil, fieldSetErr
 				}
 				if dec, ok := contentDec.(*structDecoder); ok {
-					for k, v := range dec.fieldMap {
+					for k, _ := range dec.fieldMap {
 						if tags.ExistsKey(k) {
 							continue
 						}
-						fieldSet := &structFieldSet{
-							dec:         newAnonymousFieldDecoder(pdec.typ, v.offset, v.dec),
-							offset:      field.Offset,
-							isTaggedKey: v.isTaggedKey,
-							key:         k,
-							keyLen:      int64(len(k)),
-							err:         fieldSetErr,
-						}
-						allFields = append(allFields, fieldSet)
+						return nil, fmt.Errorf("Anonymous Field is not supported in embedded struct")
 					}
 				}
 			} else {

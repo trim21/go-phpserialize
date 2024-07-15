@@ -56,12 +56,12 @@ func (d *wrappedStringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, 
 	}
 	if bytes == nil {
 		if d.isPtrType {
-			*(*unsafe.Pointer)(p) = nil
+			rv.SetZero()
 		}
 		return c, nil
 	}
 
-	if err := d.dec.DecodeString(ctx, bytes, cursor, p); err != nil {
+	if err := d.dec.DecodeString(ctx, bytes, cursor, rv); err != nil {
 		return 0, err
 	}
 	return c, nil
@@ -85,9 +85,9 @@ func (s stringBoolDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCu
 	}
 
 	if value {
-		**(**bool)(unsafe.Pointer(&p)) = true
+		rv.SetBool(true)
 	} else {
-		**(**bool)(unsafe.Pointer(&p)) = false
+		rv.SetBool(false)
 	}
 
 	return nil
@@ -104,7 +104,7 @@ type stringFloatDecoder struct {
 }
 
 func (d stringFloatDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
-	_, err := d.floatDecoder.processBytes(bytes, topCursor, p)
+	_, err := d.floatDecoder.processBytes(bytes, topCursor, rv)
 	return err
 }
 
@@ -119,7 +119,7 @@ type stringUintDecoder struct {
 }
 
 func (d stringUintDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
-	_, err := d.uintDecoder.processBytes(bytes, topCursor, p)
+	_, err := d.uintDecoder.processBytes(bytes, topCursor, rv)
 	return err
 }
 
@@ -134,7 +134,7 @@ type stringIntDecoder struct {
 }
 
 func (d *stringIntDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
-	_, err := d.intDecoder.processBytes(bytes, topCursor, p)
+	_, err := d.intDecoder.processBytes(bytes, topCursor, rv)
 	return err
 }
 

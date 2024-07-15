@@ -97,15 +97,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 		}
 		cursor++
 
-		// pre-alloc
-		slice := &sliceHeader{
-			data: newArray(d.elemType, arrLen),
-			len:  0,
-			cap:  arrLen,
-		}
-		srcLen := slice.len
-		capacity := slice.cap
-		data := slice.data
+		slice := reflect.MakeSlice(d.elemType, arrLen, arrLen)
 
 		idx := 0
 		for {
@@ -117,42 +109,13 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 			idx = currentIndex
 			cursor = end
 
-			if capacity <= idx {
-				src := sliceHeader{data: data, len: idx, cap: capacity}
-				capacity *= 2
-				data = newArray(d.elemType, capacity)
-				dst := sliceHeader{data: data, len: idx, cap: capacity}
-				copySlice(d.elemType, dst, src)
-			}
-			ep := unsafe.Pointer(uintptr(data) + uintptr(idx)*d.size)
-			// if srcLen is greater than idx, keep the original reference
-			if srcLen <= idx {
-				if d.isElemPointerType {
-					**(**unsafe.Pointer)(unsafe.Pointer(&ep)) = nil // initialize elem pointer
-				} else {
-					// assign new element to the slice
-					typedmemmove(d.elemType, ep, unsafe_New(d.elemType))
-				}
-			}
-
-			c, err := d.valueDecoder.Decode(ctx, cursor, depth, ep)
+			c, err := d.valueDecoder.Decode(ctx, cursor, depth, slice.Index(idx))
 			if err != nil {
 				return 0, err
 			}
 
 			cursor = c
 			if buf[cursor] == '}' {
-				slice.cap = capacity
-				slice.len = idx + 1
-				slice.data = data
-				dst := (*sliceHeader)(p)
-				dst.len = idx + 1
-				if dst.len > dst.cap {
-					dst.data = newArray(d.elemType, dst.len)
-					dst.cap = dst.len
-				}
-				copySlice(d.elemType, *dst, *slice)
-				d.releaseSlice(slice)
 				cursor++
 				return cursor, nil
 			}

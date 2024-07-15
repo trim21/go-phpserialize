@@ -1,13 +1,12 @@
 module github.com/trim21/go-phpserialize
 
-go 1.20
+go 1.19
 
 require (
 	github.com/fatih/color v1.17.0
 	github.com/sergi/go-diff v1.3.1
 	github.com/stretchr/testify v1.9.0
 	github.com/volatiletech/null/v9 v9.0.0
-	go4.org/unsafe/assume-no-moving-gc v0.0.0-20231121144256-b99613f794b6
 )
 
 require (

@@ -437,7 +437,7 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 			if field.err != nil {
 				return 0, field.err
 			}
-			c, err := field.dec.Decode(ctx, cursor, depth, unsafe.Pointer(uintptr(p)+field.offset))
+			c, err := field.dec.Decode(ctx, cursor, depth, rv.Field(field.fieldIdx))
 			if err != nil {
 				return 0, err
 			}

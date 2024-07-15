@@ -23,8 +23,6 @@ type emptyInterface struct {
 }
 
 func unmarshal(data []byte, v any) error {
-	header := (*emptyInterface)(unsafe.Pointer(&v))
-
 	rv := reflect.ValueOf(v)
 
 	rt := rv.Type()
