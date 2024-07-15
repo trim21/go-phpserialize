@@ -34,12 +34,6 @@ go get github.com/trim21/go-phpserialize
 
 See [examples](./example_test.go)
 
-Go 1.23 has decide to [lock down future uses of `//go:linkname`](https://github.com/golang/go/issues/67401),
-So we didn't a major refactoring in v0.1.0 (not released yet).
-
-For simplicity, support for embed struct has been removed,
-if you need this feature, consider send a Pull Request.
-
 ### Marshal
 
 Struct and map will be encoded to php array only.
@@ -51,6 +45,24 @@ Decoding from php serialized array, class and object are both supported.
 go `any` type will be decoded as `map[any]any` or `map[string]any`, based on raw input is `array` or `class`,
 
 keys of `map[any]any` maybe `int64` or `string`.
+
+## Note
+
+go `reflect` package allow you to create dynamic struct with [reflect.StructOf](https://pkg.go.dev/reflect#StructOf),
+but please use it with caution.
+
+For performance, this package will try to "compile" input type to a static encoder/decoder
+at first time and cache it for future use.
+
+So a dynamic struct may cause memory leak.
+
+## Changelog
+
+Go 1.23 has decide to [lock down future uses of `//go:linkname`](https://github.com/golang/go/issues/67401),
+So we didn't a major refactoring in v0.1.0 (not released yet).
+
+For simplicity, support for embed struct has been removed,
+if you need this feature, send a Pull Request.
 
 ## Security
 
