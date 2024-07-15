@@ -58,9 +58,12 @@ So a dynamic struct may cause memory leak.
 
 ## Changelog
 
-Go 1.23 has decide to [lock down future uses of `//go:linkname`](https://github.com/golang/go/issues/67401),
-So we didn't a major refactoring in v0.1.0 (not released yet).
+### v0.1.0 (not released yet)
 
+Add new `Marshaler` to match `json.Marshaler`.
+
+Go 1.23 has decide to [lock down future uses of `//go:linkname`](https://github.com/golang/go/issues/67401),
+So we didn't a major refactoring in v0.1.0.
 For simplicity, support for embed struct has been removed,
 if you need this feature, send a Pull Request.
 
