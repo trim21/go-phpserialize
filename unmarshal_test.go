@@ -6,7 +6,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/trim21/go-phpserialize"
+	"github.com/trim21/go-phpserialize/internal/decoder"
 )
+
+// make sure they are equal
+var _ phpserialize.Unmarshaler = decoder.Unmarshaler(nil)
+var _ decoder.Unmarshaler = phpserialize.Unmarshaler(nil)
 
 func TestUnmarshal_as_string(t *testing.T) {
 	t.Parallel()

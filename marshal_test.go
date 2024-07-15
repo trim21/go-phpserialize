@@ -12,8 +12,13 @@ import (
 	"github.com/volatiletech/null/v9"
 
 	"github.com/trim21/go-phpserialize"
+	"github.com/trim21/go-phpserialize/internal/encoder"
 	"github.com/trim21/go-phpserialize/internal/test"
 )
+
+// make sure they are equal
+var _ phpserialize.Marshaler = encoder.Marshaler(nil)
+var _ encoder.Marshaler = phpserialize.Marshaler(nil)
 
 func init() {
 	color.NoColor = false // force color
