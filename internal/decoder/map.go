@@ -72,12 +72,8 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 		return 0, errors.ErrExpected("{ character for map value", cursor)
 	}
 
-	var m reflect.Value
 	if rv.IsNil() {
-		m = reflect.MakeMapWithSize(d.mapType, int(l))
-		rv.Set(m)
-	} else {
-		m = rv.Elem()
+		rv.Set(reflect.MakeMapWithSize(d.mapType, int(l)))
 	}
 
 	cursor++
@@ -88,18 +84,18 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 
 	for {
 		k := reflect.New(d.keyType)
-		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k)
+		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k.Elem())
 		if err != nil {
 			return 0, err
 		}
 		cursor = keyCursor
 		v := reflect.New(d.valueType)
-		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v)
+		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v.Elem())
 		if err != nil {
 			return 0, err
 		}
 
-		m.SetMapIndex(k, v)
+		rv.SetMapIndex(k.Elem(), v.Elem())
 		cursor = valueCursor
 		if buf[cursor] == '}' {
 			cursor++

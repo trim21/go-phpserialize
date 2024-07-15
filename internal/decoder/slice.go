@@ -13,7 +13,8 @@ var (
 )
 
 type sliceDecoder struct {
-	elemType          reflect.Type
+	stype             reflect.Type // type of slice
+	elemType          reflect.Type // type of element
 	isElemPointerType bool
 	valueDecoder      Decoder
 	size              uintptr
@@ -38,6 +39,7 @@ func newSliceDecoder(dec Decoder, elemType reflect.Type, size uintptr, structNam
 	return &sliceDecoder{
 		valueDecoder:      dec,
 		elemType:          elemType,
+		stype:             reflect.SliceOf(elemType),
 		isElemPointerType: elemType.Kind() == reflect.Ptr || elemType.Kind() == reflect.Map,
 		size:              size,
 		structName:        structName,
@@ -97,7 +99,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 		}
 		cursor++
 
-		slice := reflect.MakeSlice(d.elemType, arrLen, arrLen)
+		slice := reflect.MakeSlice(d.stype, arrLen, arrLen)
 
 		idx := 0
 		for {
@@ -113,6 +115,8 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 			if err != nil {
 				return 0, err
 			}
+
+			rv.Set(slice)
 
 			cursor = c
 			if buf[cursor] == '}' {

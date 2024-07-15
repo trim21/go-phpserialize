@@ -71,7 +71,7 @@ func TestUnmarshal_stdClass(t *testing.T) {
 		require.NoError(t, phpserialize.Unmarshal([]byte(raw), &v))
 
 		m, ok := v.(map[string]any)
-		require.True(t, ok, "type cast fail")
+		require.True(t, ok, "type cast fail", v)
 
 		require.Equal(t, "a str value q", m["a"])
 	})
@@ -534,47 +534,43 @@ func TestUnmarshal_anonymous_field(t *testing.T) {
 
 	var v M
 
-	require.NoError(t, phpserialize.Unmarshal([]byte(`a:4:{s:1:"A";i:3;s:1:"B";i:2;s:1:"C";i:1;}`), &v))
-	require.Equal(t, M{N: N{
-		A: 3,
-		B: 2,
-	}, C: 1}, v)
+	require.Error(t, phpserialize.Unmarshal([]byte(`a:4:{s:1:"A";i:3;s:1:"B";i:2;s:1:"C";i:1;}`), &v))
 }
 
 func TestUnmarshal_empty_input(t *testing.T) {
 	t.Run("slice", func(t *testing.T) {
 		var data []int
-		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+		require.Error(t, phpserialize.Unmarshal([]byte(""), &data))
 	})
 	t.Run("array", func(t *testing.T) {
 		var data [5]int
-		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+		require.Error(t, phpserialize.Unmarshal([]byte(""), &data))
 	})
 	t.Run("map", func(t *testing.T) {
 		var data map[uint]int
-		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+		require.Error(t, phpserialize.Unmarshal([]byte(""), &data))
 	})
 	t.Run("interface", func(t *testing.T) {
 		var data any
-		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+		require.Error(t, phpserialize.Unmarshal([]byte(""), &data))
 	})
 	t.Run("string", func(t *testing.T) {
 		var data string
-		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+		require.Error(t, phpserialize.Unmarshal([]byte(""), &data))
 	})
 	t.Run("int", func(t *testing.T) {
 		var data int
-		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+		require.Error(t, phpserialize.Unmarshal([]byte(""), &data))
 	})
 
 	t.Run("uint", func(t *testing.T) {
 		var data uint
-		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+		require.Error(t, phpserialize.Unmarshal([]byte(""), &data))
 	})
 
 	t.Run("bool", func(t *testing.T) {
 		var data bool
-		require.NoError(t, phpserialize.Unmarshal([]byte(""), &data))
+		require.Error(t, phpserialize.Unmarshal([]byte(""), &data))
 	})
 }
 

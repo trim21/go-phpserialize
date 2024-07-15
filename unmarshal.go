@@ -3,7 +3,6 @@ package phpserialize
 import (
 	"fmt"
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/decoder"
 	"github.com/trim21/go-phpserialize/internal/errors"
@@ -14,12 +13,11 @@ type Unmarshaler interface {
 }
 
 func Unmarshal(data []byte, v any) error {
-	return unmarshal(data, v)
-}
+	if len(data) == 0 {
+		return fmt.Errorf("empty bytes")
+	}
 
-type emptyInterface struct {
-	typ reflect.Type
-	ptr unsafe.Pointer
+	return unmarshal(data, v)
 }
 
 func unmarshal(data []byte, v any) error {
@@ -40,7 +38,7 @@ func unmarshal(data []byte, v any) error {
 	}
 	ctx := decoder.TakeRuntimeContext()
 	ctx.Buf = src
-	cursor, err := dec.Decode(ctx, 0, 0, rv)
+	cursor, err := dec.Decode(ctx, 0, 0, rv.Elem())
 	if err != nil {
 		decoder.ReleaseRuntimeContext(ctx)
 		return err

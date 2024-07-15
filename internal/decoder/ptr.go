@@ -46,15 +46,12 @@ func (d *ptrDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 		return cursor, nil
 	}
 
-	var np reflect.Value
 	if rv.IsNil() {
-		np = reflect.New(d.typ)
+		np := reflect.New(d.typ)
 		rv.Set(np)
-	} else {
-		np = rv.Elem()
 	}
 
-	c, err := d.dec.Decode(ctx, cursor, depth, np)
+	c, err := d.dec.Decode(ctx, cursor, depth, rv.Elem())
 	if err != nil {
 		return 0, err
 	}

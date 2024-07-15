@@ -181,7 +181,7 @@ func (d *interfaceDecoder) decodeEmptyInterface(ctx *RuntimeContext, cursor, dep
 	switch buf[cursor] {
 	case 'O':
 		var v map[string]any
-		ptr := reflect.ValueOf(&v)
+		ptr := reflect.ValueOf(&v).Elem()
 		cursor, err := d.mapClassDecoder.Decode(ctx, cursor, depth, ptr)
 		if err != nil {
 			return 0, err
@@ -190,7 +190,7 @@ func (d *interfaceDecoder) decodeEmptyInterface(ctx *RuntimeContext, cursor, dep
 		return cursor, nil
 	case 'a':
 		var v map[any]any
-		ptr := reflect.ValueOf(&v)
+		ptr := reflect.ValueOf(&v).Elem()
 		cursor, err := d.mapArrayDecoder.Decode(ctx, cursor, depth, ptr)
 		if err != nil {
 			return 0, err
@@ -199,7 +199,7 @@ func (d *interfaceDecoder) decodeEmptyInterface(ctx *RuntimeContext, cursor, dep
 		return cursor, nil
 	case 'd':
 		var v float64
-		ptr := reflect.ValueOf(&v)
+		ptr := reflect.ValueOf(&v).Elem()
 		cursor, err := d.floatDecoder.Decode(ctx, cursor, depth, ptr)
 		if err != nil {
 			return 0, err
@@ -216,7 +216,7 @@ func (d *interfaceDecoder) decodeEmptyInterface(ctx *RuntimeContext, cursor, dep
 		return end, nil
 	case 'i':
 		var v int64
-		ptr := reflect.ValueOf(&v)
+		ptr := reflect.ValueOf(&v).Elem()
 		cursor, err := d.intDecode.Decode(ctx, cursor, depth, ptr)
 		if err != nil {
 			return 0, err
@@ -256,7 +256,7 @@ func (d *mapKeyDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 	switch buf[cursor] {
 	case 's':
 		var v string
-		ptr := reflect.ValueOf(&v)
+		ptr := reflect.ValueOf(&v).Elem()
 		cursor, err := d.strDecoder.Decode(ctx, cursor, depth, ptr)
 		if err != nil {
 			return 0, err
@@ -266,7 +266,7 @@ func (d *mapKeyDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 	// string key
 	case 'i':
 		var v int64
-		ptr := reflect.ValueOf(&v)
+		ptr := reflect.ValueOf(&v).Elem()
 		cursor, err := d.intDecoder.Decode(ctx, cursor, depth, ptr)
 		if err != nil {
 			return 0, err

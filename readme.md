@@ -39,14 +39,6 @@ Decoding from php serialized array or class are both supported.
 go get github.com/trim21/go-phpserialize
 ```
 
-### Advantage:
-
-Low memory allocation and fast, see [benchmark](./docs/benchmark.md)
-
-### Disadvantage:
-
-heavy usage of `unsafe`.
-
 ## Usage
 
 ## Unmarshal

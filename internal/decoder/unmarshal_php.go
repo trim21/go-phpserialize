@@ -81,10 +81,16 @@ func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, r
 	if s, ok := unquoteBytes(src); ok {
 		src = s
 	}
-	if err := rv.Interface().(Unmarshaler).UnmarshalPHP(src); err != nil {
+
+	v := reflect.New(d.typ.Elem())
+
+	if err := v.Interface().(Unmarshaler).UnmarshalPHP(src); err != nil {
 		d.annotateError(cursor, err)
 		return 0, err
 	}
+
+	rv.Set(v.Elem())
+
 	return end, nil
 }
 

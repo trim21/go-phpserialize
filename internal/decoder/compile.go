@@ -287,6 +287,10 @@ func compileStruct(rt reflect.Type, structName, fieldName string, structTypeToDe
 		if runtime.IsIgnoredStructField(field) {
 			continue
 		}
+		if field.Anonymous && field.Type.Kind() == reflect.Struct {
+			return nil, fmt.Errorf("Anonymous Field is not supported in embedded struct")
+		}
+
 		isUnexportedField := unicode.IsLower([]rune(field.Name)[0])
 		tag := runtime.StructTagFromField(field)
 		dec, err := compile(field.Type, structName, field.Name, structTypeToDecoder)
@@ -331,7 +335,6 @@ func compileStruct(rt reflect.Type, structName, fieldName string, structTypeToDe
 						if tags.ExistsKey(k) {
 							continue
 						}
-						return nil, fmt.Errorf("Anonymous Field is not supported in embedded struct")
 					}
 				}
 			} else {
