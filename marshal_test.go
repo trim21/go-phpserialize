@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/stretchr/testify/require"
@@ -1129,4 +1130,34 @@ func TestRecursivePanic(t *testing.T) {
 	require.NoError(t, err)
 
 	test.StringEqual(t, `a:2:{s:4:"Name";s:5:"hello";s:1:"E";a:1:{i:0;a:2:{s:4:"Name";s:2:"BB";s:1:"E";a:1:{i:0;a:2:{s:4:"Name";s:15:"C C D D E E F F";s:1:"E";N;}}}}}`, string(actual))
+}
+
+type userMarshaler struct {
+	t time.Time
+}
+
+func (u userMarshaler) MarshalPHP() ([]byte, error) {
+	return phpserialize.Marshal(u.t.Format(time.RFC3339))
+}
+
+var _ phpserialize.Marshaler = userMarshaler{}
+
+func TestUserMarshaler(t *testing.T) {
+	t.Parallel()
+
+	now, err := time.Parse(time.RFC3339, "2024-07-16T01:02:03+08:00")
+	require.NoError(t, err)
+
+	type O struct {
+		T userMarshaler
+	}
+
+	actual, err := phpserialize.Marshal(O{
+		T: userMarshaler{
+			t: now,
+		},
+	})
+	require.NoError(t, err)
+
+	test.StringEqual(t, `a:1:{s:1:"T";s:25:"2024-07-16T01:02:03+08:00";}`, string(actual))
 }

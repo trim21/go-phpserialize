@@ -19,6 +19,10 @@ func wrapOldEncoder(enc oldEncoder) encoder {
 }
 
 func compile(rt reflect.Type, seen seenMap) (encoder, error) {
+	if rt.Implements(marshalerType) {
+		return compileMarshaler(rt)
+	}
+
 	if rt == bytesType {
 		return encodeBytes, nil
 	}
