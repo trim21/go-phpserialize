@@ -128,3 +128,19 @@ func ErrInvalidBeginningOfArray(c byte, cursor int64) *SyntaxError {
 		Offset: cursor,
 	}
 }
+
+func ErrOverflow(v any, t string) error {
+	return &overflowError{
+		v: v,
+		t: t,
+	}
+}
+
+type overflowError struct {
+	t string
+	v any
+}
+
+func (o overflowError) Error() string {
+	return fmt.Sprintf("php: cannot marshal %s overflow type %s", o.t, o.v)
+}

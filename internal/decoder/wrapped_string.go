@@ -9,7 +9,7 @@ import (
 )
 
 type stringWrappedDecoder interface {
-	DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error
+	DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error
 }
 
 type wrappedStringDecoder struct {
@@ -49,7 +49,7 @@ func newWrappedStringDecoder(typ reflect.Type, dec Decoder, structName, fieldNam
 	}, nil
 }
 
-func (d *wrappedStringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *wrappedStringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	bytes, c, err := d.stringDecoder.decodeByte(ctx.Buf, cursor)
 	if err != nil {
 		return 0, err
@@ -76,7 +76,7 @@ var _ stringWrappedDecoder = (*stringBoolDecoder)(nil)
 type stringBoolDecoder struct {
 }
 
-func (s stringBoolDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error {
+func (s stringBoolDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
 	str := *(*string)(unsafe.Pointer(&bytes))
 
 	value, err := strconv.ParseBool(str)
@@ -103,7 +103,7 @@ type stringFloatDecoder struct {
 	floatDecoder *floatDecoder
 }
 
-func (d stringFloatDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error {
+func (d stringFloatDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
 	_, err := d.floatDecoder.processBytes(bytes, topCursor, p)
 	return err
 }
@@ -118,7 +118,7 @@ type stringUintDecoder struct {
 	uintDecoder *uintDecoder
 }
 
-func (d stringUintDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error {
+func (d stringUintDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
 	_, err := d.uintDecoder.processBytes(bytes, topCursor, p)
 	return err
 }
@@ -133,7 +133,7 @@ type stringIntDecoder struct {
 	intDecoder *intDecoder
 }
 
-func (d *stringIntDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, p unsafe.Pointer) error {
+func (d *stringIntDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
 	_, err := d.intDecoder.processBytes(bytes, topCursor, p)
 	return err
 }

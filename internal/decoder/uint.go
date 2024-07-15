@@ -11,16 +11,14 @@ import (
 type uintDecoder struct {
 	typ        reflect.Type
 	kind       reflect.Kind
-	op         func(unsafe.Pointer, uint64)
 	structName string
 	fieldName  string
 }
 
-func newUintDecoder(typ reflect.Type, structName, fieldName string, op func(unsafe.Pointer, uint64)) *uintDecoder {
+func newUintDecoder(typ reflect.Type, structName, fieldName string) *uintDecoder {
 	return &uintDecoder{
 		typ:        typ,
 		kind:       typ.Kind(),
-		op:         op,
 		structName: structName,
 		fieldName:  fieldName,
 	}
@@ -97,7 +95,7 @@ func (d *uintDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error
 	}
 }
 
-func (d *uintDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *uintDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	bytes, c, err := d.decodeByte(ctx.Buf, cursor)
 	if err != nil {
 		return 0, err
@@ -107,28 +105,20 @@ func (d *uintDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.
 	}
 	cursor = c
 
-	return d.processBytes(bytes, cursor, p)
+	return d.processBytes(bytes, cursor, rv)
 }
 
-func (d *uintDecoder) processBytes(bytes []byte, cursor int64, p unsafe.Pointer) (int64, error) {
+func (d *uintDecoder) processBytes(bytes []byte, cursor int64, rv reflect.Value) (int64, error) {
 	u64, err := d.parseUint(bytes)
 	if err != nil {
 		return 0, d.typeError(bytes, cursor)
 	}
-	switch d.kind {
-	case reflect.Uint8:
-		if (1 << 8) <= u64 {
-			return 0, d.typeError(bytes, cursor)
-		}
-	case reflect.Uint16:
-		if (1 << 16) <= u64 {
-			return 0, d.typeError(bytes, cursor)
-		}
-	case reflect.Uint32:
-		if (1 << 32) <= u64 {
-			return 0, d.typeError(bytes, cursor)
-		}
+
+	if rv.OverflowUint(u64) {
+		return 0, errors.ErrOverflow(u64, rv.Type().Name())
 	}
-	d.op(p, u64)
+
+	rv.SetUint(u64)
+
 	return cursor, nil
 }

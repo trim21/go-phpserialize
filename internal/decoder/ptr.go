@@ -36,11 +36,7 @@ func (d *ptrDecoder) contentDecoder() Decoder {
 	return dec.contentDecoder()
 }
 
-//nolint:golint
-//go:linkname unsafe_New reflect.unsafe_New
-func unsafe_New(reflect.Type) unsafe.Pointer
-
-func (d *ptrDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *ptrDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	if buf[cursor] == 'N' {
 		if err := validateNull(buf, cursor); err != nil {

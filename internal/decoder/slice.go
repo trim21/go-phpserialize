@@ -60,15 +60,6 @@ func (d *sliceDecoder) releaseSlice(p *sliceHeader) {
 	d.arrayPool.Put(p)
 }
 
-//go:linkname copySlice reflect.typedslicecopy
-func copySlice(elemType reflect.Type, dst, src sliceHeader) int
-
-//go:linkname newArray reflect.unsafe_NewArray
-func newArray(reflect.Type, int) unsafe.Pointer
-
-//go:linkname typedmemmove reflect.typedmemmove
-func typedmemmove(t reflect.Type, dst, src unsafe.Pointer)
-
 func (d *sliceDecoder) errNumber(offset int64) *errors.UnmarshalTypeError {
 	return &errors.UnmarshalTypeError{
 		Value:  "number",
@@ -79,7 +70,7 @@ func (d *sliceDecoder) errNumber(offset int64) *errors.UnmarshalTypeError {
 	}
 }
 
-func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	depth++
 	if depth > maxDecodeNestingDepth {

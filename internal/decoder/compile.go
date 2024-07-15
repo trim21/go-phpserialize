@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"unicode"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/runtime"
 )
@@ -48,8 +47,7 @@ func storeDecoder(rt reflect.Type, dec Decoder, m map[reflect.Type]Decoder) {
 }
 
 func compileHead(rt reflect.Type, structTypeToDecoder map[reflect.Type]Decoder) (Decoder, error) {
-	switch {
-	case reflect.PointerTo(rt).Implements(unmarshalPHPType):
+	if reflect.PointerTo(rt).Implements(unmarshalPHPType) {
 		return newUnmarshalTextDecoder(reflect.PointerTo(rt), "", ""), nil
 	}
 	return compile(rt.Elem(), "", "", structTypeToDecoder)
@@ -167,75 +165,51 @@ func compilePtr(typ reflect.Type, structName, fieldName string, structTypeToDeco
 }
 
 func compileInt(typ reflect.Type, structName, fieldName string) (Decoder, error) {
-	return newIntDecoder(typ, structName, fieldName, func(p unsafe.Pointer, v int64) {
-		*(*int)(p) = int(v)
-	}), nil
+	return newIntDecoder(typ, structName, fieldName), nil
 }
 
 func compileInt8(typ reflect.Type, structName, fieldName string) (Decoder, error) {
-	return newIntDecoder(typ, structName, fieldName, func(p unsafe.Pointer, v int64) {
-		*(*int8)(p) = int8(v)
-	}), nil
+	return newIntDecoder(typ, structName, fieldName), nil
 }
 
 func compileInt16(typ reflect.Type, structName, fieldName string) (Decoder, error) {
-	return newIntDecoder(typ, structName, fieldName, func(p unsafe.Pointer, v int64) {
-		*(*int16)(p) = int16(v)
-	}), nil
+	return newIntDecoder(typ, structName, fieldName), nil
 }
 
 func compileInt32(typ reflect.Type, structName, fieldName string) (Decoder, error) {
-	return newIntDecoder(typ, structName, fieldName, func(p unsafe.Pointer, v int64) {
-		*(*int32)(p) = int32(v)
-	}), nil
+	return newIntDecoder(typ, structName, fieldName), nil
 }
 
 func compileInt64(typ reflect.Type, structName, fieldName string) (Decoder, error) {
-	return newIntDecoder(typ, structName, fieldName, func(p unsafe.Pointer, v int64) {
-		*(*int64)(p) = v
-	}), nil
+	return newIntDecoder(typ, structName, fieldName), nil
 }
 
 func compileUint(typ reflect.Type, structName, fieldName string) (Decoder, error) {
-	return newUintDecoder(typ, structName, fieldName, func(p unsafe.Pointer, v uint64) {
-		*(*uint)(p) = uint(v)
-	}), nil
+	return newUintDecoder(typ, structName, fieldName), nil
 }
 
 func compileUint8(typ reflect.Type, structName, fieldName string) (Decoder, error) {
-	return newUintDecoder(typ, structName, fieldName, func(p unsafe.Pointer, v uint64) {
-		*(*uint8)(p) = uint8(v)
-	}), nil
+	return newUintDecoder(typ, structName, fieldName), nil
 }
 
 func compileUint16(typ reflect.Type, structName, fieldName string) (Decoder, error) {
-	return newUintDecoder(typ, structName, fieldName, func(p unsafe.Pointer, v uint64) {
-		*(*uint16)(p) = uint16(v)
-	}), nil
+	return newUintDecoder(typ, structName, fieldName), nil
 }
 
 func compileUint32(typ reflect.Type, structName, fieldName string) (Decoder, error) {
-	return newUintDecoder(typ, structName, fieldName, func(p unsafe.Pointer, v uint64) {
-		*(*uint32)(p) = uint32(v)
-	}), nil
+	return newUintDecoder(typ, structName, fieldName), nil
 }
 
 func compileUint64(typ reflect.Type, structName, fieldName string) (Decoder, error) {
-	return newUintDecoder(typ, structName, fieldName, func(p unsafe.Pointer, v uint64) {
-		*(*uint64)(p) = v
-	}), nil
+	return newUintDecoder(typ, structName, fieldName), nil
 }
 
 func compileFloat32(structName, fieldName string) (Decoder, error) {
-	return newFloatDecoder(structName, fieldName, func(p unsafe.Pointer, v float64) {
-		*(*float32)(p) = float32(v)
-	}), nil
+	return newFloatDecoder(structName, fieldName), nil
 }
 
 func compileFloat64(structName, fieldName string) (Decoder, error) {
-	return newFloatDecoder(structName, fieldName, func(p unsafe.Pointer, v float64) {
-		*(*float64)(p) = v
-	}), nil
+	return newFloatDecoder(structName, fieldName), nil
 }
 
 func compileString(typ reflect.Type, structName, fieldName string) (Decoder, error) {

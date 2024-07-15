@@ -2,11 +2,10 @@ package decoder
 
 import (
 	"reflect"
-	"unsafe"
 )
 
 type Decoder interface {
-	Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error)
+	Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error)
 }
 
 const (

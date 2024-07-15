@@ -2,7 +2,6 @@ package decoder
 
 import (
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -36,8 +35,8 @@ func newBytesDecoder(typ reflect.Type, structName string, fieldName string) *byt
 	}
 }
 
-func (d *bytesDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
-	bytes, c, err := d.decodeBinary(ctx, cursor, depth, p)
+func (d *bytesDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
+	bytes, c, err := d.decodeBinary(ctx, cursor, depth, rv)
 	if err != nil {
 		return 0, err
 	}
@@ -45,11 +44,11 @@ func (d *bytesDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe
 		return c, nil
 	}
 	cursor = c
-	*(*[]byte)(p) = bytes
+	rv.SetBytes(bytes)
 	return cursor, nil
 }
 
-func (d *bytesDecoder) decodeBinary(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) ([]byte, int64, error) {
+func (d *bytesDecoder) decodeBinary(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) ([]byte, int64, error) {
 	buf := ctx.Buf
 	if buf[cursor] == 'a' {
 		if d.sliceDecoder == nil {
@@ -58,7 +57,7 @@ func (d *bytesDecoder) decodeBinary(ctx *RuntimeContext, cursor, depth int64, p 
 				Offset: cursor,
 			}
 		}
-		c, err := d.sliceDecoder.Decode(ctx, cursor, depth, p)
+		c, err := d.sliceDecoder.Decode(ctx, cursor, depth, rv)
 		if err != nil {
 			return nil, 0, err
 		}

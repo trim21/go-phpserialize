@@ -44,7 +44,7 @@ var (
 	nullbytes = []byte(`N;`)
 )
 
-func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *unmarshalPHPDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	start := cursor
 	end, err := skipValue(buf, cursor, depth)

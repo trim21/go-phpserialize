@@ -29,7 +29,7 @@ func newMapDecoder(mapType reflect.Type, keyType reflect.Type, keyDec Decoder, v
 	}
 }
 
-func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	depth++
 	if depth > maxDecodeNestingDepth {
@@ -77,7 +77,6 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 
 	// TODO
 	rv := reflect.MakeMapWithSize(d.mapType, int(l))
-
 	if mapValue == nil {
 		mapValue = rv.UnsafePointer()
 	}
@@ -91,13 +90,13 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 
 	for {
 		k := reflect.New(d.keyType)
-		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k.UnsafePointer())
+		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k)
 		if err != nil {
 			return 0, err
 		}
 		cursor = keyCursor
 		v := reflect.New(d.valueType)
-		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v.UnsafePointer())
+		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v)
 		if err != nil {
 			return 0, err
 		}
@@ -105,7 +104,6 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.P
 		rv.SetMapIndex(k, v)
 		cursor = valueCursor
 		if buf[cursor] == '}' {
-			**(**unsafe.Pointer)(unsafe.Pointer(&p)) = mapValue
 			cursor++
 			return cursor, nil
 		}

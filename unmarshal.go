@@ -25,7 +25,9 @@ type emptyInterface struct {
 func unmarshal(data []byte, v any) error {
 	header := (*emptyInterface)(unsafe.Pointer(&v))
 
-	rt := reflect.TypeOf(v)
+	rv := reflect.ValueOf(v)
+
+	rt := rv.Type()
 
 	if err := validateType(rt); err != nil {
 		return err
@@ -40,7 +42,7 @@ func unmarshal(data []byte, v any) error {
 	}
 	ctx := decoder.TakeRuntimeContext()
 	ctx.Buf = src
-	cursor, err := dec.Decode(ctx, 0, 0, header.ptr)
+	cursor, err := dec.Decode(ctx, 0, 0, rv)
 	if err != nil {
 		decoder.ReleaseRuntimeContext(ctx)
 		return err

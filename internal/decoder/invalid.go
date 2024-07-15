@@ -2,7 +2,6 @@ package decoder
 
 import (
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -23,7 +22,7 @@ func newInvalidDecoder(typ reflect.Type, structName, fieldName string) *invalidD
 	}
 }
 
-func (d *invalidDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *invalidDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	return 0, &errors.UnmarshalTypeError{
 		Value:  "object",
 		Type:   d.typ,

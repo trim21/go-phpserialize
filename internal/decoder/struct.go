@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/bits"
+	"reflect"
 	"runtime"
 	"sort"
 	"strings"
@@ -372,7 +373,7 @@ func decodeKey(d *structDecoder, buf []byte, cursor int64) (int64, *structFieldS
 	return cursor, field, nil
 }
 
-func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, p unsafe.Pointer) (int64, error) {
+func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
 	depth++
 	if depth > maxDecodeNestingDepth {
