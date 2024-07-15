@@ -142,5 +142,5 @@ type overflowError struct {
 }
 
 func (o overflowError) Error() string {
-	return fmt.Sprintf("php: cannot marshal %s overflow type %s", o.t, o.v)
+	return fmt.Sprintf("php: %v overflow type %s", o.v, o.t)
 }
