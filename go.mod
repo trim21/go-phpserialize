@@ -1,6 +1,6 @@
 module github.com/trim21/go-phpserialize
 
-go 1.19
+go 1.20
 
 require (
 	github.com/fatih/color v1.17.0
