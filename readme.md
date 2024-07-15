@@ -45,9 +45,9 @@ So we didn't a major refactoring in v0.1.0 (not released yet).
 For simplicity, support for embed struct has been removed,
 if you need this feature, consider send a Pull Request.
 
-### Unmarshal
-
 See [examples](./example_test.go)
+
+### Unmarshal
 `any` type will be decoded to `map[any]any` or `map[string]any`, depends on raw input is `array` or `class`,
 
 map `any` key maybe `int64` or `string`.
