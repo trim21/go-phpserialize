@@ -144,7 +144,7 @@ func (d *intDecoder) processBytes(bytes []byte, cursor int64, rv reflect.Value) 
 	}
 
 	if rv.OverflowInt(i64) {
-		return 0, errors.ErrOverflow(i64, rv.Type().Name())
+		return 0, errors.ErrOverflow(i64, rv.Type().Kind().String())
 	}
 
 	rv.SetInt(i64)

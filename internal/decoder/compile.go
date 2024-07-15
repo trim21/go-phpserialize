@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -37,11 +38,11 @@ func CompileToGetDecoder(rt reflect.Type) (Decoder, error) {
 
 func storeDecoder(rt reflect.Type, dec Decoder, m map[reflect.Type]Decoder) {
 	newDecoderMap := make(map[reflect.Type]Decoder, len(m)+1)
-	newDecoderMap[rt] = dec
-
 	for k, v := range m {
 		newDecoderMap[k] = v
 	}
+
+	newDecoderMap[rt] = dec
 
 	cachedDecoderMap.Store(&newDecoderMap)
 }
@@ -288,7 +289,7 @@ func compileStruct(rt reflect.Type, structName, fieldName string, structTypeToDe
 			continue
 		}
 		if field.Anonymous && field.Type.Kind() == reflect.Struct {
-			return nil, fmt.Errorf("Anonymous Field is not supported in embedded struct")
+			return nil, errors.New("anonymous field is not supported")
 		}
 
 		isUnexportedField := unicode.IsLower([]rune(field.Name)[0])

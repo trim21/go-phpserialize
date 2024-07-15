@@ -77,7 +77,7 @@ func (d *floatDecoder) processBytes(bytes []byte, cursor int64, rv reflect.Value
 	}
 
 	if rv.OverflowFloat(f64) {
-		return 0, errors.ErrOverflow(f64, rv.Type().Name())
+		return 0, errors.ErrOverflow(f64, rv.Type().Kind().String())
 	}
 
 	rv.SetFloat(f64)

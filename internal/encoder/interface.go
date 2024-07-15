@@ -6,11 +6,6 @@ import (
 	"unsafe"
 )
 
-type eface struct {
-	typ uintptr
-	ptr unsafe.Pointer
-}
-
 // will need to get type message at marshal time, slow path.
 // should avoid interface for performance thinking.
 func compileInterface(rt reflect.Type) (encoder, error) {

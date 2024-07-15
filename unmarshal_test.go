@@ -54,6 +54,8 @@ func TestUnmarshal_struct_string(t *testing.T) {
 }
 
 func TestUnmarshal_stdClass(t *testing.T) {
+	t.Parallel()
+
 	raw := `O:8:"stdClass":1:{s:1:"a";s:13:"a str value q";}`
 
 	t.Run("struct", func(t *testing.T) {
@@ -381,6 +383,7 @@ func TestUnmarshal_array(t *testing.T) {
 }
 
 func TestUnmarshal_skip_value(t *testing.T) {
+	t.Parallel()
 	type Container struct {
 		Value []string `php:"value"`
 	}
@@ -538,6 +541,7 @@ func TestUnmarshal_anonymous_field(t *testing.T) {
 }
 
 func TestUnmarshal_empty_input(t *testing.T) {
+	t.Parallel()
 	t.Run("slice", func(t *testing.T) {
 		var data []int
 		require.Error(t, phpserialize.Unmarshal([]byte(""), &data))
@@ -575,6 +579,7 @@ func TestUnmarshal_empty_input(t *testing.T) {
 }
 
 func TestUnmarshal_as_string_2(t *testing.T) {
+	t.Parallel()
 	type ID uint32
 	type Type uint8
 	type Item struct {
@@ -592,6 +597,7 @@ func TestUnmarshal_as_string_2(t *testing.T) {
 }
 
 func TestUnmarshal_null_array_1(t *testing.T) {
+	t.Parallel()
 	raw := `a:0:{}`
 
 	type Tag struct {
@@ -606,6 +612,7 @@ func TestUnmarshal_null_array_1(t *testing.T) {
 }
 
 func TestUnmarshal_null_array_2(t *testing.T) {
+	t.Parallel()
 	raw := `a:4:{s:1:"a";i:2;s:4:"Test";a:0:{}s:1:"b";a:0:{}s:1:"o";i:1;}`
 
 	var data any
@@ -622,6 +629,7 @@ func TestUnmarshal_null_array_2(t *testing.T) {
 }
 
 func TestUnmarshal_array_with_bool_to_map(t *testing.T) {
+	t.Parallel()
 	data := `O:8:"stdClass":1:{s:1:"a";b:0;}`
 
 	var actual map[string]interface{}

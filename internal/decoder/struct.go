@@ -1,11 +1,9 @@
 package decoder
 
 import (
-	"fmt"
 	"math"
 	"math/bits"
 	"reflect"
-	"runtime"
 	"sort"
 	"strings"
 	"unicode"
@@ -203,91 +201,6 @@ func decodeKeyCharByEscapedChar(buf []byte, cursor int64) ([]byte, int64) {
 		return decodeKeyCharByUnicodeRune(buf, cursor)
 	}
 	return nil, cursor
-}
-
-// TODO: not finished
-func decodeKeyByBitmapUint8(d *structDecoder, buf []byte, cursor int64) (int64, *structFieldSet, error) {
-	var (
-		curBit uint8 = math.MaxUint8
-	)
-	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
-	for {
-		switch char(b, cursor) {
-		case 'i':
-			// array with int key, should we skip or just omit?
-
-		// case '"':
-		case 's':
-			cursor++
-			c := char(b, cursor)
-			if c != ':' {
-				return 0, nil, errors.ErrSyntax(fmt.Sprintf("unexpected chat (%c) before str length", c), cursor)
-			}
-
-			cursor++
-			sLen, end, err := readLength(buf, cursor)
-			if err != nil {
-				return 0, nil, err
-			}
-			cursor = end
-
-			c = char(b, cursor)
-			if c != ':' {
-				return 0, nil, errors.ErrSyntax(fmt.Sprintf("unexpected chat (%c) before str length", c), cursor)
-			}
-
-			runtime.KeepAlive(sLen)
-			cursor++
-			c = char(b, cursor)
-			switch c {
-			case '"':
-				cursor++
-				return cursor, nil, nil
-			case nul:
-				return 0, nil, errors.ErrUnexpectedEnd("string", cursor)
-			}
-			keyIdx := 0
-			bitmap := d.keyBitmapUint8
-			start := cursor
-			for {
-				c := char(b, cursor)
-				switch c {
-				case '"':
-					fieldSetIndex := bits.TrailingZeros8(curBit)
-					field := d.sortedFieldSets[fieldSetIndex]
-					keyLen := cursor - start
-					cursor++
-					if keyLen < field.keyLen {
-						// early match
-						return cursor, nil, nil
-					}
-					return cursor, field, nil
-				case nul:
-					return 0, nil, errors.ErrUnexpectedEnd("string", cursor)
-				case '\\':
-					cursor++
-					chars, nextCursor := decodeKeyCharByEscapedChar(buf, cursor)
-					for _, c := range chars {
-						curBit &= bitmap[keyIdx][largeToSmallTable[c]]
-						if curBit == 0 {
-							return decodeKeyNotFound(b, cursor)
-						}
-						keyIdx++
-					}
-					cursor = nextCursor
-				default:
-					curBit &= bitmap[keyIdx][largeToSmallTable[c]]
-					if curBit == 0 {
-						return decodeKeyNotFound(b, cursor)
-					}
-					keyIdx++
-				}
-				cursor++
-			}
-		default:
-			return cursor, nil, errors.ErrInvalidBeginningOfValue(char(b, cursor), cursor)
-		}
-	}
 }
 
 func decodeKeyByBitmapUint16(d *structDecoder, buf []byte, cursor int64) (int64, *structFieldSet, error) {

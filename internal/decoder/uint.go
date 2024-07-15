@@ -115,7 +115,7 @@ func (d *uintDecoder) processBytes(bytes []byte, cursor int64, rv reflect.Value)
 	}
 
 	if rv.OverflowUint(u64) {
-		return 0, errors.ErrOverflow(u64, rv.Type().Name())
+		return 0, errors.ErrOverflow(u64, rv.Type().Kind().String())
 	}
 
 	rv.SetUint(u64)
