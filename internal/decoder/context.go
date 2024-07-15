@@ -46,7 +46,7 @@ func init() {
 }
 
 func char(ptr unsafe.Pointer, offset int64) byte {
-	return *(*byte)(unsafe.Pointer(uintptr(ptr) + uintptr(offset)))
+	return *(*byte)(unsafe.Add(ptr, offset))
 }
 
 // `:${length}:`

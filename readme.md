@@ -10,26 +10,19 @@ Support All go type including `map`, `slice`, `struct`, `array`, and simple type
 Encoding some type from standard library like `time.Time`, `net.IP` are not supported.
 If you have any thought about how to support these types, please create an issue.
 
-## supported and tested go version
+## Supported and tested go version
 
 - 1.20
 - 1.21
 - 1.22
+- 1.23rc2
 
-You may see compile error about `golang_version_higher_than_*_not_supported_yet is undefined`,
-please try to upgrade version of this package.
+This repo have `//go:build ...` to disallow downstream users compiling this package on newer version of go.
 
-If you are using the latest version of this package, this is expected.
+This is because the usage of unsafe package, and unsafe doesn't follow Go 1 promise of compatibility,
+so new version of golang may break this package.
 
-Due to the usage of unsafe (unsafe doesn't follow Go 1 promise of compatibility), 
-new version of golang may break this package,
-so it use go build flags to make sure it only compile on tested go versions.
-
-## Use case:
-
-You serialize all data into php array only. 
-
-Decoding from php serialized array or class are both supported.
+When a new version of go is released, I will test on new go version and create a new release.
 
 ## Install
 
@@ -47,10 +40,17 @@ So we didn't a major refactoring in v0.1.0 (not released yet).
 For simplicity, support for embed struct has been removed,
 if you need this feature, consider send a Pull Request.
 
-### Unmarshal
-`any` type will be decoded to `map[any]any` or `map[string]any`, depends on raw input is `array` or `class`,
+### Marshal
 
-map `any` key maybe `int64` or `string`.
+Struct and map will be encoded to php array only.
+
+### Unmarshal
+
+Decoding from php serialized array, class and object are both supported.
+
+go `any` type will be decoded as `map[any]any` or `map[string]any`, based on raw input is `array` or `class`,
+
+keys of `map[any]any` maybe `int64` or `string`.
 
 ## Security
 

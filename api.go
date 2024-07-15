@@ -1,4 +1,4 @@
-//go:build !go1.24
+//go:build !1.23rc2
 
 package phpserialize
 

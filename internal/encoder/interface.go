@@ -28,11 +28,6 @@ LOOP:
 		}
 	}
 
-	value := rv.Interface()
-
-	v := *(*emptyInterface)(unsafe.Pointer(&value))
-	pp := uintptr(v.ptr)
-
 	// simple type
 	switch rv.Type().Kind() {
 	case reflect.Bool:
@@ -55,7 +50,7 @@ LOOP:
 	case reflect.Map:
 		return reflectMap(ctx, b, rv)
 	case reflect.Struct:
-		return reflectStruct(ctx, b, rv, pp)
+		return reflectStruct(ctx, b, rv)
 	}
 
 	return b, &UnsupportedInterfaceTypeError{rv.Type()}
