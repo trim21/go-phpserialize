@@ -21,10 +21,7 @@ func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 		return reflectConcreteSlice(ctx, b, rv)
 	}
 
-	shPtr := unpackIface(rv.UnsafeAddr())
-	// no data ptr, nil slice
-	// even empty slice has a non-zero data ptr
-	if shPtr == 0 {
+	if rv.IsNil() {
 		return appendNull(b), nil
 	}
 

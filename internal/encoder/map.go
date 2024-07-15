@@ -35,13 +35,13 @@ func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
 
 		b = appendArrayBegin(b, int64(rv.Len()))
 
-		keys := rv.MapKeys()
-		for _, key := range keys {
-			b, err = keyEncoder(ctx, b, key)
+		iter := rv.MapRange()
+		for iter.Next() {
+			b, err = keyEncoder(ctx, b, iter.Key())
 			if err != nil {
 				return b, err
 			}
-			b, err = valueEncoder(ctx, b, rv.MapIndex(key))
+			b, err = valueEncoder(ctx, b, iter.Value())
 			if err != nil {
 				return b, err
 			}

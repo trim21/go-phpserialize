@@ -12,11 +12,11 @@ If you have any thought about how to support these types, please create an issue
 
 ## supported and tested go version
 
-- 1.18
-- 1.19
+- 1.19 (use of `atomic.Pointer`, which is added at go1.19)
 - 1.20
 - 1.21
 - 1.22
+- 1.23
 
 You may see compile error about `golang_version_higher_than_*_not_supported_yet is undefined`,
 please try to upgrade version of this package.
