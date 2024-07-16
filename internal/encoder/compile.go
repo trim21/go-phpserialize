@@ -6,16 +6,9 @@ import (
 )
 
 type encoder func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error)
-type oldEncoder func(ctx *Ctx, b []byte, p uintptr) ([]byte, error)
 
 func compileType(rt reflect.Type) (encoder, error) {
 	return compile(rt, seenMap{})
-}
-
-func wrapOldEncoder(enc oldEncoder) encoder {
-	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
-		return enc(ctx, b, unpackAny(rv.Interface()))
-	}
 }
 
 func compile(rt reflect.Type, seen seenMap) (encoder, error) {

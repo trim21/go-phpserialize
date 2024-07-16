@@ -4,53 +4,43 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"unsafe"
 )
 
 func compileIntAsString(typ reflect.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.Int8:
-		return wrapOldEncoder(encodeInt8AsString), nil
+		return encodeInt8AsString, nil
 	case reflect.Int16:
-		return wrapOldEncoder(encodeInt16AsString), nil
+		return encodeInt16AsString, nil
 	case reflect.Int32:
-		return wrapOldEncoder(encodeInt32AsString), nil
+		return encodeInt32AsString, nil
 	case reflect.Int64:
-		return wrapOldEncoder(encodeInt64AsString), nil
+		return encodeInt64AsString, nil
 	case reflect.Int:
-		return wrapOldEncoder(encodeIntAsString), nil
+		return encodeIntAsString, nil
 	}
 
 	panic(fmt.Sprintf("unexpected kind %s", typ.Kind()))
 }
 
-func encodeInt8AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := **(**int8)(unsafe.Pointer(&p))
-	return appendIntAsString(b, int64(value))
-
+func encodeInt8AsString(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	return appendIntAsString(b, rv.Int())
 }
 
-func encodeInt16AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := **(**int16)(unsafe.Pointer(&p))
-	return appendIntAsString(b, int64(value))
-
+func encodeInt16AsString(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	return appendIntAsString(b, rv.Int())
 }
 
-func encodeInt32AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := **(**int32)(unsafe.Pointer(&p))
-	return appendIntAsString(b, int64(value))
-
+func encodeInt32AsString(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	return appendIntAsString(b, rv.Int())
 }
 
-func encodeInt64AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := **(**int64)(unsafe.Pointer(&p))
-	return appendIntAsString(b, int64(value))
-
+func encodeInt64AsString(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	return appendIntAsString(b, rv.Int())
 }
 
-func encodeIntAsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := **(**int)(unsafe.Pointer(&p))
-	return appendIntAsString(b, int64(value))
+func encodeIntAsString(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	return appendIntAsString(b, rv.Int())
 }
 
 func appendIntAsString(b []byte, v int64) ([]byte, error) {

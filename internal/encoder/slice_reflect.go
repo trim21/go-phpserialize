@@ -2,16 +2,7 @@ package encoder
 
 import (
 	"reflect"
-	"unsafe"
 )
-
-func unpackAny(v any) uintptr {
-	return unpackIface(uintptr(unsafe.Pointer(&v)))
-}
-
-func unpackIface(p uintptr) uintptr {
-	return uintptr((**(**emptyInterface)(unsafe.Pointer(&p))).ptr)
-}
 
 func reflectSlice(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 	rt := rv.Type()

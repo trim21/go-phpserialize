@@ -5,7 +5,6 @@ import (
 	"math"
 	"reflect"
 	"strconv"
-	"unsafe"
 )
 
 func encodeFloat32(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
@@ -53,22 +52,20 @@ func appendFloat64(b []byte, f64 float64) []byte {
 func compileFloatAsString(typ reflect.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.Float32:
-		return wrapOldEncoder(encodeFloat32AsString), nil
+		return encodeFloat32AsString, nil
 	case reflect.Float64:
-		return wrapOldEncoder(encodeFloat64AsString), nil
+		return encodeFloat64AsString, nil
 	}
 
 	panic(fmt.Sprintf("unexpected kind %s", typ.Kind()))
 }
 
-func encodeFloat32AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	value := **(**float32)(unsafe.Pointer(&p))
-	return appendFloat32AsString(ctx.smallBuffer[:0], b, value), nil
+func encodeFloat32AsString(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	return appendFloat32AsString(ctx.smallBuffer[:0], b, rv.Interface().(float32)), nil
 }
 
-func encodeFloat64AsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
-	f64 := **(**float64)(unsafe.Pointer(&p))
-	return appendFloat64AsString(ctx.smallBuffer[:0], b, f64), nil
+func encodeFloat64AsString(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	return appendFloat64AsString(ctx.smallBuffer[:0], b, rv.Float()), nil
 }
 
 func appendFloat32AsString(buf []byte, b []byte, f32 float32) []byte {
