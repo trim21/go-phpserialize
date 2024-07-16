@@ -3,7 +3,6 @@ package encoder
 import (
 	"fmt"
 	"reflect"
-	"unsafe"
 )
 
 // will need to get type message at marshal time, slow path.
@@ -76,39 +75,33 @@ LOOP:
 		}
 	}
 
-	value := rv.Interface()
-
-	v := *(*emptyInterface)(unsafe.Pointer(&value))
-	p := uintptr(v.ptr)
-
-	// simple type
-	switch rv.Type().Kind() {
-	case reflect.Bool:
-		return encodeBoolAsString(ctx, b, p)
-	case reflect.Uint8:
-		return encodeUint8AsString(ctx, b, p)
-	case reflect.Uint16:
-		return encodeUint16AsString(ctx, b, p)
-	case reflect.Uint32:
-		return encodeUint32AsString(ctx, b, p)
-	case reflect.Uint64:
-		return encodeUint64AsString(ctx, b, p)
-	case reflect.Uint:
-		return encodeUintAsString(ctx, b, p)
-	case reflect.Int8:
-		return encodeInt8AsString(ctx, b, p)
-	case reflect.Int16:
-		return encodeInt16AsString(ctx, b, p)
-	case reflect.Int32:
-		return encodeInt32AsString(ctx, b, p)
-	case reflect.Int64:
-		return encodeInt64AsString(ctx, b, p)
-	case reflect.Int:
-		return encodeIntAsString(ctx, b, p)
-	case reflect.Float32:
-		return encodeFloat32AsString(ctx, b, p)
-	case reflect.Float64:
-		return encodeFloat64AsString(ctx, b, p)
+	switch value := rv.Interface().(type) {
+	case bool:
+		return appendBoolAsString(b, value)
+	case uint8:
+		return appendUintAsString(b, uint64(value))
+	case uint16:
+		return appendUintAsString(b, uint64(value))
+	case uint32:
+		return appendUintAsString(b, uint64(value))
+	case uint64:
+		return appendUintAsString(b, uint64(value))
+	case uint:
+		return appendUintAsString(b, uint64(value))
+	case int8:
+		return appendIntAsString(b, int64(value))
+	case int16:
+		return appendIntAsString(b, int64(value))
+	case int32:
+		return appendIntAsString(b, int64(value))
+	case int64:
+		return appendIntAsString(b, int64(value))
+	case int:
+		return appendIntAsString(b, int64(value))
+	case float32:
+		return appendFloat32AsString(ctx.smallBuffer[:0], b, value), nil
+	case float64:
+		return appendFloat64AsString(ctx.smallBuffer[:0], b, value), nil
 	}
 
 	// slice, map and struct as interface are not supported yet.

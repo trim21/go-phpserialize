@@ -16,6 +16,10 @@ func compileBoolAsString(typ reflect.Type) (encoder, error) {
 
 func encodeBoolAsString(ctx *Ctx, b []byte, p uintptr) ([]byte, error) {
 	value := **(**bool)(unsafe.Pointer(&p))
+	return appendBoolAsString(b, value)
+}
+
+func appendBoolAsString(b []byte, value bool) ([]byte, error) {
 	if value {
 		return append(b, `s:4:"true";`...), nil
 	}
