@@ -3,7 +3,6 @@ package decoder
 import (
 	"reflect"
 	"strconv"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -70,8 +69,7 @@ func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 }
 
 func (d *floatDecoder) processBytes(bytes []byte, cursor int64, rv reflect.Value) (int64, error) {
-	s := *(*string)(unsafe.Pointer(&bytes))
-	f64, err := strconv.ParseFloat(s, 64)
+	f64, err := strconv.ParseFloat(unsafeStr(bytes), 64)
 	if err != nil {
 		return 0, errors.ErrSyntax(err.Error(), cursor)
 	}

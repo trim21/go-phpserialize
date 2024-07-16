@@ -17,13 +17,6 @@ If you have any thought about how to support these types, please create an issue
 - 1.22
 - 1.23rc2
 
-This repo have `//go:build ...` to disallow downstream users compiling this package on newer version of go.
-
-This is because the usage of unsafe package, and unsafe doesn't follow Go 1 promise of compatibility,
-so new version of golang may break this package.
-
-When a new version of go is released, I will test on new go version and create a new release.
-
 ## Install
 
 ```console

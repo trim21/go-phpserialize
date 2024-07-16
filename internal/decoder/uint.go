@@ -54,7 +54,7 @@ func (d *uintDecoder) parseUint(b []byte) (uint64, error) {
 	return sum, nil
 }
 
-func (d *uintDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
+func (d *uintDecoder) decodeBytes(buf []byte, cursor int64) ([]byte, int64, error) {
 	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
 	if char(b, cursor) != 'i' {
 		return nil, cursor, errors.ErrExpected("int", cursor)
@@ -96,7 +96,7 @@ func (d *uintDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error
 }
 
 func (d *uintDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
-	bytes, c, err := d.decodeByte(ctx.Buf, cursor)
+	bytes, c, err := d.decodeBytes(ctx.Buf, cursor)
 	if err != nil {
 		return 0, err
 	}

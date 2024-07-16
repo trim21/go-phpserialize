@@ -3,7 +3,6 @@ package decoder
 import (
 	"reflect"
 	"strconv"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -77,9 +76,7 @@ type stringBoolDecoder struct {
 }
 
 func (s stringBoolDecoder) DecodeString(ctx *RuntimeContext, bytes []byte, topCursor int64, rv reflect.Value) error {
-	str := *(*string)(unsafe.Pointer(&bytes))
-
-	value, err := strconv.ParseBool(str)
+	value, err := strconv.ParseBool(unsafeStr(bytes))
 	if err != nil {
 		return errors.ErrSyntax(err.Error(), topCursor)
 	}

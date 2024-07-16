@@ -1,9 +1,9 @@
-//go:build !1.23rc2
-
 package phpserialize
 
 import (
 	"fmt"
+
+	_ "go4.org/unsafe/assume-no-moving-gc"
 
 	"github.com/trim21/go-phpserialize/internal/encoder"
 )
