@@ -33,15 +33,23 @@ func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
 			return appendNull(b), nil
 		}
 
-		b = appendArrayBegin(b, int64(rv.Len()))
+		size := rv.Len()
+		b = appendArrayBegin(b, int64(size))
 
 		iter := rv.MapRange()
+
+		kv := reflect.New(keyType).Elem()
+		vv := reflect.New(valueType).Elem()
+
 		for iter.Next() {
-			b, err = keyEncoder(ctx, b, iter.Key())
+			kv.SetIterKey(iter)
+			b, err = keyEncoder(ctx, b, kv)
 			if err != nil {
 				return b, err
 			}
-			b, err = valueEncoder(ctx, b, iter.Value())
+
+			vv.SetIterValue(iter)
+			b, err = valueEncoder(ctx, b, vv)
 			if err != nil {
 				return b, err
 			}

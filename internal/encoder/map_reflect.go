@@ -50,19 +50,27 @@ func reflectMap(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 
 	keyEncoder := mapKeyEncoder[keyType.Kind()]
 
-	valueEncoder, err := compileInterface(rt.Elem())
+	var valueType = rt.Elem()
+
+	valueEncoder, err := compileInterface(valueType)
 	if err != nil {
 		return b, err
 	}
 
-	keys := rv.MapKeys()
+	iter := rv.MapRange()
 
-	for _, key := range keys {
-		b, err = keyEncoder(ctx, b, key)
+	kv := reflect.New(keyType).Elem()
+	vv := reflect.New(valueType).Elem()
+
+	for iter.Next() {
+		kv.SetIterKey(iter)
+		b, err = keyEncoder(ctx, b, kv)
 		if err != nil {
 			return b, err
 		}
-		b, err = valueEncoder(ctx, b, rv.MapIndex(key))
+
+		vv.SetIterValue(iter)
+		b, err = valueEncoder(ctx, b, vv)
 		if err != nil {
 			return b, err
 		}
@@ -97,14 +105,20 @@ func reflectConcreteMap(ctx *Ctx, b []byte, rt reflect.Type, rv reflect.Value, k
 
 	keyEncoder := mapKeyEncoder[keyType.Kind()]
 
-	keys := rv.MapKeys()
+	iter := rv.MapRange()
 
-	for _, key := range keys {
-		b, err = keyEncoder(ctx, b, key)
+	kv := reflect.New(keyType).Elem()
+	vv := reflect.New(valueType).Elem()
+
+	for iter.Next() {
+		kv.SetIterKey(iter)
+		b, err = keyEncoder(ctx, b, kv)
 		if err != nil {
 			return b, err
 		}
-		b, err = valueEncoder(ctx, b, rv.MapIndex(key))
+
+		vv.SetIterValue(iter)
+		b, err = valueEncoder(ctx, b, vv)
 		if err != nil {
 			return b, err
 		}
