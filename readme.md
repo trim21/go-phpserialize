@@ -10,7 +10,7 @@ Support All go type including `map`, `slice`, `struct`, `array`, and simple type
 Encoding and decoding some type from standard library like `time.Time`, `net.IP` are not supported.
 If you have any thought about how to support these types, please create an issue.
 
-Or you can wrap these types with `Marshaler` and `Unmarshaler`
+Or you can wrap these types and implement `Marshaler` and `Unmarshaler`
 
 ## Supported and tested go version
 
