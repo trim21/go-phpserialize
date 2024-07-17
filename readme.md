@@ -33,7 +33,7 @@ Struct and map will be encoded to php array only.
 
 ### Unmarshal
 
-Decoding from php serialized array, class and object are both supported.
+Decoding from php serialized array, class or object are all supported.
 
 go `any` type will be decoded as `map[any]any` or `map[string]any`, based on raw input is `array` or `class`,
 
