@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/stretchr/testify/require"
 
 	"github.com/trim21/go-phpserialize"
@@ -18,10 +17,6 @@ import (
 // make sure they are equal
 var _ phpserialize.Marshaler = encoder.Marshaler(nil)
 var _ encoder.Marshaler = phpserialize.Marshaler(nil)
-
-func init() {
-	color.NoColor = false // force color
-}
 
 type Container struct {
 	Value any `php:"value"`
@@ -54,6 +49,12 @@ type ContainerNonAnonymous struct {
 	V    int
 }
 
+type Case struct {
+	Name     string
+	Data     any
+	Expected string `php:"-" json:"-"`
+}
+
 // map in struct is an indirect ptr
 type MapPtr struct {
 	Users []Item           `php:"users" json:"users"`
@@ -67,11 +68,7 @@ type MapOnly struct {
 
 type NestedMap = map[int]map[uint]string
 
-var testCase = []struct {
-	Name     string
-	Data     any
-	Expected string `php:"-" json:"-"`
-}{
+var testCase = []Case{
 	{Name: "bool true", Data: true, Expected: "b:1;"},
 	{
 		Name:     "*bool-true",
@@ -1155,7 +1152,11 @@ type Generic2[T any] struct {
 	Value T
 }
 
-var go118TestCase = []test.Case{
+func (tc Case) WrappedExpected() string {
+	return fmt.Sprintf(`a:2:{s:4:"Name";s:%d:"%s";s:4:"Data";`, len(tc.Name), tc.Name) + tc.Expected + "}"
+}
+
+var go118TestCase = []Case{
 	{
 		Name:     "generic[int]",
 		Data:     Generic[int]{1},
@@ -1163,7 +1164,7 @@ var go118TestCase = []test.Case{
 	},
 	{
 		Name:     "generic[struct]",
-		Data:     Generic[test.User]{test.User{}},
+		Data:     Generic[User]{User{}},
 		Expected: `a:1:{s:5:"Value";a:2:{s:2:"id";i:0;s:4:"name";s:0:"";}}`,
 	},
 
