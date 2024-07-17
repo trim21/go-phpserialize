@@ -77,6 +77,6 @@ never decode them to `interface`, `slice` or `map`.
 
 ## License
 
-Heavily inspired by https://github.com/goccy/go-json
-
 MIT License
+
+Heavily inspired by https://github.com/goccy/go-json
