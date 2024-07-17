@@ -9,7 +9,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/stretchr/testify/require"
-	"github.com/volatiletech/null/v9"
 
 	"github.com/trim21/go-phpserialize"
 	"github.com/trim21/go-phpserialize/internal/encoder"
@@ -76,7 +75,7 @@ var testCase = []struct {
 	{Name: "bool true", Data: true, Expected: "b:1;"},
 	{
 		Name:     "*bool-true",
-		Data:     null.BoolFrom(true).Ptr(),
+		Data:     toPtr(true),
 		Expected: "b:1;",
 	},
 
@@ -104,7 +103,7 @@ var testCase = []struct {
 		Name: "*bool-as-string-direct",
 		Data: struct {
 			Value *bool `php:"value,string"`
-		}{Value: null.BoolFrom(false).Ptr()},
+		}{Value: toPtr(false)},
 		Expected: `a:1:{s:5:"value";s:5:"false";}`,
 	},
 
@@ -113,14 +112,14 @@ var testCase = []struct {
 		Data: struct {
 			Value *bool `php:"value,string"`
 			B     *bool
-		}{Value: null.BoolFrom(false).Ptr()},
+		}{Value: toPtr(false)},
 		Expected: `a:2:{s:5:"value";s:5:"false";s:1:"B";N;}`,
 	},
 
 	{Name: "int8", Data: int8(7), Expected: "i:7;"},
 	{
 		Name:     "*int8",
-		Data:     null.Int8From(-7).Ptr(),
+		Data:     toPtr(int8(-7)),
 		Expected: "i:-7;",
 	},
 
@@ -133,7 +132,7 @@ var testCase = []struct {
 	},
 
 	{Name: "int16", Data: int16(7), Expected: "i:7;"},
-	{Name: "*int16", Data: null.Int16From(7).Ptr(), Expected: "i:7;"},
+	{Name: "*int16", Data: toPtr(int16(7)), Expected: "i:7;"},
 	{
 		Name: "int16 as string",
 		Data: struct {
@@ -143,7 +142,7 @@ var testCase = []struct {
 	},
 
 	{Name: "int32", Data: int32(7), Expected: "i:7;"},
-	{Name: "*int32", Data: null.Int32From(9).Ptr(), Expected: "i:9;"},
+	{Name: "*int32", Data: toPtr(int32(9)), Expected: "i:9;"},
 	{
 		Name: "int32 as string",
 		Data: struct {
@@ -155,30 +154,30 @@ var testCase = []struct {
 		Name: "*int32 as string",
 		Data: struct {
 			Value *int32 `php:"value,string"`
-		}{Value: null.Int32From(100).Ptr()},
+		}{Value: toPtr(int32(100))},
 		Expected: `a:1:{s:5:"value";s:3:"100";}`,
 	},
 
 	{Name: "int64", Data: int64(7), Expected: "i:7;"},
-	{Name: "*int64", Data: null.Int64From(10).Ptr(), Expected: "i:10;"},
+	{Name: "*int64", Data: toPtr[int64](10), Expected: "i:10;"},
 	{Name: "int", Data: int(8), Expected: "i:8;"},
-	{Name: "*int", Data: null.IntFrom(11).Ptr(), Expected: "i:11;"},
+	{Name: "*int", Data: toPtr[int](11), Expected: "i:11;"},
 	{Name: "uint8", Data: uint8(7), Expected: "i:7;"},
-	{Name: "*uint8", Data: null.Uint8From(7).Ptr(), Expected: "i:7;"},
+	{Name: "*uint8", Data: toPtr[uint8](7), Expected: "i:7;"},
 	{Name: "uint16", Data: uint16(7), Expected: "i:7;"},
-	{Name: "*uint16", Data: null.Uint16From(7).Ptr(), Expected: "i:7;"},
+	{Name: "*uint16", Data: toPtr[uint16](7), Expected: "i:7;"},
 	{Name: "uint32", Data: uint32(7), Expected: "i:7;"},
-	{Name: "*uint32", Data: null.Uint32From(7).Ptr(), Expected: "i:7;"},
+	{Name: "*uint32", Data: toPtr[uint32](7), Expected: "i:7;"},
 	{Name: "uint64", Data: uint64(7777), Expected: "i:7777;"},
-	{Name: "*uint64", Data: null.Uint64From(7).Ptr(), Expected: "i:7;"},
+	{Name: "*uint64", Data: toPtr[uint64](7), Expected: "i:7;"},
 	{Name: "uint", Data: uint(9), Expected: "i:9;"},
-	{Name: "*uint", Data: null.UintFrom(787).Ptr(), Expected: "i:787;"},
+	{Name: "*uint", Data: toPtr[uint](787), Expected: "i:787;"},
 	{Name: "float32", Data: float32(3.14), Expected: "d:3.14;"},
-	{Name: "*float32", Data: null.Float32From(3.14).Ptr(), Expected: "d:3.14;"},
-	{Name: "float64", Data: float64(3.14), Expected: "d:3.14;"},
-	{Name: "*float64", Data: null.Float64From(3.54).Ptr(), Expected: "d:3.54;"},
+	{Name: "*float32", Data: toPtr(float32(3.14)), Expected: "d:3.14;"},
+	{Name: "float64", Data: 3.14, Expected: "d:3.14;"},
+	{Name: "*float64", Data: toPtr(3.54), Expected: "d:3.54;"},
 	{Name: "string", Data: `qwer"qwer`, Expected: `s:9:"qwer"qwer";`},
-	{Name: "*string", Data: null.StringFrom(`qwer"qwer`).Ptr(), Expected: `s:9:"qwer"qwer";`},
+	{Name: "*string", Data: toPtr(`qwer"qwer`), Expected: `s:9:"qwer"qwer";`},
 	{Name: "simple slice", Data: []int{1, 4, 6, 2, 3}, Expected: `a:5:{i:0;i:1;i:1;i:4;i:2;i:6;i:3;i:2;i:4;i:3;}`},
 	{
 		Name:     "struct-slice",
@@ -423,7 +422,7 @@ func TestMarshal_int_as_string(t *testing.T) {
 		data := struct {
 			I *int `php:"i,string"`
 		}{
-			I: null.IntFrom(0).Ptr(),
+			I: toPtr(0),
 		}
 
 		actual, err := phpserialize.Marshal(&data)
@@ -437,7 +436,7 @@ func TestMarshal_int_as_string(t *testing.T) {
 			II *int `php:"ii,string,omitempty"`
 			I  *int `php:"i,string"`
 		}{
-			I: null.IntFrom(0).Ptr(),
+			I: toPtr(0),
 		}
 
 		actual, err := phpserialize.Marshal(&data)
@@ -451,32 +450,12 @@ func TestMarshal_int_as_string(t *testing.T) {
 			II *int `php:"ii,string"`
 			I  *int `php:"i,string"`
 		}{
-			I: null.IntFrom(0).Ptr(),
+			I: toPtr(0),
 		}
 
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:2:{s:2:"ii";N;s:1:"i";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
-	})
-}
-
-func TestMarshal_uint_as_string(t *testing.T) {
-	type Container struct {
-		I uint `php:"i,string"`
-	}
-
-	t.Run("zero", func(t *testing.T) {
-		actual, err := phpserialize.Marshal(Container{I: 0})
-		require.NoError(t, err)
-		expected := `a:1:{s:1:"i";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
-	})
-
-	t.Run("positive", func(t *testing.T) {
-		actual, err := phpserialize.Marshal(Container{I: 1040})
-		require.NoError(t, err)
-		expected := `a:1:{s:1:"i";s:4:"1040";}`
 		test.StringEqual(t, expected, string(actual))
 	})
 }
@@ -1232,4 +1211,245 @@ func TestMarshal_go118_interface(t *testing.T) {
 			test.StringEqual(t, data.WrappedExpected(), string(actual))
 		})
 	}
+}
+
+func toPtr[T any](v T) *T {
+	return &v
+}
+
+func TestMarshal_uint_as_string(t *testing.T) {
+	t.Run("normal", func(t *testing.T) {
+		var data = struct {
+			A uint8  `php:"a,string"`
+			B uint16 `php:"b,string"`
+			C uint32 `php:"c,string"`
+			D uint64 `php:"d,string"`
+			E uint   `php:"e,string"`
+		}{
+			A: 2,
+			B: 3,
+			C: 0,
+			D: 52,
+			E: 110,
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:5:{s:1:"a";s:1:"2";s:1:"b";s:1:"3";s:1:"c";s:1:"0";s:1:"d";s:2:"52";s:1:"e";s:3:"110";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+
+	type Container struct {
+		I uint `php:"i,string"`
+	}
+
+	t.Run("zero", func(t *testing.T) {
+		actual, err := phpserialize.Marshal(Container{I: 0})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"i";s:1:"0";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+
+	t.Run("positive", func(t *testing.T) {
+		actual, err := phpserialize.Marshal(Container{I: 1040})
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"i";s:4:"1040";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+}
+
+func TestMarshal_uint_as_string_omitempty(t *testing.T) {
+	var data = struct {
+		A uint8  `php:"a,string,omitempty"`
+		B uint16 `php:"b,string,omitempty"`
+		C uint32 `php:"c,string,omitempty"`
+		D uint64 `php:"d,string,omitempty"`
+		E uint   `php:"e,string,omitempty"`
+	}{}
+
+	actual, err := phpserialize.Marshal(&data)
+	require.NoError(t, err)
+	expected := `a:0:{}`
+	test.StringEqual(t, expected, string(actual))
+}
+
+func TestMarshal_uint_as_string_ptr_omitempty(t *testing.T) {
+	t.Run("indirect", func(t *testing.T) {
+		var data = struct {
+			A *uint8  `php:"a,string,omitempty"`
+			B *uint16 `php:"b,string,omitempty"`
+			C *uint32 `php:"c,string,omitempty"`
+			D *uint64 `php:"d,string,omitempty"`
+			E *uint   `php:"e,string,omitempty"`
+		}{
+			A: toPtr[uint8](0),
+			B: toPtr[uint16](0),
+			C: toPtr[uint32](0),
+			D: toPtr[uint64](0),
+			E: toPtr[uint](0),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:5:{s:1:"a";s:1:"0";s:1:"b";s:1:"0";s:1:"c";s:1:"0";s:1:"d";s:1:"0";s:1:"e";s:1:"0";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+
+	t.Run("uint8-indirect", func(t *testing.T) {
+		var data = struct {
+			A *uint8 `php:"a,string,omitempty"`
+		}{
+			A: toPtr[uint8](0),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"a";s:1:"0";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+
+	t.Run("uint16-direct", func(t *testing.T) {
+		var data = struct {
+			B *uint16 `php:"b,string,omitempty"`
+		}{
+			B: toPtr[uint16](0),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"b";s:1:"0";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+
+	t.Run("uint32-direct", func(t *testing.T) {
+		var data = struct {
+			C *uint32 `php:"c,string,omitempty"`
+		}{
+			C: toPtr[uint32](0),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"c";s:1:"0";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+
+	t.Run("uint64-direct", func(t *testing.T) {
+		var data = struct {
+			D *uint64 `php:"d,string,omitempty"`
+		}{
+			D: toPtr[uint64](0),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"d";s:1:"0";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+
+	t.Run("uint-direct", func(t *testing.T) {
+		var data = struct {
+			E *uint `php:"e,string,omitempty"`
+		}{
+			E: toPtr[uint](0),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"e";s:1:"0";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+}
+
+func TestMarshal_int_ptr_string(t *testing.T) {
+	t.Run("ptr direct", func(t *testing.T) {
+		data := struct {
+			I *int `php:"i,string"`
+		}{
+			I: toPtr(0),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:1:"i";s:1:"0";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+}
+
+func TestMarshalBool_ptr_as_string(t *testing.T) {
+	t.Run("direct-false", func(t *testing.T) {
+		var data = struct {
+			Value *bool `php:"value,string"`
+		}{
+			Value: toPtr(false),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:5:"value";s:5:"false";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+
+	t.Run("direct-true", func(t *testing.T) {
+		var data = struct {
+			Value *bool `php:"value,string"`
+		}{
+			Value: toPtr(true),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:1:{s:5:"value";s:4:"true";}`
+		test.StringEqual(t, expected, string(actual))
+	})
+
+	t.Run("indirect-false", func(t *testing.T) {
+		var data = struct {
+			Value *bool `php:"value,string"`
+			B     *bool
+		}{
+			Value: toPtr(false),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:2:{s:5:"value";s:5:"false";s:1:"B";N;}`
+		test.StringEqual(t, expected, string(actual))
+	})
+
+	t.Run("indirect-true", func(t *testing.T) {
+		var data = struct {
+			Value *bool `php:"value,string"`
+			B     *bool
+		}{
+			Value: toPtr(true),
+		}
+
+		actual, err := phpserialize.Marshal(&data)
+		require.NoError(t, err)
+		expected := `a:2:{s:5:"value";s:4:"true";s:1:"B";N;}`
+		test.StringEqual(t, expected, string(actual))
+	})
+}
+
+func TestMarshal_array_map(t *testing.T) {
+	var data = [5]map[int]uint{
+		{-3: 1},
+		nil,
+		{-1: 1},
+	}
+
+	actual, err := phpserialize.Marshal(data)
+	require.NoError(t, err)
+	expected := `a:5:{i:0;a:1:{i:-3;i:1;}i:1;N;i:2;a:1:{i:-1;i:1;}i:3;N;i:4;N;}`
+	test.StringEqual(t, expected, string(actual))
+}
+
+func TestMarshal_Array_nil(t *testing.T) {
+	var data [5]int
+
+	actual, err := phpserialize.Marshal(data)
+	require.NoError(t, err)
+	expected := `a:5:{i:0;i:0;i:1;i:0;i:2;i:0;i:3;i:0;i:4;i:0;}`
+	test.StringEqual(t, expected, string(actual))
 }
