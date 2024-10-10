@@ -5,7 +5,7 @@ import (
 )
 
 // !!! not safe to use in reflect case !!!
-func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
+func compileMap(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 	// for map[int]string, keyType is int, valueType is string
 	keyType := rt.Key()
 	valueType := rt.Elem()
@@ -28,11 +28,7 @@ func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
 		return nil, err
 	}
 
-	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
-		if rv.IsNil() {
-			return appendNull(b), nil
-		}
-
+	return checkRecursiveEncoder(func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 		size := rv.Len()
 		b = appendArrayBegin(b, int64(size))
 
@@ -56,5 +52,5 @@ func compileMap(rt reflect.Type, seen seenMap) (encoder, error) {
 		}
 
 		return append(b, '}'), nil
-	}, nil
+	}), nil
 }

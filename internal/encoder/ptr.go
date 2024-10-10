@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-func compilePtr(rt reflect.Type, seen seenMap) (encoder, error) {
+func compilePtr(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 	switch rt.Elem().Kind() {
 	case reflect.Ptr:
 		return nil, fmt.Errorf("encoding nested ptr is not supported *%s", rt.Elem().String())
@@ -28,7 +28,7 @@ func compilePtr(rt reflect.Type, seen seenMap) (encoder, error) {
 		return deRefNilEncoder(enc), err
 	case reflect.Struct:
 		enc, err := compileStruct(rt.Elem(), seen)
-		return deRefNilEncoder(enc), err
+		return checkStructRecursiveEncoder(enc), err
 	}
 
 	enc, err := compile(rt.Elem(), seen)
@@ -46,5 +46,63 @@ func deRefNilEncoder(enc encoder) encoder {
 		}
 
 		return enc(ctx, b, rv.Elem())
+	}
+}
+
+func checkStructRecursiveEncoder(enc encoder) encoder {
+	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+		if rv.IsNil() {
+			return appendNull(b), nil
+		}
+
+		ctx.StackDepth++
+		if ctx.StackDepth > 1000 {
+			_, seen := ctx.Seen[rv.UnsafePointer()]
+			if seen {
+				return b, fmt.Errorf("php: try to encode recursive object %v", rv.Interface())
+			}
+		}
+
+		b, err := enc(ctx, b, rv.Elem())
+		if err != nil {
+			return b, err
+		}
+
+		if ctx.StackDepth > 1000 {
+			delete(ctx.Seen, rv.UnsafePointer())
+		}
+		ctx.StackDepth--
+
+		return b, nil
+	}
+}
+
+func checkRecursiveEncoder(enc encoder) encoder {
+	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+		if rv.IsNil() {
+			return appendNull(b), nil
+		}
+
+		ctx.StackDepth++
+		if ctx.StackDepth > 1000 {
+			_, seen := ctx.Seen[rv.UnsafePointer()]
+			if seen {
+				return b, fmt.Errorf("php: try to encode recursive object %v", rv.Interface())
+			}
+
+			ctx.Seen[rv.UnsafePointer()] = empty{}
+		}
+
+		b, err := enc(ctx, b, rv)
+		if err != nil {
+			return b, err
+		}
+
+		if ctx.StackDepth > 1000 {
+			delete(ctx.Seen, rv.UnsafePointer())
+		}
+		ctx.StackDepth--
+
+		return b, nil
 	}
 }

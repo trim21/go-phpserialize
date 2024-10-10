@@ -9,7 +9,9 @@ import (
 )
 
 type RuntimeContext struct {
-	Buf []byte
+	Buf          []byte
+	MaxMapSize   uint
+	MaxSliceSize uint
 }
 
 var (
@@ -25,6 +27,8 @@ func TakeRuntimeContext() *RuntimeContext {
 }
 
 func ReleaseRuntimeContext(ctx *RuntimeContext) {
+	ctx.MaxSliceSize = 0
+	ctx.MaxMapSize = 0
 	runtimeContextPool.Put(ctx)
 }
 

@@ -91,13 +91,6 @@ func ErrUnexpectedEnd(msg string, cursor int64) *SyntaxError {
 	}
 }
 
-func ErrUnexpectedLength(buf []byte, cursor int64) *SyntaxError {
-	return &SyntaxError{
-		msg:    fmt.Sprintf("php: unexpected char %c in length", buf[cursor]),
-		Offset: cursor,
-	}
-}
-
 func ErrExpected(msg string, cursor int64) *SyntaxError {
 	return &SyntaxError{msg: fmt.Sprintf("expected %s", msg), Offset: cursor}
 }

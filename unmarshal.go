@@ -31,7 +31,7 @@ func unmarshal(data []byte, v any) error {
 		return err
 	}
 
-	src := make([]byte, len(data)) // append nul byte to the end
+	src := make([]byte, len(data))
 	copy(src, data)
 
 	dec, err := decoder.CompileToGetDecoder(rt)

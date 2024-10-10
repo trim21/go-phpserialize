@@ -359,6 +359,7 @@ func TestMarshal_concrete_types(t *testing.T) {
 			actual, err := phpserialize.Marshal(d.Data)
 			require.NoError(t, err)
 
+			t.Log(data.Name)
 			test.StringEqual(t, data.Expected, string(actual))
 		})
 	}

@@ -18,7 +18,7 @@ type structEncoder struct {
 	ptr       bool
 }
 
-type seenMap = map[reflect.Type]*structRecEncoder
+type compileSeenMap = map[reflect.Type]*structRecEncoder
 
 type structRecEncoder struct {
 	enc encoder
@@ -28,7 +28,7 @@ func (s *structRecEncoder) Encode(ctx *Ctx, b []byte, rv reflect.Value) ([]byte,
 	return s.enc(ctx, b, rv)
 }
 
-func compileStruct(rt reflect.Type, seen seenMap) (encoder, error) {
+func compileStruct(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 	recursiveEnc, hasSeen := seen[rt]
 
 	if hasSeen {
@@ -54,7 +54,7 @@ func compileStruct(rt reflect.Type, seen seenMap) (encoder, error) {
 }
 
 // struct don't have `omitempty` tag, fast path
-func compileStructFields(rt reflect.Type, seen seenMap) (encoder, error) {
+func compileStructFields(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 	fields, err := compileStructFieldsEncoders(rt, seen)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func compileStructFields(rt reflect.Type, seen seenMap) (encoder, error) {
 	}, nil
 }
 
-func compileStructFieldsEncoders(rt reflect.Type, seen seenMap) ([]structEncoder, error) {
+func compileStructFieldsEncoders(rt reflect.Type, seen compileSeenMap) ([]structEncoder, error) {
 	var encoders []structEncoder
 
 	for i := 0; i < rt.NumField(); i++ {

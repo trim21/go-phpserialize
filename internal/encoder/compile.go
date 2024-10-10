@@ -8,10 +8,10 @@ import (
 type encoder func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error)
 
 func compileType(rt reflect.Type) (encoder, error) {
-	return compile(rt, seenMap{})
+	return compile(rt, compileSeenMap{})
 }
 
-func compile(rt reflect.Type, seen seenMap) (encoder, error) {
+func compile(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 	if rt.Implements(marshalerType) {
 		return compileMarshaler(rt)
 	}

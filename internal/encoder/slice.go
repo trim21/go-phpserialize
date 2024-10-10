@@ -4,31 +4,27 @@ import (
 	"reflect"
 )
 
-func compileSlice(rt reflect.Type, seen seenMap) (encoder, error) {
+func compileSlice(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 	var enc encoder
-	var err error
+	var compileError error
 
 	if rt.Elem().Kind() == reflect.Map {
-		enc, err = compile(reflect.PointerTo(rt.Elem()), seen)
-		if err != nil {
-			return nil, err
+		enc, compileError = compile(reflect.PointerTo(rt.Elem()), seen)
+		if compileError != nil {
+			return nil, compileError
 		}
 	} else {
-		enc, err = compile(rt.Elem(), seen)
-		if err != nil {
-			return nil, err
+		enc, compileError = compile(rt.Elem(), seen)
+		if compileError != nil {
+			return nil, compileError
 		}
 	}
 
-	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
-		if rv.IsNil() {
-			return appendNull(b), nil
-		}
-
+	return checkRecursiveEncoder(func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 		length := rv.Len()
 
 		b = appendArrayBegin(b, int64(length))
-		var err error // create a new error value, so shadow compiler's error
+		var err error
 		for i := 0; i < length; i++ {
 			b = appendIntBytes(b, int64(i))
 			b, err = enc(ctx, b, rv.Index(i))
@@ -37,5 +33,5 @@ func compileSlice(rt reflect.Type, seen seenMap) (encoder, error) {
 			}
 		}
 		return append(b, '}'), nil
-	}, nil
+	}), nil
 }
