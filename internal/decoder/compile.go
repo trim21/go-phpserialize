@@ -301,9 +301,9 @@ func compileStruct(rt reflect.Type, structName, fieldName string, structTypeToDe
 		}
 
 		fieldSet := &structFieldSet{
-			dec:    dec,
-			offset: field.Offset,
-			key:    key,
+			dec:      dec,
+			fieldIdx: i,
+			key:      key,
 		}
 
 		allFields = append(allFields, fieldSet)

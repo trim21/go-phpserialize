@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"strconv"
 	"testing"
 
 	"github.com/fatih/color"
@@ -13,22 +14,17 @@ func init() {
 }
 
 func diff(a, b string) []diffmatchpatch.Diff {
-	dmp := diffmatchpatch.New()
-	diffs := dmp.DiffMain(a, b, true)
-	if len(diffs) > 2 {
-		diffs = dmp.DiffCleanupSemantic(diffs)
-		diffs = dmp.DiffCleanupEfficiency(diffs)
-	}
-	return diffs
+	return diffmatchpatch.New().DiffMain(a, b, false)
 }
 
-// CharacterDiff returns an inline diff between the two strings, using (++added++) and (~~deleted~~) markup.
-func CharacterDiff(a, b string) string {
+// characterDiff returns an inline diff between the two strings, using (++added++) and (~~deleted~~) markup.
+func characterDiff(a, b string) string {
 	return diffsToString(diff(a, b))
 }
 
 func diffsToString(diffs []diffmatchpatch.Diff) string {
 	var buff bytes.Buffer
+	buff.WriteString("expected : ")
 	for _, diff := range diffs {
 		text := diff.Text
 		switch diff.Type {
@@ -39,7 +35,7 @@ func diffsToString(diffs []diffmatchpatch.Diff) string {
 		}
 	}
 
-	buff.WriteString("\n")
+	buff.WriteString("\nactual   : ")
 
 	for _, diff := range diffs {
 		text := diff.Text
@@ -54,10 +50,17 @@ func diffsToString(diffs []diffmatchpatch.Diff) string {
 	return buff.String()
 }
 
-func StringEqual(t *testing.T, expected, actual string) {
+type stringLike interface {
+	~string | ~[]byte
+}
+
+func StringEqual[A stringLike, B stringLike](t *testing.T, expected A, actual B) {
 	t.Helper()
-	if actual != expected {
-		t.Errorf("Result not as expected:\n%v", CharacterDiff(expected, actual))
-		t.FailNow()
+
+	if string(expected) == string(actual) {
+		return
 	}
+
+	t.Errorf("Result not as expected:\n%v", characterDiff(strconv.QuoteToASCII(string(expected)), strconv.QuoteToASCII(string(actual))))
+	t.FailNow()
 }

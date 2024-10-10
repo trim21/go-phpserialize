@@ -9,7 +9,6 @@ import (
 
 type structFieldSet struct {
 	dec      Decoder
-	offset   uintptr
 	fieldIdx int
 	key      string
 	err      error
