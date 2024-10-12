@@ -55,9 +55,9 @@ func compileStruct(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 
 // struct don't have `omitempty` tag, fast path
 func compileStructFields(rt reflect.Type, seen compileSeenMap) (encoder, error) {
-	fields, err := compileStructFieldsEncoders(rt, seen)
-	if err != nil {
-		return nil, err
+	fields, compileErr := compileStructFieldsEncoders(rt, seen)
+	if compileErr != nil {
+		return nil, compileErr
 	}
 
 	return func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {

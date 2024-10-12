@@ -18,14 +18,14 @@ func compileMap(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 		return nil, &UnsupportedTypeAsMapKeyError{Type: keyType}
 	}
 
-	keyEncoder, err := compileMapKey(keyType)
-	if err != nil {
-		return nil, err
+	keyEncoder, compileErr := compileMapKey(keyType)
+	if compileErr != nil {
+		return nil, compileErr
 	}
 
-	valueEncoder, err := compile(valueType, seen)
-	if err != nil {
-		return nil, err
+	valueEncoder, compileErr := compile(valueType, seen)
+	if compileErr != nil {
+		return nil, compileErr
 	}
 
 	return checkRecursiveEncoder(func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
@@ -37,6 +37,7 @@ func compileMap(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 		kv := reflect.New(keyType).Elem()
 		vv := reflect.New(valueType).Elem()
 
+		var err error
 		for iter.Next() {
 			kv.SetIterKey(iter)
 			b, err = keyEncoder(ctx, b, kv)
