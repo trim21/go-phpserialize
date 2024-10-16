@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - 0-0-x
     paths:
       - ".github/workflows/test.yaml"
       - "go.mod"
@@ -14,6 +15,7 @@ on:
   pull_request:
     branches:
       - master
+      - 0-0-x
     paths:
       - ".github/workflows/test.yaml"
       - "go.mod"
@@ -28,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go_version: ["~1.18", "~1.19", "~1.20", "~1.21", "~1.22"]
+        go_version: ["~1.18", "~1.19", "~1.20", "~1.21", "~1.22", "~1.23"]
 
     steps:
       - uses: actions/checkout@v4
