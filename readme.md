@@ -17,7 +17,8 @@ Or you can wrap these types and implement `phpserialize.Marshaler` or `phpserial
 - 1.20
 - 1.21
 - 1.22
-- 1.23rc2
+- 1.23
+- 1.24
 
 ## Install
 
