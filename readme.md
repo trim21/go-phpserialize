@@ -54,7 +54,7 @@ So a dynamic struct may cause memory leak.
 
 ## Changelog
 
-### v0.1.0 (not released yet)
+### v0.1.0
 
 Add new `Marshaler` to match `json.Marshaler`.
 
