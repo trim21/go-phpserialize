@@ -11,13 +11,13 @@ type InvalidUnmarshalError struct {
 
 func (e *InvalidUnmarshalError) Error() string {
 	if e.Type == nil {
-		return "php: Unmarshal(nil)"
+		return "php-serialize: Unmarshal(nil)"
 	}
 
 	if e.Type.Kind() != reflect.Ptr {
-		return fmt.Sprintf("php: Unmarshal(non-pointer %s)", e.Type)
+		return fmt.Sprintf("php-serialize: Unmarshal(non-pointer %s)", e.Type)
 	}
-	return fmt.Sprintf("php: Unmarshal(nil %s)", e.Type)
+	return fmt.Sprintf("php-serialize: Unmarshal(nil %s)", e.Type)
 }
 
 // A SyntaxError is a description of a JSON syntax error.
@@ -40,11 +40,11 @@ type UnmarshalTypeError struct {
 
 func (e *UnmarshalTypeError) Error() string {
 	if e.Struct != "" || e.Field != "" {
-		return fmt.Sprintf("php: cannot unmarshal %s into Go struct field %s.%s of type %s (offset %d)",
+		return fmt.Sprintf("php-serialize: cannot unmarshal %s into Go struct field %s.%s of type %s (offset %d)",
 			e.Value, e.Struct, e.Field, e.Type, e.Offset,
 		)
 	}
-	return fmt.Sprintf("php: cannot unmarshal %s into Go value of type %s (offset: %d)", e.Value, e.Type, e.Offset)
+	return fmt.Sprintf("php-serialize: cannot unmarshal %s into Go value of type %s (offset: %d)", e.Value, e.Type, e.Offset)
 }
 
 // An UnsupportedTypeError is returned by Marshal when attempting
@@ -54,7 +54,7 @@ type UnsupportedTypeError struct {
 }
 
 func (e *UnsupportedTypeError) Error() string {
-	return fmt.Sprintf("php: unsupported type: %s", e.Type)
+	return fmt.Sprintf("php-serialize: unsupported type: %s", e.Type)
 }
 
 type UnsupportedValueError struct {
@@ -63,7 +63,7 @@ type UnsupportedValueError struct {
 }
 
 func (e *UnsupportedValueError) Error() string {
-	return fmt.Sprintf("php: unsupported value: %s", e.Str)
+	return fmt.Sprintf("php-serialize: unsupported value: %s", e.Str)
 }
 
 func ErrSyntax(msg string, offset int64) *SyntaxError {
@@ -72,52 +72,52 @@ func ErrSyntax(msg string, offset int64) *SyntaxError {
 
 func ErrExceededMaxDepth(c byte, cursor int64) *SyntaxError {
 	return &SyntaxError{
-		msg:    fmt.Sprintf(`invalid character "%c" exceeded max depth`, c),
+		msg:    fmt.Sprintf(`php-serialize: invalid character "%c" exceeded max depth`, c),
 		Offset: cursor,
 	}
 }
 
 func ErrUnexpectedStart(typ string, buf []byte, cursor int64) *SyntaxError {
 	return &SyntaxError{
-		msg:    fmt.Sprintf("php: unexpected %c at beginning of %s", buf[cursor], typ),
+		msg:    fmt.Sprintf("php-serialize: unexpected %c at beginning of %s", buf[cursor], typ),
 		Offset: cursor,
 	}
 }
 
 func ErrUnexpectedEnd(msg string, cursor int64) *SyntaxError {
 	return &SyntaxError{
-		msg:    fmt.Sprintf("php: %s unexpected end of input", msg),
+		msg:    fmt.Sprintf("php-serialize: %s unexpected end of input", msg),
 		Offset: cursor,
 	}
 }
 
 func ErrUnexpected(msg string, cursor int64, c byte) *SyntaxError {
-	return &SyntaxError{msg: fmt.Sprintf("php: expecting %s, get char '%c' instead", msg, c), Offset: cursor}
+	return &SyntaxError{msg: fmt.Sprintf("php-serialize: expecting %s, get char '%c' instead", msg, c), Offset: cursor}
 }
 
 func ErrInvalidCharacter(c byte, context string, cursor int64) *SyntaxError {
 	if c == 0 {
 		return &SyntaxError{
-			msg:    fmt.Sprintf("php: invalid character as %s", context),
+			msg:    fmt.Sprintf("php-serialize: invalid character as %s", context),
 			Offset: cursor,
 		}
 	}
 	return &SyntaxError{
-		msg:    fmt.Sprintf("php: invalid character %c as %s", c, context),
+		msg:    fmt.Sprintf("php-serialize: invalid character %c as %s", c, context),
 		Offset: cursor,
 	}
 }
 
 func ErrInvalidBeginningOfValue(c byte, cursor int64) *SyntaxError {
 	return &SyntaxError{
-		msg:    fmt.Sprintf("invalid character '%c' looking for beginning of value", c),
+		msg:    fmt.Sprintf("php-serialize: invalid character '%c' looking for beginning of value", c),
 		Offset: cursor,
 	}
 }
 
 func ErrInvalidBeginningOfArray(c byte, cursor int64) *SyntaxError {
 	return &SyntaxError{
-		msg:    fmt.Sprintf("invalid character '%c' looking for beginning of array", c),
+		msg:    fmt.Sprintf("php-serialize: invalid character '%c' looking for beginning of array", c),
 		Offset: cursor,
 	}
 }
@@ -135,5 +135,5 @@ type overflowError struct {
 }
 
 func (o overflowError) Error() string {
-	return fmt.Sprintf("php: %v overflow type %s", o.v, o.t)
+	return fmt.Sprintf("php-serialize: %v overflow type %s", o.v, o.t)
 }
