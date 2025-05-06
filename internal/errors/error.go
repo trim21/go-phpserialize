@@ -79,7 +79,7 @@ func ErrExceededMaxDepth(c byte, cursor int64) *SyntaxError {
 
 func ErrUnexpectedStart(typ string, buf []byte, cursor int64) *SyntaxError {
 	return &SyntaxError{
-		msg:    fmt.Sprintf("php: unexpected %c at beginneng of %s", buf[cursor], typ),
+		msg:    fmt.Sprintf("php: unexpected %c at beginning of %s", buf[cursor], typ),
 		Offset: cursor,
 	}
 }
