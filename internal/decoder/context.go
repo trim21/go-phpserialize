@@ -56,7 +56,7 @@ func char(ptr unsafe.Pointer, offset int64) byte {
 // `:${length}:`
 func skipLengthWithBothColon(buf []byte, cursor int64) (int64, error) {
 	if buf[cursor] != ':' {
-		return cursor, errors.ErrExpected("':' before length", cursor)
+		return cursor, errors.ErrUnexpected("':' before length", cursor, buf[cursor])
 	}
 	cursor++
 
@@ -65,7 +65,7 @@ func skipLengthWithBothColon(buf []byte, cursor int64) (int64, error) {
 	}
 
 	if buf[cursor] != ':' {
-		return cursor, errors.ErrExpected("':' after length", cursor)
+		return cursor, errors.ErrUnexpected("':' after length", cursor, buf[cursor])
 	}
 
 	cursor++
@@ -185,13 +185,13 @@ func validateEmptyArray(buf []byte, cursor int64) error {
 	}
 
 	if buf[cursor+1] != ':' {
-		return errors.ErrExpected("':' before array length", cursor+1)
+		return errors.ErrUnexpected("':' before array length", cursor+1, buf[cursor+1])
 	}
 	if buf[cursor+2] != '{' {
 		return errors.ErrInvalidBeginningOfArray(buf[cursor+2], cursor+2)
 	}
 	if buf[cursor+3] != '}' {
-		return errors.ErrExpected("empty array end with '}'", cursor+3)
+		return errors.ErrUnexpected("empty array end with '}'", cursor+3, buf[cursor+3])
 
 	}
 
@@ -239,11 +239,11 @@ func readString(buf []byte, cursor int64) ([]byte, int64, error) {
 	end = end + sLen + 1
 
 	if buf[end] != '"' {
-		return nil, end, errors.ErrExpected(`string quoted '"'`, end)
+		return nil, end, errors.ErrUnexpected(`string quoted '"'`, end, buf[end])
 	}
 	cursor = end + 1
 	if buf[cursor] != ';' {
-		return nil, end, errors.ErrExpected(`string end ';'`, cursor)
+		return nil, end, errors.ErrUnexpected(`string end ';'`, cursor, buf[cursor])
 	}
 
 	cursor++

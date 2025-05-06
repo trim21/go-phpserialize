@@ -37,7 +37,7 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 
 	buflen := int64(len(buf))
 	if buflen < 2 {
-		return 0, errors.ErrExpected("{} for map", cursor)
+		return 0, errors.ErrUnexpected("{} for map", cursor, buf[cursor])
 	}
 	switch buf[cursor] {
 	case 'N':
@@ -69,7 +69,7 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 
 	cursor = end
 	if buf[cursor] != '{' {
-		return 0, errors.ErrExpected("{ character for map value", cursor)
+		return 0, errors.ErrUnexpected("{ character for map value", cursor, buf[cursor])
 	}
 
 	if rv.IsNil() {

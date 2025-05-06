@@ -105,7 +105,7 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 
 		// cursor++
 		if cursor >= buflen {
-			return 0, errors.ErrExpected("object value after colon", cursor)
+			return 0, errors.ErrUnexpected("object value after colon", cursor, buf[cursor])
 		}
 		if field != nil {
 			if field.err != nil {

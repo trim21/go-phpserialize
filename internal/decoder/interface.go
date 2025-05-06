@@ -268,7 +268,7 @@ func (d *mapKeyDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 		rv.Set(ptr)
 		return cursor, nil
 	default:
-		return 0, errors.ErrExpected("array key", cursor)
+		return 0, errors.ErrUnexpected("array key", cursor, buf[cursor])
 	}
 }
 

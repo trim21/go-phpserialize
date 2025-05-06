@@ -66,7 +66,7 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 	case 'a':
 		cursor++
 		if buf[cursor] != ':' {
-			return cursor, errors.ErrExpected("':' before array length", cursor)
+			return cursor, errors.ErrUnexpected("':' before array length", cursor, buf[cursor])
 		}
 
 		cursor++

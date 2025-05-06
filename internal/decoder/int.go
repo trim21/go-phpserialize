@@ -86,12 +86,12 @@ var (
 func (d *intDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
 	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
 	if char(b, cursor) != 'i' {
-		return nil, cursor, errors.ErrExpected("int", cursor)
+		return nil, cursor, errors.ErrUnexpected("int", cursor, buf[cursor])
 	}
 
 	cursor++
 	if char(b, cursor) != ':' {
-		return nil, cursor, errors.ErrExpected("int sep ':'", cursor)
+		return nil, cursor, errors.ErrUnexpected("int sep ':'", cursor, buf[cursor])
 	}
 	cursor++
 
@@ -99,7 +99,7 @@ func (d *intDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error)
 	case '0':
 		cursor++
 		if char(b, cursor) != ';' {
-			return nil, cursor, errors.ErrExpected("';' end int", cursor)
+			return nil, cursor, errors.ErrUnexpected("';' end int", cursor, buf[cursor])
 		}
 		return numZeroBuf, cursor + 1, nil
 	case '-', '1', '2', '3', '4', '5', '6', '7', '8', '9':
@@ -109,7 +109,7 @@ func (d *intDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error)
 			cursor++
 		}
 		if char(b, cursor) != ';' {
-			return nil, cursor, errors.ErrExpected("';' end int", cursor)
+			return nil, cursor, errors.ErrUnexpected("';' end int", cursor, buf[cursor])
 		}
 		num := buf[start:cursor]
 		return num, cursor + 1, nil
@@ -155,12 +155,12 @@ func (d *intDecoder) processBytes(bytes []byte, cursor int64, rv reflect.Value) 
 func readInt(buf []byte, cursor int64) (int, int64, error) {
 	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
 	if char(b, cursor) != 'i' {
-		return 0, cursor, errors.ErrExpected("'i' to start a int", cursor)
+		return 0, cursor, errors.ErrUnexpected("'i' to start a int", cursor, buf[cursor])
 	}
 
 	cursor++
 	if char(b, cursor) != ':' {
-		return 0, cursor, errors.ErrExpected("int sep ':'", cursor)
+		return 0, cursor, errors.ErrUnexpected("int sep ':'", cursor, buf[cursor])
 	}
 	cursor++
 
@@ -168,7 +168,7 @@ func readInt(buf []byte, cursor int64) (int, int64, error) {
 	case '0':
 		cursor++
 		if char(b, cursor) != ';' {
-			return 0, cursor, errors.ErrExpected("';' end int", cursor)
+			return 0, cursor, errors.ErrUnexpected("';' end int", cursor, buf[cursor])
 		}
 		cursor++
 		return 0, cursor, nil
@@ -180,12 +180,12 @@ func readInt(buf []byte, cursor int64) (int, int64, error) {
 		}
 
 		if char(b, cursor) != ';' {
-			return 0, cursor, errors.ErrExpected("';' end int", cursor)
+			return 0, cursor, errors.ErrUnexpected("';' end int", cursor, buf[cursor])
 		}
 		value := parseByteStringInt(buf[start:cursor])
 		cursor++
 		return value, cursor, nil
 	default:
-		return 0, 0, errors.ErrExpected("int", cursor)
+		return 0, 0, errors.ErrUnexpected("int", cursor, buf[cursor])
 	}
 }

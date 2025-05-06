@@ -91,8 +91,8 @@ func ErrUnexpectedEnd(msg string, cursor int64) *SyntaxError {
 	}
 }
 
-func ErrExpected(msg string, cursor int64) *SyntaxError {
-	return &SyntaxError{msg: fmt.Sprintf("expected %s", msg), Offset: cursor}
+func ErrUnexpected(msg string, cursor int64, c byte) *SyntaxError {
+	return &SyntaxError{msg: fmt.Sprintf("php: expecting %s, get char '%c' instead", msg, c), Offset: cursor}
 }
 
 func ErrInvalidCharacter(c byte, context string, cursor int64) *SyntaxError {

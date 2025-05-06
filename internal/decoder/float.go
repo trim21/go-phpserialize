@@ -28,12 +28,12 @@ func (d *floatDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, erro
 	case 'd':
 		break
 	default:
-		return nil, cursor, errors.ErrExpected("float start with 'd' or 'N'", cursor)
+		return nil, cursor, errors.ErrUnexpected("float start with 'd' or 'N'", cursor, buf[cursor])
 	}
 
 	cursor++
 	if buf[cursor] != ':' {
-		return nil, cursor, errors.ErrExpected("float start with 'd:'", cursor)
+		return nil, cursor, errors.ErrUnexpected("float start with 'd:'", cursor, buf[cursor])
 	}
 	// cursor++
 
@@ -57,7 +57,7 @@ func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 	}
 
 	if buf[cursor] != ';' {
-		return cursor, errors.ErrExpected("float end with ';'", cursor)
+		return cursor, errors.ErrUnexpected("float end with ';'", cursor, buf[cursor])
 	}
 	cursor++
 
