@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/sergi/go-diff v1.3.1
 	github.com/stretchr/testify v1.10.0
-	github.com/trim21/go-phpserialize v0.0.0
+	github.com/trim21/go-phpserialize v0.1.0
 )
 
 require (
