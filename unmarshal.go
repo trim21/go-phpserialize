@@ -10,6 +10,10 @@ import (
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
 
+// make sure they are equal
+var _ Unmarshaler = decoder.Unmarshaler(nil)
+var _ decoder.Unmarshaler = Unmarshaler(nil)
+
 type Unmarshaler interface {
 	UnmarshalPHP([]byte) error
 }
