@@ -3,13 +3,5 @@
   "extends": [
     "local>trim21/renovate-config",
     "local>trim21/renovate-config:go"
-  ],
-  "packageRules": [
-    {
-      "matchPackageNames": [
-        "github.com/trim21/go-phpserialize"
-      ],
-      "enabled": false
-    }
   ]
 }

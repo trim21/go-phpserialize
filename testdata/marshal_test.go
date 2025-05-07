@@ -7,16 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"phpserialize_test/internal/diff"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/trim21/go-phpserialize"
-	"github.com/trim21/go-phpserialize/internal/encoder"
-	"github.com/trim21/go-phpserialize/internal/test"
 )
-
-// make sure they are equal
-var _ phpserialize.Marshaler = encoder.Marshaler(nil)
-var _ encoder.Marshaler = phpserialize.Marshaler(nil)
 
 type Container struct {
 	Value any `php:"value"`
@@ -360,7 +356,7 @@ func TestMarshal_concrete_types(t *testing.T) {
 			require.NoError(t, err)
 
 			t.Log(data.Name)
-			test.StringEqual(t, data.Expected, string(actual))
+			diff.StringEqual(t, data.Expected, string(actual))
 		})
 	}
 }
@@ -373,7 +369,7 @@ func TestMarshal_interface(t *testing.T) {
 			require.NoError(t, err)
 
 			expected := fmt.Sprintf(`a:2:{s:4:"Name";s:%d:"%s";s:4:"Data";`, len(data.Name), data.Name) + data.Expected + "}"
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 	}
 }
@@ -385,7 +381,7 @@ func TestMarshal_interface_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(&data.Data)
 			require.NoError(t, err)
 
-			test.StringEqual(t, data.Expected, string(actual))
+			diff.StringEqual(t, data.Expected, string(actual))
 		})
 	}
 }
@@ -399,21 +395,21 @@ func TestMarshal_int_as_string(t *testing.T) {
 		v, err := phpserialize.Marshal(Container{I: -104})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:4:"-104";}`
-		test.StringEqual(t, expected, string(v))
+		diff.StringEqual(t, expected, string(v))
 	})
 
 	t.Run("positive", func(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{I: 1040})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:4:"1040";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("zero", func(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{I: 0})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("ptr-direct", func(t *testing.T) {
@@ -426,7 +422,7 @@ func TestMarshal_int_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("int indirect", func(t *testing.T) {
@@ -440,7 +436,7 @@ func TestMarshal_int_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("int indirect", func(t *testing.T) {
@@ -454,7 +450,7 @@ func TestMarshal_int_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:2:{s:2:"ii";N;s:1:"i";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 }
 
@@ -485,21 +481,21 @@ func TestMarshal_float32_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{F: 3.14})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:4:"3.14";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("positive", func(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{F: 1.00})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:1:"1";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("zero", func(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{F: -3.14})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 }
 
@@ -512,21 +508,21 @@ func TestMarshal_float64_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{F: 3.14})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:4:"3.14";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("positive", func(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{F: 1.00})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:1:"1";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("zero", func(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{F: -3.14})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 }
 
@@ -542,21 +538,21 @@ func TestMarshal_float64_as_string_reflect(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{Value: S{F: 3.14}}.Value)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:4:"3.14";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("positive", func(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{Value: S{F: 1.00}}.Value)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:1:"1";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("zero", func(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{Value: S{F: -3.14}}.Value)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"f";s:5:"-3.14";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 }
 
@@ -572,7 +568,7 @@ func TestMarshal_ptr(t *testing.T) {
 		actual, err := phpserialize.Marshal(Indirect{B: &i})
 		require.NoError(t, err)
 		expected := `a:2:{s:1:"a";N;s:1:"b";i:50;}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("int-indirect-omitempty", func(t *testing.T) {
@@ -586,7 +582,7 @@ func TestMarshal_ptr(t *testing.T) {
 		actual, err := phpserialize.Marshal(Indirect{A: &i})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"a";i:50;}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("int-direct", func(t *testing.T) {
@@ -600,7 +596,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(Direct{Value: &i})
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";i:50;}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 	})
 
@@ -613,7 +609,7 @@ func TestMarshal_ptr(t *testing.T) {
 		actual, err := phpserialize.Marshal(data)
 		require.NoError(t, err)
 		expected := `a:1:{s:5:"value";N;}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("*string", func(t *testing.T) {
@@ -626,7 +622,7 @@ func TestMarshal_ptr(t *testing.T) {
 		actual, err := phpserialize.Marshal(data)
 		require.NoError(t, err)
 		expected := `a:1:{s:5:"value";s:7:"abcdefg";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("multiple ptr", func(t *testing.T) {
@@ -641,7 +637,7 @@ func TestMarshal_ptr(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:5:"value";s:7:"abcdefg";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("struct", func(t *testing.T) {
@@ -655,7 +651,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(&data)
 			require.NoError(t, err)
 			expected := `a:2:{s:5:"value";i:0;s:2:"id";i:0;}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("*struct-nil", func(t *testing.T) {
@@ -668,7 +664,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `N;`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("indirect", func(t *testing.T) {
@@ -683,7 +679,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:2:{s:1:"b";i:20;s:5:"value";N;}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		u := User{
@@ -700,7 +696,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";N;}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("encode direct", func(t *testing.T) {
@@ -712,7 +708,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";a:2:{s:2:"id";i:4;s:4:"name";s:3:"one";}}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("encode indirect", func(t *testing.T) {
@@ -725,7 +721,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:2:{s:1:"b";N;s:5:"value";a:2:{s:2:"id";i:4;s:4:"name";s:3:"one";}}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 	})
 
@@ -739,7 +735,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";N;}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("nil-indirect", func(t *testing.T) {
@@ -754,7 +750,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:2:{s:5:"value";N;s:1:"b";b:1;}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("omitempty", func(t *testing.T) {
@@ -767,7 +763,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";a:5:{i:0;i:1;i:1;i:6;i:2;i:4;i:3;i:7;i:4;i:9;}}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("no omitempty", func(t *testing.T) {
@@ -780,7 +776,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";a:5:{i:0;i:1;i:1;i:6;i:2;i:4;i:3;i:7;i:4;i:9;}}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 	})
 
@@ -796,7 +792,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";a:7:{i:0;s:1:"a";i:1;s:1:"b";i:2;s:1:"c";i:3;s:1:"d";i:4;s:1:"e";i:5;s:1:"f";i:6;s:1:"g";}}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("no-omitempty", func(t *testing.T) {
@@ -810,7 +806,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";a:7:{i:0;s:1:"a";i:1;s:1:"b";i:2;s:1:"c";i:3;s:1:"d";i:4;s:1:"e";i:5;s:1:"f";i:6;s:1:"g";}}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("nil", func(t *testing.T) {
@@ -823,7 +819,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";N;}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("encode", func(t *testing.T) {
@@ -838,7 +834,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";a:2:{i:0;s:1:"1";i:1;s:1:"2";}}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 	})
 
@@ -854,7 +850,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 			expected := `a:1:{s:5:"value";s:7:"abcdefg";}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 	})
@@ -870,7 +866,7 @@ func TestMarshal_ptr(t *testing.T) {
 				actual, err := phpserialize.Marshal(data)
 				require.NoError(t, err)
 				expected := `a:1:{s:5:"value";N;}`
-				test.StringEqual(t, expected, string(actual))
+				diff.StringEqual(t, expected, string(actual))
 			})
 
 			t.Run("encode", func(t *testing.T) {
@@ -879,7 +875,7 @@ func TestMarshal_ptr(t *testing.T) {
 				actual, err := phpserialize.Marshal(&s)
 				require.NoError(t, err)
 				expected := `a:1:{i:1;i:2;}`
-				test.StringEqual(t, expected, string(actual))
+				diff.StringEqual(t, expected, string(actual))
 			})
 
 			t.Run("omitempty encode", func(t *testing.T) {
@@ -893,7 +889,7 @@ func TestMarshal_ptr(t *testing.T) {
 				actual, err := phpserialize.Marshal(data)
 				require.NoError(t, err)
 				expected := `a:1:{s:5:"value";a:1:{i:1;i:2;}}`
-				test.StringEqual(t, expected, string(actual))
+				diff.StringEqual(t, expected, string(actual))
 			})
 
 			t.Run("omitempty nil", func(t *testing.T) {
@@ -905,7 +901,7 @@ func TestMarshal_ptr(t *testing.T) {
 				actual, err := phpserialize.Marshal(data)
 				require.NoError(t, err)
 				expected := `a:0:{}`
-				test.StringEqual(t, expected, string(actual))
+				diff.StringEqual(t, expected, string(actual))
 			})
 		})
 
@@ -920,7 +916,7 @@ func TestMarshal_ptr(t *testing.T) {
 				actual, err := phpserialize.Marshal(data)
 				require.NoError(t, err)
 				expected := `a:2:{s:5:"value";N;s:1:"b";N;}`
-				test.StringEqual(t, expected, string(actual))
+				diff.StringEqual(t, expected, string(actual))
 			})
 
 			t.Run("encode", func(t *testing.T) {
@@ -929,7 +925,7 @@ func TestMarshal_ptr(t *testing.T) {
 				actual, err := phpserialize.Marshal(&s)
 				require.NoError(t, err)
 				expected := `a:1:{i:1;i:2;}`
-				test.StringEqual(t, expected, string(actual))
+				diff.StringEqual(t, expected, string(actual))
 			})
 
 			t.Run("omitempty", func(t *testing.T) {
@@ -944,7 +940,7 @@ func TestMarshal_ptr(t *testing.T) {
 				actual, err := phpserialize.Marshal(data)
 				require.NoError(t, err)
 				expected := `a:2:{s:5:"value";a:1:{i:1;i:2;}s:1:"b";N;}`
-				test.StringEqual(t, expected, string(actual))
+				diff.StringEqual(t, expected, string(actual))
 			})
 		})
 	})
@@ -960,7 +956,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(data.Value)
 			require.NoError(t, err)
 			expected := `N;`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 
 		t.Run("encode", func(t *testing.T) {
@@ -969,7 +965,7 @@ func TestMarshal_ptr(t *testing.T) {
 			actual, err := phpserialize.Marshal(&s)
 			require.NoError(t, err)
 			expected := `a:1:{i:1;i:2;}`
-			test.StringEqual(t, expected, string(actual))
+			diff.StringEqual(t, expected, string(actual))
 		})
 	})
 
@@ -983,7 +979,7 @@ func TestMarshal_ptr(t *testing.T) {
 		actual, err := phpserialize.Marshal(data)
 		require.NoError(t, err)
 		expected := `a:1:{s:5:"value";i:644;}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("nested", func(t *testing.T) {
@@ -1011,7 +1007,7 @@ func TestMarshal_ptr(t *testing.T) {
 		expected := `a:1:{s:5:"value";i:8;}`
 		actual, err := phpserialize.Marshal(Container{Value: &a})
 		require.NoError(t, err)
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 }
 
@@ -1024,7 +1020,7 @@ func TestMarshal_map(t *testing.T) {
 		actual, err := phpserialize.Marshal(MapOnly{Map: nil})
 		require.NoError(t, err)
 		expected := `a:1:{s:3:"map";N;}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("direct", func(t *testing.T) {
@@ -1035,7 +1031,7 @@ func TestMarshal_map(t *testing.T) {
 		actual, err := phpserialize.Marshal(MapOnly{Map: map[string]int64{"abcdef": 1}})
 		require.NoError(t, err)
 		expected := `a:1:{s:3:"map";a:1:{s:6:"abcdef";i:1;}}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("indirect", func(t *testing.T) {
@@ -1048,7 +1044,7 @@ func TestMarshal_map(t *testing.T) {
 		actual, err := phpserialize.Marshal(MapPtr{Map: map[string]int64{"abcdef": 1}})
 		require.NoError(t, err)
 		expected := `a:2:{s:5:"users";N;s:3:"map";a:1:{s:6:"abcdef";i:1;}}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 }
 
@@ -1068,7 +1064,7 @@ func TestMarshal_interface_with_method(t *testing.T) {
 	actual, err := phpserialize.Marshal(Container{Value: data})
 	require.NoError(t, err)
 	expected := `a:1:{s:5:"value";a:0:{}}`
-	test.StringEqual(t, expected, string(actual))
+	diff.StringEqual(t, expected, string(actual))
 }
 
 func TestMarshal_anonymous_field(t *testing.T) {
@@ -1111,7 +1107,7 @@ func TestRecursivePanic(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	test.StringEqual(t, `a:2:{s:4:"Name";s:5:"hello";s:1:"E";a:1:{i:0;a:2:{s:4:"Name";s:2:"BB";s:1:"E";a:1:{i:0;a:2:{s:4:"Name";s:15:"C C D D E E F F";s:1:"E";N;}}}}}`, string(actual))
+	diff.StringEqual(t, `a:2:{s:4:"Name";s:5:"hello";s:1:"E";a:1:{i:0;a:2:{s:4:"Name";s:2:"BB";s:1:"E";a:1:{i:0;a:2:{s:4:"Name";s:15:"C C D D E E F F";s:1:"E";N;}}}}}`, string(actual))
 }
 
 type userMarshaler struct {
@@ -1141,7 +1137,7 @@ func TestUserMarshaler(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	test.StringEqual(t, `a:1:{s:1:"T";s:25:"2024-07-16T01:02:03+08:00";}`, string(actual))
+	diff.StringEqual(t, `a:1:{s:1:"T";s:25:"2024-07-16T01:02:03+08:00";}`, string(actual))
 }
 
 type Generic[T any] struct {
@@ -1196,7 +1192,7 @@ func TestMarshal_go118_concrete_types(t *testing.T) {
 			actual, err := phpserialize.Marshal(data.Data)
 			require.NoError(t, err)
 
-			test.StringEqual(t, data.Expected, string(actual))
+			diff.StringEqual(t, data.Expected, string(actual))
 		})
 	}
 }
@@ -1210,7 +1206,7 @@ func TestMarshal_go118_interface(t *testing.T) {
 			actual, err := phpserialize.Marshal(data)
 			require.NoError(t, err)
 
-			test.StringEqual(t, data.WrappedExpected(), string(actual))
+			diff.StringEqual(t, data.WrappedExpected(), string(actual))
 		})
 	}
 }
@@ -1238,7 +1234,7 @@ func TestMarshal_uint_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:5:{s:1:"a";s:1:"2";s:1:"b";s:1:"3";s:1:"c";s:1:"0";s:1:"d";s:2:"52";s:1:"e";s:3:"110";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	type Container struct {
@@ -1249,14 +1245,14 @@ func TestMarshal_uint_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{I: 0})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("positive", func(t *testing.T) {
 		actual, err := phpserialize.Marshal(Container{I: 1040})
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:4:"1040";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 }
 
@@ -1272,7 +1268,7 @@ func TestMarshal_uint_as_string_omitempty(t *testing.T) {
 	actual, err := phpserialize.Marshal(&data)
 	require.NoError(t, err)
 	expected := `a:0:{}`
-	test.StringEqual(t, expected, string(actual))
+	diff.StringEqual(t, expected, string(actual))
 }
 
 func TestMarshal_uint_as_string_ptr_omitempty(t *testing.T) {
@@ -1294,7 +1290,7 @@ func TestMarshal_uint_as_string_ptr_omitempty(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:5:{s:1:"a";s:1:"0";s:1:"b";s:1:"0";s:1:"c";s:1:"0";s:1:"d";s:1:"0";s:1:"e";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("uint8-indirect", func(t *testing.T) {
@@ -1307,7 +1303,7 @@ func TestMarshal_uint_as_string_ptr_omitempty(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"a";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("uint16-direct", func(t *testing.T) {
@@ -1320,7 +1316,7 @@ func TestMarshal_uint_as_string_ptr_omitempty(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"b";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("uint32-direct", func(t *testing.T) {
@@ -1333,7 +1329,7 @@ func TestMarshal_uint_as_string_ptr_omitempty(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"c";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("uint64-direct", func(t *testing.T) {
@@ -1346,7 +1342,7 @@ func TestMarshal_uint_as_string_ptr_omitempty(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"d";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("uint-direct", func(t *testing.T) {
@@ -1359,7 +1355,7 @@ func TestMarshal_uint_as_string_ptr_omitempty(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"e";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 }
 
@@ -1374,7 +1370,7 @@ func TestMarshal_int_ptr_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:1:"i";s:1:"0";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 }
 
@@ -1389,7 +1385,7 @@ func TestMarshalBool_ptr_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:5:"value";s:5:"false";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("direct-true", func(t *testing.T) {
@@ -1402,7 +1398,7 @@ func TestMarshalBool_ptr_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:1:{s:5:"value";s:4:"true";}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("indirect-false", func(t *testing.T) {
@@ -1416,7 +1412,7 @@ func TestMarshalBool_ptr_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:2:{s:5:"value";s:5:"false";s:1:"B";N;}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 
 	t.Run("indirect-true", func(t *testing.T) {
@@ -1430,7 +1426,7 @@ func TestMarshalBool_ptr_as_string(t *testing.T) {
 		actual, err := phpserialize.Marshal(&data)
 		require.NoError(t, err)
 		expected := `a:2:{s:5:"value";s:4:"true";s:1:"B";N;}`
-		test.StringEqual(t, expected, string(actual))
+		diff.StringEqual(t, expected, string(actual))
 	})
 }
 
@@ -1444,7 +1440,7 @@ func TestMarshal_array_map(t *testing.T) {
 	actual, err := phpserialize.Marshal(data)
 	require.NoError(t, err)
 	expected := `a:5:{i:0;a:1:{i:-3;i:1;}i:1;N;i:2;a:1:{i:-1;i:1;}i:3;N;i:4;N;}`
-	test.StringEqual(t, expected, string(actual))
+	diff.StringEqual(t, expected, string(actual))
 }
 
 func TestMarshal_Array_nil(t *testing.T) {
@@ -1453,5 +1449,5 @@ func TestMarshal_Array_nil(t *testing.T) {
 	actual, err := phpserialize.Marshal(data)
 	require.NoError(t, err)
 	expected := `a:5:{i:0;i:0;i:1;i:0;i:2;i:0;i:3;i:0;i:4;i:0;}`
-	test.StringEqual(t, expected, string(actual))
+	diff.StringEqual(t, expected, string(actual))
 }

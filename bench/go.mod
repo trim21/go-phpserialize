@@ -1,6 +1,6 @@
 module bench
 
-go 1.19
+go 1.24
 
 require (
 	github.com/elliotchance/phpserialize v1.4.0
