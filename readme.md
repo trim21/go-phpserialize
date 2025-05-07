@@ -80,7 +80,7 @@ never decode them to `interface`, `slice` or `map`.
 
 ## benchmark
 
-see <./tests/bench.txt>
+see [./tests/bench.txt](./tests/bench.txt)
 
 ## License
 
