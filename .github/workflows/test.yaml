@@ -6,8 +6,8 @@ on:
       - master
     paths:
       - ".github/workflows/test.yaml"
-      - "go.mod"
-      - "go.sum"
+      - "**/go.mod"
+      - "**/go.sum"
       - "Taskfile.yaml"
       - "**.go"
       - "**.go.json"
@@ -16,8 +16,8 @@ on:
       - master
     paths:
       - ".github/workflows/test.yaml"
-      - "go.mod"
-      - "go.sum"
+      - "**/go.mod"
+      - "**/go.sum"
       - "Taskfile.yaml"
       - "**.go"
       - "**.go.json"
@@ -39,8 +39,9 @@ jobs:
           go-version: "${{ matrix.go_version }}"
 
       - run: go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out -count=1 ./...
+        working-directory: testdata
 
       - uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5
         with:
-          files: coverage.out
+          files: testdata/coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
