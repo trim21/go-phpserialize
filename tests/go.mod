@@ -1,8 +1,9 @@
-module phpserialize_test
+module tests
 
 go 1.20
 
 require (
+	github.com/elliotchance/phpserialize v1.4.0
 	github.com/fatih/color v1.18.0
 	github.com/sergi/go-diff v1.3.1
 	github.com/stretchr/testify v1.10.0

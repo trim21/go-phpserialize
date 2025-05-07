@@ -1,4 +1,4 @@
-package phpserialize_test
+package tests
 
 import (
 	"fmt"
@@ -7,11 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"phpserialize_test/internal/diff"
-
 	"github.com/stretchr/testify/require"
-
 	"github.com/trim21/go-phpserialize"
+
+	"tests/internal/diff"
 )
 
 type Container struct {

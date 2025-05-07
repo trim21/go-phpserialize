@@ -78,6 +78,10 @@ So a malicious input like `a:100000000:{}` may become `make([]T, 100000000)` and
 If you have to decode some un-trusted bytes, make sure only decode them into fixed-length golang array or struct,
 never decode them to `interface`, `slice` or `map`.
 
+## benchmark
+
+see <./tests/bench.txt>
+
 ## License
 
 MIT License

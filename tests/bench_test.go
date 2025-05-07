@@ -1,4 +1,4 @@
-package phpserialize_test
+package tests
 
 import (
 	"fmt"
