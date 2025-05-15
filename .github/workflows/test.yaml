@@ -37,11 +37,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "${{ matrix.go_version }}"
+          cache-dependency-path: "**/*.sum"
 
       - run: go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out -count=1 ./...
         working-directory: tests
 
-      - uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5
+      - uses: codecov/codecov-action@v5
         with:
           files: tests/coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
