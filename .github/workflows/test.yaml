@@ -39,7 +39,7 @@ jobs:
           go-version: "${{ matrix.go_version }}"
           cache-dependency-path: "**/*.sum"
 
-      - run: go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out -count=1 ./...
+      - run: go test '-coverpkg=github.com/trim21/go-phpserialize/...' -covermode=atomic -coverprofile=coverage.out -count=1 ./...
         working-directory: tests
 
       - uses: codecov/codecov-action@v5
