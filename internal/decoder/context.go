@@ -81,8 +81,16 @@ func skipClassName(buf []byte, cursor int64) (int64, error) {
 }
 
 // i:{};
+// the cursor should point to the beginning `i`
+// and it will point to the byte after `;`
 func skipInt(buf []byte, cursor int64) (int64, error) {
-	cursor += 2
+	cursor++
+
+	if buf[cursor] != ':' {
+		return cursor, errors.ErrUnexpected("':' after type operator `i`", cursor, buf[cursor])
+	}
+
+	cursor++
 
 	for isInteger[buf[cursor]] {
 		cursor++
