@@ -1,0 +1,4 @@
+version: 3
+tasks:
+  test:
+    - go test '-coverpkg=github.com/trim21/go-phpserialize/...' -covermode=atomic -coverprofile=coverage.out -count=1 ./...
