@@ -3,6 +3,7 @@ package errors
 import (
 	"fmt"
 	"reflect"
+	"runtime/debug"
 )
 
 type InvalidUnmarshalError struct {
@@ -92,7 +93,8 @@ func ErrUnexpectedEnd(msg string, cursor int64) *SyntaxError {
 }
 
 func ErrUnexpected(msg string, cursor int64, c byte) *SyntaxError {
-	return &SyntaxError{msg: fmt.Sprintf("php-serialize: expecting %s, get char '%c' instead", msg, c), Offset: cursor}
+	debug.PrintStack()
+	return &SyntaxError{msg: fmt.Sprintf("php-serialize: expecting %s, get char '%c' instead at offset: %d", msg, c, cursor), Offset: cursor}
 }
 
 func ErrInvalidCharacter(c byte, context string, cursor int64) *SyntaxError {

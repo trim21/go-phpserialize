@@ -80,6 +80,23 @@ func skipClassName(buf []byte, cursor int64) (int64, error) {
 	return end - 2, err
 }
 
+// i:{};
+func skipInt(buf []byte, cursor int64) (int64, error) {
+	cursor += 2
+
+	for isInteger[buf[cursor]] {
+		cursor++
+	}
+
+	if buf[cursor] != ';' {
+		return cursor, errors.ErrUnexpected("';' after integer", cursor, buf[cursor])
+	}
+
+	cursor++
+
+	return cursor, nil
+}
+
 func skipString(buf []byte, cursor int64) (int64, error) {
 	cursor++
 	sLen, end, err := readLength(buf, cursor)
@@ -141,12 +158,7 @@ func skipValue(buf []byte, cursor, depth int64) (int64, error) {
 		return skipString(buf, cursor)
 	// case 'd':
 	case 'i':
-		cursor++
-		end, err := skipLengthWithBothColon(buf, cursor)
-		if err != nil {
-			return cursor, err
-		}
-		return end + 1, nil
+		return skipInt(buf, cursor)
 	case 'b':
 		cursor++
 		if buf[cursor] != ':' {

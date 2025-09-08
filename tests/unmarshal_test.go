@@ -653,3 +653,22 @@ func TestUnmarshal_error_case(t *testing.T) {
 	err := phpserialize.Unmarshal([]byte(raw), &tags)
 	require.NoError(t, err)
 }
+
+func TestUnmarshal_issue_69(t *testing.T) {
+	type UnionInfo struct {
+		CompanyId int    `php:"company_id" json:"company_id"`
+		CorpID    string `php:"corp_id" json:"corp_id"`
+		OpenID    string `php:"openid" json:"openid"`
+		From      string `php:"from" json:"from"`
+		Uid       int    `php:"uid" json:"uid"`
+		UnionID   string `php:"unionid" json:"unionid"`
+		OrgUid    int    `php:"org_uid,omitempty" json:"org_uid"`
+		FromType  int    `php:"from_type" json:"from_type"`
+	}
+
+	ddd := `a:7:{s:4:"from";s:4:"ding";s:6:"openid";s:15:"360946652480232";s:7:"unionid";s:26:"0Cg1QDDRfgyz8qMjqwwN0giEiE";s:10:"company_id";i:1;s:7:"corp_id";s:36:"ding4eb8f5a40a6244aa35c2f4657eb6378f";s:8:"agent_id";i:894146310;s:3:"uid";i:2;}`
+
+	unionInfo := UnionInfo{}
+
+	require.NoError(t, phpserialize.Unmarshal([]byte(ddd), &unionInfo))
+}
