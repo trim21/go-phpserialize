@@ -42,7 +42,7 @@ jobs:
       - run: go test '-coverpkg=github.com/trim21/go-phpserialize/...' -covermode=atomic -coverprofile=coverage.out -count=1 ./...
         working-directory: tests
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           files: tests/coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
