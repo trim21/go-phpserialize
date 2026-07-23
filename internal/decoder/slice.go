@@ -90,19 +90,23 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 		}
 		cursor++
 
-		slice := reflect.MakeSlice(d.stype, arrLen, arrLen)
+		slice := reflect.MakeSlice(d.stype, 0, arrLen)
 
-		idx := 0
 		for {
 			currentIndex, end, err := readInt(buf, cursor)
 			if err != nil {
 				return 0, err
 			}
 
-			idx = currentIndex
 			cursor = end
 
-			c, err := d.valueDecoder.Decode(ctx, cursor, depth, slice.Index(idx))
+			if currentIndex >= slice.Len() {
+				newSlice := reflect.MakeSlice(d.stype, currentIndex+1, currentIndex+1)
+				reflect.Copy(newSlice, slice)
+				slice = newSlice
+			}
+
+			c, err := d.valueDecoder.Decode(ctx, cursor, depth, slice.Index(currentIndex))
 			if err != nil {
 				return 0, err
 			}

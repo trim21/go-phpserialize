@@ -341,6 +341,28 @@ func TestUnmarshal_slice(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, []string{"one", "two", "q", "a", "zx"}, c.Value[:5])
 	})
+
+	t.Run("non-sequential keys with gap", func(t *testing.T) {
+		type Container struct {
+			Value []string `php:"value"`
+		}
+		var c Container
+		raw := `a:1:{s:5:"value";a:2:{i:0;s:1:"a";i:5;s:1:"b";}}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, []string{"a", "", "", "", "", "b"}, c.Value)
+	})
+
+	t.Run("non-sequential keys start at non-zero", func(t *testing.T) {
+		type Container struct {
+			Value []string `php:"value"`
+		}
+		var c Container
+		raw := `a:1:{s:5:"value";a:1:{i:1;s:1:"a";}}`
+		err := phpserialize.Unmarshal([]byte(raw), &c)
+		require.NoError(t, err)
+		require.Equal(t, []string{"", "a"}, c.Value)
+	})
 }
 
 func TestUnmarshal_array(t *testing.T) {
