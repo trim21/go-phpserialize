@@ -3,7 +3,6 @@ package decoder
 import (
 	"strconv"
 	"sync"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -27,6 +26,7 @@ func TakeRuntimeContext() *RuntimeContext {
 }
 
 func ReleaseRuntimeContext(ctx *RuntimeContext) {
+	ctx.Buf = nil
 	ctx.MaxSliceSize = 0
 	ctx.MaxMapSize = 0
 	runtimeContextPool.Put(ctx)
@@ -49,21 +49,35 @@ func init() {
 	}
 }
 
-func char(ptr unsafe.Pointer, offset int64) byte {
-	return *(*byte)(unsafe.Add(ptr, offset))
+func hasByte(buf []byte, cursor int64) bool {
+	return cursor >= 0 && cursor < int64(len(buf))
+}
+
+func hasBytes(buf []byte, cursor, size int64) bool {
+	return cursor >= 0 && size >= 0 && cursor <= int64(len(buf))-size
 }
 
 // `:${length}:`
 func skipLengthWithBothColon(buf []byte, cursor int64) (int64, error) {
+	if !hasByte(buf, cursor) {
+		return cursor, errors.ErrUnexpectedEnd("length", cursor)
+	}
 	if buf[cursor] != ':' {
 		return cursor, errors.ErrUnexpected("':' before length", cursor, buf[cursor])
 	}
 	cursor++
 
-	for isInteger[buf[cursor]] {
+	start := cursor
+	for hasByte(buf, cursor) && isInteger[buf[cursor]] {
 		cursor++
 	}
+	if cursor == start {
+		return cursor, errors.ErrSyntax("php-serialize: length requires at least one digit", cursor)
+	}
 
+	if !hasByte(buf, cursor) {
+		return cursor, errors.ErrUnexpectedEnd("length", cursor)
+	}
 	if buf[cursor] != ':' {
 		return cursor, errors.ErrUnexpected("':' after length", cursor, buf[cursor])
 	}
@@ -76,82 +90,84 @@ func skipLengthWithBothColon(buf []byte, cursor int64) (int64, error) {
 // jump from 'O' to colon ':' before array length
 func skipClassName(buf []byte, cursor int64) (int64, error) {
 	// O:8:"stdClass":1:{s:1:"a";s:1:"q";}
-	end, err := skipString(buf, cursor)
-	return end - 2, err
+	if !hasByte(buf, cursor) || buf[cursor] != 'O' {
+		return cursor, errors.ErrUnexpectedEnd("object", cursor)
+	}
+	classLen, start, err := readLength(buf, cursor+1)
+	if err != nil {
+		return cursor, err
+	}
+	if !hasByte(buf, start) || buf[start] != '"' {
+		return start, errors.ErrUnexpectedEnd("class name", start)
+	}
+	end := start + classLen + 1
+	if !hasBytes(buf, end, 2) {
+		return end, errors.ErrUnexpectedEnd("class name", end)
+	}
+	if buf[end] != '"' {
+		return end, errors.ErrUnexpected(`class name quoted '"'`, end, buf[end])
+	}
+	if buf[end+1] != ':' {
+		return end + 1, errors.ErrUnexpected("':' after class name", end+1, buf[end+1])
+	}
+	return end, nil
 }
 
 // i:{};
 // the cursor should point to the beginning `i`
 // and it will point to the byte after `;`
 func skipInt(buf []byte, cursor int64) (int64, error) {
-	cursor++
-
-	if buf[cursor] != ':' {
-		return cursor, errors.ErrUnexpected("':' after type operator `i`", cursor, buf[cursor])
-	}
-
-	cursor++
-
-	for isInteger[buf[cursor]] {
-		cursor++
-	}
-
-	if buf[cursor] != ';' {
-		return cursor, errors.ErrUnexpected("';' after integer", cursor, buf[cursor])
-	}
-
-	cursor++
-
-	return cursor, nil
+	_, end, err := readIntegerBytes(buf, cursor)
+	return end, err
 }
 
 func skipString(buf []byte, cursor int64) (int64, error) {
-	cursor++
-	sLen, end, err := readLength(buf, cursor)
-	if err != nil {
-		return cursor, err
+	if !hasByte(buf, cursor) || buf[cursor] != 's' {
+		return cursor, errors.ErrUnexpectedEnd("string", cursor)
 	}
-
-	return end + sLen + 3, nil
+	_, end, err := readString(buf, cursor+1)
+	return end, err
 }
 
 func skipArray(buf []byte, cursor, depth int64) (int64, error) {
-	bracketCount := 1
-	end, err := skipLengthWithBothColon(buf, cursor)
+	if depth > maxDecodeNestingDepth {
+		return 0, errors.ErrExceededMaxDepth('a', cursor)
+	}
+	length, end, err := readLength(buf, cursor)
 	if err != nil {
 		return cursor, err
 	}
 	cursor = end
-
-	for {
-		switch buf[cursor] {
-		// '{' and '}' may only appear in array or string,
-		// we will skip value content, it's easy to only scan char '{' and '}'
-		case 's':
-			end, err := skipString(buf, cursor)
-			if err != nil {
-				return cursor, err
-			}
-			cursor = end
-		case '}':
-			bracketCount--
-			depth--
-			if bracketCount == 0 {
-				return cursor + 1, nil
-			}
-		case '{':
-			depth++
-			if depth > maxDecodeNestingDepth {
-				return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
-			}
-			cursor++
-		default:
-			cursor++
+	if !hasByte(buf, cursor) {
+		return cursor, errors.ErrUnexpectedEnd("array", cursor)
+	}
+	if buf[cursor] != '{' {
+		return cursor, errors.ErrInvalidBeginningOfArray(buf[cursor], cursor)
+	}
+	cursor++
+	for range length {
+		cursor, err = skipValue(buf, cursor, depth)
+		if err != nil {
+			return cursor, err
+		}
+		cursor, err = skipValue(buf, cursor, depth)
+		if err != nil {
+			return cursor, err
 		}
 	}
+	if !hasByte(buf, cursor) {
+		return cursor, errors.ErrUnexpectedEnd("array", cursor)
+	}
+	if buf[cursor] != '}' {
+		return cursor, errors.ErrUnexpected("'}' after array", cursor, buf[cursor])
+	}
+	return cursor + 1, nil
 }
 
 func skipValue(buf []byte, cursor, depth int64) (int64, error) {
+	if !hasByte(buf, cursor) {
+		return cursor, errors.ErrUnexpectedEnd("value", cursor)
+	}
 	switch buf[cursor] {
 	case 'O':
 		end, err := skipClassName(buf, cursor)
@@ -164,27 +180,14 @@ func skipValue(buf []byte, cursor, depth int64) (int64, error) {
 		return skipArray(buf, cursor+1, depth+1)
 	case 's':
 		return skipString(buf, cursor)
-	// case 'd':
+	case 'd':
+		_, end, err := readFloatBytes(buf, cursor)
+		return end, err
 	case 'i':
 		return skipInt(buf, cursor)
 	case 'b':
-		cursor++
-		if buf[cursor] != ':' {
-			return 0, errors.ErrUnexpectedEnd("':' before bool value", cursor)
-		}
-		cursor++
-		switch buf[cursor] {
-		case '0':
-		case '1':
-		default:
-			return 0, errors.ErrUnexpectedEnd("'0' pr '1' af bool value", cursor)
-		}
-		cursor++
-		if buf[cursor] != ';' {
-			return 0, errors.ErrUnexpectedEnd("';' end bool value", cursor)
-		}
-		cursor++
-		return cursor, nil
+		_, err := readBool(buf, cursor)
+		return cursor + 4, err
 
 	case 'N':
 		if err := validateNull(buf, cursor); err != nil {
@@ -193,9 +196,8 @@ func skipValue(buf []byte, cursor, depth int64) (int64, error) {
 		cursor += 2
 		return cursor, nil
 	default:
-		return cursor, errors.ErrUnexpectedEnd("null", cursor)
+		return cursor, errors.ErrInvalidBeginningOfValue(buf[cursor], cursor)
 	}
-
 }
 
 // caller should check `a:0` , this function check  `0:{};`
@@ -234,8 +236,11 @@ func readLength(buf []byte, cursor int64) (int64, int64, error) {
 	if err != nil {
 		return 0, cursor, err
 	}
-
-	return parseByteStringInt64(buf[cursor+1 : end-1]), end, nil
+	length, err := parseInt64(buf[cursor+1 : end-1])
+	if err != nil || length < 0 {
+		return 0, cursor, errors.ErrSyntax("php-serialize: invalid length", cursor+1)
+	}
+	return length, end, nil
 }
 
 // :${length}:
@@ -245,7 +250,11 @@ func readLengthInt(buf []byte, cursor int64) (int, int64, error) {
 		return 0, cursor, err
 	}
 
-	return parseByteStringInt(buf[cursor+1 : end-1]), end, nil
+	length, err := parseInt64(buf[cursor+1 : end-1])
+	if err != nil || length < 0 || int64(int(length)) != length {
+		return 0, cursor, errors.ErrSyntax("php-serialize: invalid length", cursor+1)
+	}
+	return int(length), end, nil
 }
 
 // `:${length}:"${content}";`
@@ -254,10 +263,17 @@ func readString(buf []byte, cursor int64) ([]byte, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-
+	if !hasByte(buf, end) {
+		return nil, end, errors.ErrUnexpectedEnd("string", end)
+	}
+	if buf[end] != '"' {
+		return nil, end, errors.ErrUnexpected(`string quoted '"'`, end, buf[end])
+	}
 	start := end + 1
-	end = end + sLen + 1
-
+	if !hasBytes(buf, start, sLen+2) {
+		return nil, start, errors.ErrUnexpectedEnd("string", start)
+	}
+	end = start + sLen
 	if buf[end] != '"' {
 		return nil, end, errors.ErrUnexpected(`string quoted '"'`, end, buf[end])
 	}
@@ -271,27 +287,73 @@ func readString(buf []byte, cursor int64) ([]byte, int64, error) {
 	return buf[start:end], cursor, nil
 }
 
-func parseByteStringInt64(b []byte) int64 {
-	var l int64
-	for _, c := range b {
-		l = l*10 + int64(c-'0')
+func readIntegerBytes(buf []byte, cursor int64) ([]byte, int64, error) {
+	if !hasByte(buf, cursor) {
+		return nil, cursor, errors.ErrUnexpectedEnd("integer", cursor)
 	}
-
-	return l
+	if buf[cursor] != 'i' {
+		return nil, cursor, errors.ErrUnexpected("'i' to start an integer", cursor, buf[cursor])
+	}
+	if !hasBytes(buf, cursor, 3) {
+		return nil, cursor, errors.ErrUnexpectedEnd("integer", cursor)
+	}
+	if buf[cursor+1] != ':' {
+		return nil, cursor + 1, errors.ErrUnexpected("int separator ':'", cursor+1, buf[cursor+1])
+	}
+	cursor += 2
+	start := cursor
+	if buf[cursor] == '-' {
+		cursor++
+	}
+	digitStart := cursor
+	for hasByte(buf, cursor) && numTable[buf[cursor]] {
+		cursor++
+	}
+	if cursor == digitStart {
+		return nil, cursor, errors.ErrSyntax("php-serialize: integer requires at least one digit", cursor)
+	}
+	if !hasByte(buf, cursor) {
+		return nil, cursor, errors.ErrUnexpectedEnd("integer", cursor)
+	}
+	if buf[cursor] != ';' {
+		return nil, cursor, errors.ErrUnexpected("';' after integer", cursor, buf[cursor])
+	}
+	return buf[start:cursor], cursor + 1, nil
 }
 
-func parseByteStringInt(b []byte) int {
-	var l int
-	for _, c := range b {
-		l = l*10 + int(c-'0')
+func readFloatBytes(buf []byte, cursor int64) ([]byte, int64, error) {
+	if !hasByte(buf, cursor) {
+		return nil, cursor, errors.ErrUnexpectedEnd("float", cursor)
 	}
-
-	return l
+	if buf[cursor] != 'd' {
+		return nil, cursor, errors.ErrUnexpected("'d' to start a float", cursor, buf[cursor])
+	}
+	if !hasBytes(buf, cursor, 3) {
+		return nil, cursor, errors.ErrUnexpectedEnd("float", cursor)
+	}
+	if buf[cursor+1] != ':' {
+		return nil, cursor + 1, errors.ErrUnexpected("float separator ':'", cursor+1, buf[cursor+1])
+	}
+	start := cursor + 2
+	cursor = start
+	for hasByte(buf, cursor) && buf[cursor] != ';' {
+		cursor++
+	}
+	if cursor == start {
+		return nil, cursor, errors.ErrSyntax("php-serialize: float requires a value", cursor)
+	}
+	if !hasByte(buf, cursor) {
+		return nil, cursor, errors.ErrUnexpectedEnd("float", cursor)
+	}
+	return buf[start:cursor], cursor + 1, nil
 }
 
 func readBool(buf []byte, cursor int64) (bool, error) {
-	if cursor+1 >= int64(len(buf)) {
-		return false, errors.ErrUnexpectedEnd("null", cursor)
+	if !hasBytes(buf, cursor, 4) {
+		return false, errors.ErrUnexpectedEnd("bool", cursor)
+	}
+	if buf[cursor] != 'b' {
+		return false, errors.ErrInvalidCharacter(buf[cursor], "bool", cursor)
 	}
 
 	if buf[cursor+1] != ':' {

@@ -42,8 +42,11 @@ func (d *stringDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 }
 
 func (d *stringDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
+	if !hasByte(buf, cursor) {
+		return nil, cursor, errors.ErrUnexpectedEnd("string", cursor)
+	}
 	switch buf[cursor] {
-	case 'n':
+	case 'N':
 		if err := validateNull(buf, cursor); err != nil {
 			return nil, 0, err
 		}

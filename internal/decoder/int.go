@@ -3,7 +3,6 @@ package decoder
 import (
 	"fmt"
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -34,34 +33,60 @@ func (d *intDecoder) typeError(buf []byte, offset int64) *errors.UnmarshalTypeEr
 	}
 }
 
-var (
-	pow10i64 = [...]int64{
-		1e00, 1e01, 1e02, 1e03, 1e04, 1e05, 1e06, 1e07, 1e08, 1e09,
-		1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18,
-	}
-	pow10i64Len = len(pow10i64)
-)
-
 func (d *intDecoder) parseInt(b []byte) (int64, error) {
-	isNegative := false
-	if b[0] == '-' {
-		b = b[1:]
-		isNegative = true
+	return parseInt64(b)
+}
+
+var pow10i64 = [...]uint64{
+	1e00, 1e01, 1e02, 1e03, 1e04, 1e05, 1e06, 1e07, 1e08, 1e09,
+	1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18,
+}
+
+func parseInt64(buf []byte) (int64, error) {
+	if len(buf) == 0 {
+		return 0, fmt.Errorf("invalid integer")
 	}
-	maxDigit := len(b)
-	if maxDigit > pow10i64Len {
-		return 0, fmt.Errorf("invalid length of number")
+
+	negative := buf[0] == '-'
+	if negative {
+		buf = buf[1:]
+		if len(buf) == 0 {
+			return 0, fmt.Errorf("invalid integer")
+		}
 	}
-	sum := int64(0)
-	for i := 0; i < maxDigit; i++ {
-		c := int64(b[i]) - 48
-		digitValue := pow10i64[maxDigit-i-1]
-		sum += c * digitValue
+
+	for len(buf) > 0 && buf[0] == '0' {
+		buf = buf[1:]
 	}
-	if isNegative {
-		return -1 * sum, nil
+	if len(buf) == 0 {
+		return 0, nil
 	}
-	return sum, nil
+	if len(buf) > len(pow10i64) {
+		return 0, fmt.Errorf("integer overflow")
+	}
+
+	var value uint64
+	for i, c := range buf {
+		if !numTable[c] {
+			return 0, fmt.Errorf("invalid integer")
+		}
+		value += uint64(c-'0') * pow10i64[len(buf)-i-1]
+	}
+
+	limit := uint64(^uint64(0) >> 1)
+	if negative {
+		limit++
+	}
+	if value > limit {
+		return 0, fmt.Errorf("integer overflow")
+	}
+	if negative {
+		if value == uint64(1)<<63 {
+			return -1 << 63, nil
+		}
+		return -int64(value), nil
+	}
+	return int64(value), nil
 }
 
 var (
@@ -84,44 +109,16 @@ var (
 )
 
 func (d *intDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
-	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
-	if char(b, cursor) != 'i' {
-		return nil, cursor, errors.ErrUnexpected("int", cursor, buf[cursor])
+	if !hasByte(buf, cursor) {
+		return nil, cursor, errors.ErrUnexpectedEnd("integer", cursor)
 	}
-
-	cursor++
-	if char(b, cursor) != ':' {
-		return nil, cursor, errors.ErrUnexpected("int sep ':'", cursor, buf[cursor])
-	}
-	cursor++
-
-	switch char(b, cursor) {
-	case '0':
-		cursor++
-		if char(b, cursor) != ';' {
-			return nil, cursor, errors.ErrUnexpected("';' end int", cursor, buf[cursor])
-		}
-		return numZeroBuf, cursor + 1, nil
-	case '-', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		start := cursor
-		cursor++
-		for numTable[char(b, cursor)] {
-			cursor++
-		}
-		if char(b, cursor) != ';' {
-			return nil, cursor, errors.ErrUnexpected("';' end int", cursor, buf[cursor])
-		}
-		num := buf[start:cursor]
-		return num, cursor + 1, nil
-	case 'N':
+	if buf[cursor] == 'N' {
 		if err := validateNull(buf, cursor); err != nil {
 			return nil, 0, err
 		}
-		cursor += 2
-		return nil, cursor, nil
-	default:
-		return nil, 0, d.typeError([]byte{char(b, cursor)}, cursor)
+		return nil, cursor + 2, nil
 	}
+	return readIntegerBytes(buf, cursor)
 }
 
 func (d *intDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
@@ -153,39 +150,14 @@ func (d *intDecoder) processBytes(bytes []byte, cursor int64, rv reflect.Value) 
 }
 
 func readInt(buf []byte, cursor int64) (int, int64, error) {
-	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
-	if char(b, cursor) != 'i' {
-		return 0, cursor, errors.ErrUnexpected("'i' to start a int", cursor, buf[cursor])
+	start := cursor + 2
+	bytes, end, err := readIntegerBytes(buf, cursor)
+	if err != nil {
+		return 0, cursor, err
 	}
-
-	cursor++
-	if char(b, cursor) != ':' {
-		return 0, cursor, errors.ErrUnexpected("int sep ':'", cursor, buf[cursor])
+	value64, err := parseInt64(bytes)
+	if err != nil || value64 < 0 || int64(int(value64)) != value64 {
+		return 0, cursor, errors.ErrSyntax("php-serialize: invalid array index", start)
 	}
-	cursor++
-
-	switch char(b, cursor) {
-	case '0':
-		cursor++
-		if char(b, cursor) != ';' {
-			return 0, cursor, errors.ErrUnexpected("';' end int", cursor, buf[cursor])
-		}
-		cursor++
-		return 0, cursor, nil
-	case '-', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		start := cursor
-		cursor++
-		for numTable[char(b, cursor)] {
-			cursor++
-		}
-
-		if char(b, cursor) != ';' {
-			return 0, cursor, errors.ErrUnexpected("';' end int", cursor, buf[cursor])
-		}
-		value := parseByteStringInt(buf[start:cursor])
-		cursor++
-		return value, cursor, nil
-	default:
-		return 0, 0, errors.ErrUnexpected("int", cursor, buf[cursor])
-	}
+	return int(value64), end, nil
 }

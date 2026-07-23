@@ -50,6 +50,9 @@ func (d *sliceDecoder) errNumber(offset int64) *errors.UnmarshalTypeError {
 
 func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
+	if !hasByte(buf, cursor) {
+		return 0, errors.ErrUnexpectedEnd("slice", cursor)
+	}
 	depth++
 	if depth > maxDecodeNestingDepth {
 		return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
@@ -65,11 +68,17 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 		return cursor, nil
 	case 'a':
 		cursor++
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("array length", cursor)
+		}
 		if buf[cursor] != ':' {
 			return cursor, errors.ErrUnexpected("':' before array length", cursor, buf[cursor])
 		}
 
 		cursor++
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("array length", cursor)
+		}
 		if buf[cursor] == '0' {
 			err := validateEmptyArray(buf, cursor)
 			if err != nil {
@@ -85,6 +94,9 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 		}
 		cursor = end
 
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("array", cursor)
+		}
 		if buf[cursor] != '{' {
 			return cursor, errors.ErrInvalidBeginningOfArray(buf[cursor], cursor)
 		}
@@ -93,12 +105,18 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 		slice := reflect.MakeSlice(d.stype, 0, arrLen)
 
 		for {
+			if !hasByte(buf, cursor) {
+				return cursor, errors.ErrUnexpectedEnd("array", cursor)
+			}
 			currentIndex, end, err := readInt(buf, cursor)
 			if err != nil {
 				return 0, err
 			}
 
 			cursor = end
+			if !hasByte(buf, cursor) {
+				return cursor, errors.ErrUnexpectedEnd("array value", cursor)
+			}
 
 			if currentIndex >= slice.Len() {
 				newSlice := reflect.MakeSlice(d.stype, currentIndex+1, currentIndex+1)
@@ -114,6 +132,9 @@ func (d *sliceDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 			rv.Set(slice)
 
 			cursor = c
+			if !hasByte(buf, cursor) {
+				return cursor, errors.ErrUnexpectedEnd("array", cursor)
+			}
 			if buf[cursor] == '}' {
 				cursor++
 				return cursor, nil

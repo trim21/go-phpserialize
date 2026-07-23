@@ -17,30 +17,17 @@ func newBoolDecoder(structName, fieldName string) *boolDecoder {
 
 func (d *boolDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
+	if !hasByte(buf, cursor) {
+		return 0, errors.ErrUnexpectedEnd("bool", cursor)
+	}
 	switch buf[cursor] {
 	case 'b':
-		// b:0;
-		// b:1;
-
-		cursor++
-		if buf[cursor] != ':' {
-			return 0, errors.ErrUnexpectedEnd("':' before bool value", cursor)
+		value, err := readBool(buf, cursor)
+		if err != nil {
+			return 0, err
 		}
-		cursor++
-		switch buf[cursor] {
-		case '0':
-			rv.SetBool(false)
-		case '1':
-			rv.SetBool(true)
-		default:
-			return 0, errors.ErrInvalidCharacter(buf[cursor], "bool value", cursor)
-		}
-		cursor++
-		if buf[cursor] != ';' {
-			return 0, errors.ErrUnexpectedEnd("';' end bool value", cursor)
-		}
-		cursor++
-		return cursor, nil
+		rv.SetBool(value)
+		return cursor + 4, nil
 
 	case 'N':
 		if err := validateNull(buf, cursor); err != nil {

@@ -30,15 +30,14 @@ func newMapDecoder(mapType reflect.Type, keyType reflect.Type, keyDec Decoder, v
 
 func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
+	if !hasByte(buf, cursor) {
+		return 0, errors.ErrUnexpectedEnd("map", cursor)
+	}
 	depth++
 	if depth > maxDecodeNestingDepth {
 		return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
 	}
 
-	buflen := int64(len(buf))
-	if buflen < 2 {
-		return 0, errors.ErrUnexpected("{} for map", cursor, buf[cursor])
-	}
 	switch buf[cursor] {
 	case 'N':
 		if err := validateNull(buf, cursor); err != nil {
@@ -68,6 +67,9 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 	}
 
 	cursor = end
+	if !hasByte(buf, cursor) {
+		return 0, errors.ErrUnexpectedEnd("map", cursor)
+	}
 	if buf[cursor] != '{' {
 		return 0, errors.ErrUnexpected("{ character for map value", cursor, buf[cursor])
 	}
@@ -77,18 +79,27 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 	}
 
 	cursor++
+	if !hasByte(buf, cursor) {
+		return cursor, errors.ErrUnexpectedEnd("map", cursor)
+	}
 	if buf[cursor] == '}' {
 		cursor++
 		return cursor, nil
 	}
 
 	for {
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("map", cursor)
+		}
 		k := reflect.New(d.keyType)
 		keyCursor, err := d.keyDecoder.Decode(ctx, cursor, depth, k.Elem())
 		if err != nil {
 			return 0, err
 		}
 		cursor = keyCursor
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("map value", cursor)
+		}
 		v := reflect.New(d.valueType)
 		valueCursor, err := d.valueDecoder.Decode(ctx, cursor, depth, v.Elem())
 		if err != nil {
@@ -97,6 +108,9 @@ func (d *mapDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect
 
 		rv.SetMapIndex(k.Elem(), v.Elem())
 		cursor = valueCursor
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("map", cursor)
+		}
 		if buf[cursor] == '}' {
 			cursor++
 			return cursor, nil

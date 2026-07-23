@@ -31,10 +31,9 @@ func unmarshal(data []byte, v any) error {
 
 	rt := rv.Type()
 
-	if err := validateType(rt); err != nil {
+	if err := validateValue(rv, rt); err != nil {
 		return err
 	}
-
 	src := make([]byte, len(data))
 	copy(src, data)
 
@@ -43,13 +42,12 @@ func unmarshal(data []byte, v any) error {
 		return err
 	}
 	ctx := decoder.TakeRuntimeContext()
+	defer decoder.ReleaseRuntimeContext(ctx)
 	ctx.Buf = src
 	cursor, err := dec.Decode(ctx, 0, 0, rv.Elem())
 	if err != nil {
-		decoder.ReleaseRuntimeContext(ctx)
 		return err
 	}
-	decoder.ReleaseRuntimeContext(ctx)
 	return validateEndBuf(src, cursor)
 }
 
@@ -64,8 +62,8 @@ func validateEndBuf(src []byte, cursor int64) error {
 	)
 }
 
-func validateType(typ reflect.Type) error {
-	if typ == nil || typ.Kind() != reflect.Ptr {
+func validateValue(value reflect.Value, typ reflect.Type) error {
+	if typ == nil || typ.Kind() != reflect.Ptr || value.IsNil() {
 		return &errors.InvalidUnmarshalError{Type: typ}
 	}
 	return nil

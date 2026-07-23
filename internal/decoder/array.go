@@ -31,6 +31,9 @@ func newArrayDecoder(dec Decoder, elemType reflect.Type, alen int, structName, f
 
 func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
+	if !hasByte(buf, cursor) {
+		return 0, errors.ErrUnexpectedEnd("array", cursor)
+	}
 	depth++
 	if depth > maxDecodeNestingDepth {
 		return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
@@ -45,6 +48,9 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 		return cursor, nil
 	case 'a':
 		cursor++
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("array length", cursor)
+		}
 		if buf[cursor] != ':' {
 			return cursor, errors.ErrUnexpected("':' before array length", cursor, buf[cursor])
 		}
@@ -53,6 +59,9 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 		rv.SetZero()
 
 		cursor++
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("array length", cursor)
+		}
 		if buf[cursor] == '0' {
 			err := validateEmptyArray(buf, cursor)
 			if err != nil {
@@ -65,10 +74,20 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 		if err != nil {
 			return cursor, err
 		}
-		cursor = end + 1
+		cursor = end
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("array", cursor)
+		}
+		if buf[cursor] != '{' {
+			return cursor, errors.ErrInvalidBeginningOfArray(buf[cursor], cursor)
+		}
+		cursor++
 
 		idx := 0
 		for {
+			if !hasByte(buf, cursor) {
+				return cursor, errors.ErrUnexpectedEnd("array", cursor)
+			}
 			currentIndex, end, err := readInt(buf, cursor)
 			if err != nil {
 				return 0, err
@@ -76,6 +95,9 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 
 			idx = currentIndex
 			cursor = end
+			if !hasByte(buf, cursor) {
+				return cursor, errors.ErrUnexpectedEnd("array value", cursor)
+			}
 
 			if idx < d.alen {
 				c, err := d.valueDecoder.Decode(ctx, cursor, depth, rv.Index(idx))
@@ -91,6 +113,9 @@ func (d *arrayDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 				cursor = c
 			}
 
+			if !hasByte(buf, cursor) {
+				return cursor, errors.ErrUnexpectedEnd("array", cursor)
+			}
 			if buf[cursor] == '}' {
 				cursor++
 				return cursor, nil

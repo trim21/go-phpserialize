@@ -2,7 +2,6 @@ package decoder
 
 import (
 	"reflect"
-	"unsafe"
 
 	"github.com/trim21/go-phpserialize/internal/errors"
 )
@@ -49,13 +48,14 @@ func decodeKey(d *structDecoder, buf []byte, cursor int64) (int64, *structFieldS
 
 func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
 	buf := ctx.Buf
+	if !hasByte(buf, cursor) {
+		return 0, errors.ErrUnexpectedEnd("object", cursor)
+	}
 	depth++
 	if depth > maxDecodeNestingDepth {
 		return 0, errors.ErrExceededMaxDepth(buf[cursor], cursor)
 	}
-	buflen := int64(len(buf))
-	b := (*sliceHeader)(unsafe.Pointer(&buf)).data
-	switch char(b, cursor) {
+	switch buf[cursor] {
 	case 'N':
 		if err := validateNull(buf, cursor); err != nil {
 			return 0, err
@@ -72,11 +72,14 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 		fallthrough
 	case 'a':
 		cursor++
+		if !hasByte(buf, cursor) {
+			return 0, errors.ErrUnexpectedEnd("object length", cursor)
+		}
 		if buf[cursor] != ':' {
-			return 0, errors.ErrInvalidBeginningOfValue(char(b, cursor), cursor)
+			return 0, errors.ErrInvalidBeginningOfValue(buf[cursor], cursor)
 		}
 	default:
-		return 0, errors.ErrInvalidBeginningOfValue(char(b, cursor), cursor)
+		return 0, errors.ErrInvalidBeginningOfValue(buf[cursor], cursor)
 	}
 
 	// skip  :${length}:
@@ -85,17 +88,26 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 		return cursor, err
 	}
 	cursor = end
+	if !hasByte(buf, cursor) {
+		return 0, errors.ErrUnexpectedEnd("object", cursor)
+	}
 	if buf[cursor] != '{' {
-		return 0, errors.ErrInvalidBeginningOfArray(char(b, cursor), cursor)
+		return 0, errors.ErrInvalidBeginningOfArray(buf[cursor], cursor)
 	}
 
 	cursor++
+	if !hasByte(buf, cursor) {
+		return cursor, errors.ErrUnexpectedEnd("object", cursor)
+	}
 	if buf[cursor] == '}' {
 		cursor++
 		return cursor, nil
 	}
 
 	for {
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("object", cursor)
+		}
 		c, field, err := decodeKey(d, buf, cursor)
 		if err != nil {
 			return 0, err
@@ -104,8 +116,8 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 		cursor = c
 
 		// cursor++
-		if cursor >= buflen {
-			return 0, errors.ErrUnexpected("object value after colon", cursor, buf[cursor])
+		if !hasByte(buf, cursor) {
+			return 0, errors.ErrUnexpectedEnd("object value", cursor)
 		}
 		if field != nil {
 			if field.err != nil {
@@ -124,7 +136,10 @@ func (d *structDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refl
 			cursor = c
 		}
 
-		if char(b, cursor) == '}' {
+		if !hasByte(buf, cursor) {
+			return cursor, errors.ErrUnexpectedEnd("object", cursor)
+		}
+		if buf[cursor] == '}' {
 			cursor++
 			return cursor, nil
 		}

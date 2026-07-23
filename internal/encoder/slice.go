@@ -11,19 +11,9 @@ func compileSlice(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 	recursiveEnc := &structRecEncoder{}
 	seen[rt] = recursiveEnc
 
-	var enc encoder
-	var compileError error
-
-	if rt.Elem().Kind() == reflect.Map {
-		enc, compileError = compile(reflect.PointerTo(rt.Elem()), seen)
-		if compileError != nil {
-			return nil, compileError
-		}
-	} else {
-		enc, compileError = compile(rt.Elem(), seen)
-		if compileError != nil {
-			return nil, compileError
-		}
+	enc, compileError := compile(rt.Elem(), seen)
+	if compileError != nil {
+		return nil, compileError
 	}
 
 	elemEnc := enc

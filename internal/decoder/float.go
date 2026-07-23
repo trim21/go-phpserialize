@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"math"
 	"reflect"
 	"strconv"
 
@@ -17,6 +18,9 @@ func newFloatDecoder(structName, fieldName string) *floatDecoder {
 }
 
 func (d *floatDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, error) {
+	if !hasByte(buf, cursor) {
+		return nil, cursor, errors.ErrUnexpectedEnd("float", cursor)
+	}
 	switch buf[cursor] {
 	case 'N':
 		if err := validateNull(buf, cursor); err != nil {
@@ -26,27 +30,10 @@ func (d *floatDecoder) decodeByte(buf []byte, cursor int64) ([]byte, int64, erro
 		return nil, cursor, nil
 
 	case 'd':
-		break
+		return readFloatBytes(buf, cursor)
 	default:
 		return nil, cursor, errors.ErrUnexpected("float start with 'd' or 'N'", cursor, buf[cursor])
 	}
-
-	cursor++
-	if buf[cursor] != ':' {
-		return nil, cursor, errors.ErrUnexpected("float start with 'd:'", cursor, buf[cursor])
-	}
-	// cursor++
-
-	start := cursor + 1
-	for {
-		cursor++
-		if buf[cursor] == ';' {
-			break
-		}
-	}
-
-	num := buf[start:cursor]
-	return num, cursor, nil
 }
 
 func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv reflect.Value) (int64, error) {
@@ -55,12 +42,6 @@ func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 	if err != nil {
 		return 0, err
 	}
-
-	if buf[cursor] != ';' {
-		return cursor, errors.ErrUnexpected("float end with ';'", cursor, buf[cursor])
-	}
-	cursor++
-
 	if bytes == nil {
 		return cursor, nil
 	}
@@ -69,7 +50,18 @@ func (d *floatDecoder) Decode(ctx *RuntimeContext, cursor, depth int64, rv refle
 }
 
 func (d *floatDecoder) processBytes(bytes []byte, cursor int64, rv reflect.Value) (int64, error) {
-	f64, err := strconv.ParseFloat(unsafeStr(bytes), 64)
+	var f64 float64
+	var err error
+	switch unsafeStr(bytes) {
+	case "INF":
+		f64 = math.Inf(1)
+	case "-INF":
+		f64 = math.Inf(-1)
+	case "NAN":
+		f64 = math.NaN()
+	default:
+		f64, err = strconv.ParseFloat(unsafeStr(bytes), 64)
+	}
 	if err != nil {
 		return 0, errors.ErrSyntax(err.Error(), cursor)
 	}
