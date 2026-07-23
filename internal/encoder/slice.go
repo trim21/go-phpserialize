@@ -5,6 +5,12 @@ import (
 )
 
 func compileSlice(rt reflect.Type, seen compileSeenMap) (encoder, error) {
+	if recursiveEnc, exists := seen[rt]; exists {
+		return recursiveEnc.Encode, nil
+	}
+	recursiveEnc := &structRecEncoder{}
+	seen[rt] = recursiveEnc
+
 	var enc encoder
 	var compileError error
 
@@ -20,18 +26,21 @@ func compileSlice(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 		}
 	}
 
-	return checkRecursiveEncoder(func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	elemEnc := enc
+	containerEnc := checkRecursiveEncoder(func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 		length := rv.Len()
 
 		b = appendArrayBegin(b, int64(length))
 		var err error
 		for i := 0; i < length; i++ {
 			b = appendIntBytes(b, int64(i))
-			b, err = enc(ctx, b, rv.Index(i))
+			b, err = elemEnc(ctx, b, rv.Index(i))
 			if err != nil {
 				return b, err
 			}
 		}
 		return append(b, '}'), nil
-	}), nil
+	})
+	recursiveEnc.enc = containerEnc
+	return recursiveEnc.Encode, nil
 }

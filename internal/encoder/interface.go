@@ -45,14 +45,25 @@ LOOP:
 
 	switch rv.Kind() {
 	case reflect.Slice:
-		return reflectSlice(ctx, b, rv)
+		return reflectRecursiveValue(ctx, b, rv, reflectSlice)
 	case reflect.Map:
-		return reflectMap(ctx, b, rv)
+		return reflectRecursiveValue(ctx, b, rv, reflectMap)
 	case reflect.Struct:
 		return reflectStruct(ctx, b, rv)
 	}
 
 	return b, &UnsupportedInterfaceTypeError{rv.Type()}
+}
+
+func reflectRecursiveValue(ctx *Ctx, b []byte, rv reflect.Value, enc encoder) ([]byte, error) {
+	ptr := rv.UnsafePointer()
+	if _, seen := ctx.Seen[ptr]; seen {
+		return b, fmt.Errorf("php: try to encode recursive value of type %s", rv.Type())
+	}
+	ctx.Seen[ptr] = empty{}
+	b, err := enc(ctx, b, rv)
+	delete(ctx.Seen, ptr)
+	return b, err
 }
 
 func compileInterfaceAsString(rt reflect.Type) (encoder, error) {

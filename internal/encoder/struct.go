@@ -143,6 +143,10 @@ func compileStructFieldsEncoders(rt reflect.Type, seen compileSeenMap) ([]struct
 		} else {
 			if field.Type.Kind() == reflect.Ptr {
 				fieldEncoder, err = compile(field.Type.Elem(), seen)
+				if err == nil && field.Type.Elem().Kind() == reflect.Struct {
+					fieldEncoder = checkStructRecursiveEncoder(fieldEncoder)
+					isPtrField = false
+				}
 			} else {
 				fieldEncoder, err = compile(field.Type, seen)
 			}

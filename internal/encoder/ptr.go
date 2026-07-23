@@ -56,24 +56,24 @@ func checkStructRecursiveEncoder(enc encoder) encoder {
 		}
 
 		ctx.StackDepth++
-		if ctx.StackDepth > 1000 {
-			_, seen := ctx.Seen[rv.UnsafePointer()]
+		tracked := ctx.StackDepth > 1000
+		ptr := rv.UnsafePointer()
+		if tracked {
+			_, seen := ctx.Seen[ptr]
 			if seen {
-				return b, fmt.Errorf("php: try to encode recursive object %v", rv.Interface())
+				ctx.StackDepth--
+				return b, fmt.Errorf("php: try to encode recursive value of type %s", rv.Type())
 			}
+			ctx.Seen[ptr] = empty{}
 		}
 
 		b, err := enc(ctx, b, rv.Elem())
-		if err != nil {
-			return b, err
-		}
-
-		if ctx.StackDepth > 1000 {
-			delete(ctx.Seen, rv.UnsafePointer())
+		if tracked {
+			delete(ctx.Seen, ptr)
 		}
 		ctx.StackDepth--
 
-		return b, nil
+		return b, err
 	}
 }
 
@@ -84,25 +84,24 @@ func checkRecursiveEncoder(enc encoder) encoder {
 		}
 
 		ctx.StackDepth++
-		if ctx.StackDepth > 1000 {
-			_, seen := ctx.Seen[rv.UnsafePointer()]
+		tracked := ctx.StackDepth > 1000
+		ptr := rv.UnsafePointer()
+		if tracked {
+			_, seen := ctx.Seen[ptr]
 			if seen {
-				return b, fmt.Errorf("php: try to encode recursive object %v", rv.Interface())
+				ctx.StackDepth--
+				return b, fmt.Errorf("php: try to encode recursive value of type %s", rv.Type())
 			}
 
-			ctx.Seen[rv.UnsafePointer()] = empty{}
+			ctx.Seen[ptr] = empty{}
 		}
 
 		b, err := enc(ctx, b, rv)
-		if err != nil {
-			return b, err
-		}
-
-		if ctx.StackDepth > 1000 {
-			delete(ctx.Seen, rv.UnsafePointer())
+		if tracked {
+			delete(ctx.Seen, ptr)
 		}
 		ctx.StackDepth--
 
-		return b, nil
+		return b, err
 	}
 }

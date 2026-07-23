@@ -8,7 +8,7 @@ import (
 )
 
 func encodeFloat32(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
-	return appendFloat32(b, rv.Interface().(float32)), nil
+	return appendFloat32(b, float32(rv.Float())), nil
 }
 
 func encodeFloat64(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
@@ -18,6 +18,9 @@ func encodeFloat64(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 // https://github.com/goccy/go-json/blob/4d0a50640b999aeafd15e3b20d8ad47fe917e6e8/internal/encoder/encoder.go#L335
 
 func appendFloat32(b []byte, f32 float32) []byte {
+	if special, ok := appendSpecialFloat(b, float64(f32)); ok {
+		return special
+	}
 	f64 := float64(f32)
 	abs := math.Abs(f64)
 	format := byte('f')
@@ -35,6 +38,9 @@ func appendFloat32(b []byte, f32 float32) []byte {
 }
 
 func appendFloat64(b []byte, f64 float64) []byte {
+	if special, ok := appendSpecialFloat(b, f64); ok {
+		return special
+	}
 	abs := math.Abs(f64)
 	format := byte('f')
 	// Note: Must use float32 comparisons for underlying float32 value to get precise cutoffs right.
@@ -49,6 +55,19 @@ func appendFloat64(b []byte, f64 float64) []byte {
 	return append(b, ';')
 }
 
+func appendSpecialFloat(b []byte, f64 float64) ([]byte, bool) {
+	switch {
+	case math.IsNaN(f64):
+		return append(b, "d:NAN;"...), true
+	case math.IsInf(f64, 1):
+		return append(b, "d:INF;"...), true
+	case math.IsInf(f64, -1):
+		return append(b, "d:-INF;"...), true
+	default:
+		return b, false
+	}
+}
+
 func compileFloatAsString(typ reflect.Type) (encoder, error) {
 	switch typ.Kind() {
 	case reflect.Float32:
@@ -61,7 +80,7 @@ func compileFloatAsString(typ reflect.Type) (encoder, error) {
 }
 
 func encodeFloat32AsString(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
-	return appendFloat32AsString(ctx.smallBuffer[:0], b, rv.Interface().(float32)), nil
+	return appendFloat32AsString(ctx.smallBuffer[:0], b, float32(rv.Float())), nil
 }
 
 func encodeFloat64AsString(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {

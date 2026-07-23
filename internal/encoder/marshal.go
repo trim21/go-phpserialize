@@ -24,6 +24,9 @@ func Marshal(v any) ([]byte, error) {
 
 func encode(ctx *Ctx, b []byte, v any) ([]byte, error) {
 	rv := reflect.ValueOf(v)
+	if !rv.IsValid() {
+		return appendNull(b), nil
+	}
 
 	enc, err := compileWithCache(rv.Type())
 	if err != nil {

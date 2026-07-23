@@ -6,6 +6,12 @@ import (
 
 // !!! not safe to use in reflect case !!!
 func compileMap(rt reflect.Type, seen compileSeenMap) (encoder, error) {
+	if recursiveEnc, exists := seen[rt]; exists {
+		return recursiveEnc.Encode, nil
+	}
+	recursiveEnc := &structRecEncoder{}
+	seen[rt] = recursiveEnc
+
 	// for map[int]string, keyType is int, valueType is string
 	keyType := rt.Key()
 	valueType := rt.Elem()
@@ -28,7 +34,7 @@ func compileMap(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 		return nil, compileErr
 	}
 
-	return checkRecursiveEncoder(func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
+	enc := checkRecursiveEncoder(func(ctx *Ctx, b []byte, rv reflect.Value) ([]byte, error) {
 		size := rv.Len()
 		b = appendArrayBegin(b, int64(size))
 
@@ -53,5 +59,7 @@ func compileMap(rt reflect.Type, seen compileSeenMap) (encoder, error) {
 		}
 
 		return append(b, '}'), nil
-	}), nil
+	})
+	recursiveEnc.enc = enc
+	return recursiveEnc.Encode, nil
 }
