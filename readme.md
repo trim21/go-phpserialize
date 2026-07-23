@@ -14,11 +14,8 @@ Or you can wrap these types and implement `phpserialize.Marshaler` or `phpserial
 
 ## Supported and tested go version
 
-- 1.20
-- 1.21
-- 1.22
-- 1.23
-- 1.24
+- 1.25
+- 1.26
 
 ## Install
 
@@ -53,6 +50,22 @@ at first time and cache it for future use.
 So a dynamic struct may cause memory leak.
 
 ## Changelog
+
+### v0.1.4
+
+fix(decoder): add more check
+
+### v0.1.3
+
+feat(decoder): handle non-sequential keys in PHP array deserialization
+
+### v0.1.2
+
+fix: skip int struct field (#71)
+
+### v0.1.1
+
+chore: remove test deps from top level mod
 
 ### v0.1.0
 
