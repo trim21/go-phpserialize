@@ -1,0 +1,32 @@
+merge_queue:
+  max_parallel_checks: 1
+  queued_label: "ci:queued"
+  dequeued_label: "ci:dequeued"
+
+queue_rules:
+  - name: default
+    update_method: merge
+
+pull_request_rules:
+  - name: label conflicts
+    conditions:
+      - conflict
+    actions:
+      label:
+        toggle:
+          - conflict
+
+  - name: automatic merge
+    conditions:
+      - base=master
+      - or:
+          - "#approved-reviews-by>=1"
+          - label=ci:auto-merge
+      - not:
+          and:
+            - "head*=renovate/lockfile-maintenance-*"
+            - "created-at>24h ago"
+      - check-success=test-checks
+    actions:
+      queue:
+        name: default
