@@ -46,3 +46,9 @@ jobs:
         with:
           files: tests/coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-checks: # referenced in Mergify conditions, must stay unique across all workflows
+    needs: [test]
+    runs-on: ubuntu-slim
+    steps:
+      - run: echo "all test checks passed"
