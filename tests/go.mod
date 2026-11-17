@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/elliotchance/phpserialize v1.4.0
 	github.com/fatih/color v1.19.0
-	github.com/sergi/go-diff v1.4.4
+	github.com/sergi/go-diff v1.4.5
 	github.com/stretchr/testify v1.12.1
 	github.com/trim21/go-phpserialize v0.0.0
 )
